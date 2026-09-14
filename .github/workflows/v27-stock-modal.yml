@@ -1,0 +1,214 @@
+name: V27 Stock Blank Modal No Diff
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/v27-stock-modal.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch V27
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          # MODAL: saldo lama hanya referensi, bukan target. Hapus konsep selisih.
+          s=s.replace(
+            '<thead><tr><th>Kategori</th><th>Sumber</th><th>Nilai Excel 13 Sep</th><th>Modal Inputan</th><th>Selisih</th></tr></thead>',
+            '<thead><tr><th>Kategori</th><th>Sumber</th><th>Saldo Referensi</th><th>Modal Inputan</th></tr></thead>'
+          )
+          s=re.sub(r'<td class="diff-cell[^"]*" id="modalDiff\d+">.*?</td>','',s)
+          s=s.replace('<div class="sumrow"><span>Total Excel</span><b>Rp109.607.235</b></div>', '<div class="sumrow"><span>Total Referensi</span><b>Rp109.607.235</b></div>')
+          s=re.sub(
+            r'<div class="sumrow"><span>Selisih</span><b id="modalInputDiff"[^>]*>.*?</b></div>',
+            '<div class="sumrow"><span>Status Pengisian</span><b id="modalInputStatus" style="color:var(--purple)">0/25 terisi</b></div>',
+            s,
+            count=1
+          )
+          s=s.replace(
+            'Baris bertanda <b>Otomatis</b> berasal dari transaksi/stok dan untuk sementara dikunci pada preview. Baris <b>Input</b> dapat diuji langsung.',
+            'Saldo Referensi hanya informasi saldo sebelumnya, bukan target. Modal tiap tempat dapat bertambah atau berkurang sesuai transaksi. Sistem hanya mencatat saldo aktual yang diinput.'
+          )
+
+          new_modal_calc = '''function calcModalInput(){
+            let total=0,filled=0;
+            modalCatalog.forEach((m,ix)=>{
+              const el=document.getElementById('modalInput'+(ix+1));
+              if(!el)return;
+              const raw=String(el.value??'').trim();
+              el.classList.remove('changed-input','ok-input','pending-input');
+              if(raw===''){
+                el.classList.add('pending-input');
+                return;
+              }
+              filled++;
+              total+=moneyValue(el);
+              el.classList.add('ok-input');
+            });
+            modalInputTotal.textContent=filled?fmt(total):'Belum diisi';
+            const status=document.getElementById('modalInputStatus')||document.getElementById('modalInputDiff');
+            if(status){
+              status.textContent=filled===modalCatalog.length ? 'Lengkap '+filled+'/'+modalCatalog.length : filled+'/'+modalCatalog.length+' terisi';
+              status.style.color=filled===modalCatalog.length?'var(--green)':'var(--purple)';
+            }
+          }
+          '''
+          start=s.find('function calcModalInput(){')
+          end=s.find('function bindPurchasePreviewButtons(){',start)
+          if start!=-1 and end!=-1:
+            s=s[:start]+new_modal_calc+'\n'+s[end:]
+
+          # PAKET & ROKOK: stok akhir adalah hasil hitung fisik terbaru, jadi input awal wajib kosong.
+          def blank_stock(match):
+            tag=match.group(0)
+            tag=re.sub(r'\svalue="[^"]*"','',tag)
+            if 'autocomplete=' not in tag:
+              tag=tag.replace('<input ','<input autocomplete="off" ',1)
+            if 'placeholder=' not in tag:
+              tag=tag[:-2]+' placeholder="Isi stok akhir"/>' if tag.endswith('/>') else tag[:-1]+' placeholder="Isi stok akhir">'
+            return tag
+
+          s=re.sub(r'<input(?=[^>]*class="[^"]*\bpkg-end\b[^"]*")[^>]*?/?>',blank_stock,s)
+          s=re.sub(r'<input(?=[^>]*class="[^"]*\bcig-end\b[^"]*")[^>]*?/?>',blank_stock,s)
+
+          new_pkg = '''function calcPkgEnd(i){
+            const p=pkgCatalog[i-1],avail=p.stock+(p.purchaseQty||0),el=document.getElementById('pkgEnd'+i);
+            const raw=String(el?.value??'').trim();
+            if(raw===''){
+              document.getElementById('pkgSold'+i).textContent='—';
+              document.getElementById('pkgMoney'+i).textContent='—';
+              document.getElementById('pkgMargin'+i).textContent='—';
+              document.getElementById('pkgRemainModal'+i).textContent='—';
+              calcPkgTotals();return;
+            }
+            let e=Math.max(0,Number(raw));
+            if(e>avail){e=avail;el.value=avail}
+            const sold=avail-e;
+            document.getElementById('pkgSold'+i).textContent=sold;
+            document.getElementById('pkgMoney'+i).textContent=fmt(sold*p.activeSell);
+            document.getElementById('pkgMargin'+i).textContent=fmt(sold*(p.activeSell-p.activeBase));
+            document.getElementById('pkgRemainModal'+i).textContent=fmt(e*p.activeBase);
+            calcPkgTotals();
+          }
+          function calcPkgTotals(){
+            let avail=0,sold=0,money=0,margin=0,filled=0,required=0;
+            pkgCatalog.forEach((p,ix)=>{
+              const a=p.stock+(p.purchaseQty||0);avail+=a;
+              if(a<=0)return;
+              required++;
+              const el=document.getElementById('pkgEnd'+(ix+1));
+              const raw=String(el?.value??'').trim();
+              if(raw==='')return;
+              filled++;
+              const e=Number(raw)||0,s=a-e;
+              sold+=s;money+=s*p.activeSell;margin+=s*(p.activeSell-p.activeBase);
+            });
+            pkgTotalAvail.textContent=avail+' unit';
+            if(filled===0){pkgTotalSold.textContent='Belum diisi';pkgTotalMoney.textContent='Belum diisi';pkgTotalMargin.textContent='Belum diisi';return;}
+            pkgTotalSold.textContent=(filled<required?filled+'/'+required+' terisi • ':'')+sold+' unit';
+            pkgTotalMoney.textContent=fmt(money)+(filled<required?' sementara':'');
+            pkgTotalMargin.textContent=fmt(margin)+(filled<required?' sementara':'');
+          }
+          '''
+          start=s.find('function calcPkgEnd(i){')
+          end=s.find('function calcCigEnd(i){',start)
+          if start!=-1 and end!=-1:
+            # pertahankan fungsi di antara calcPkgTotals dan calcCigEnd jika ada: cari akhir calcPkgTotals dengan marker calcDisplayTotal
+            marker=s.find('function calcDisplayTotal(){',start)
+            if marker!=-1 and marker<end:
+              s=s[:start]+new_pkg+'\n'+s[marker:]
+
+          new_cig = '''function calcCigEnd(i){
+            const c=cigCatalog[i-1],mv=Number(document.getElementById('move'+i).value||0),avail=c.display+mv,wh=c.warehouse+(c.purchaseQty||0)-mv,el=document.getElementById('cigEnd'+i);
+            document.getElementById('cigWh'+i).textContent=wh;
+            document.getElementById('cigWhModal'+i).textContent=fmt(wh*c.base);
+            const raw=String(el?.value??'').trim();
+            if(raw===''){
+              document.getElementById('cigSold'+i).textContent='—';
+              document.getElementById('cigSales'+i).textContent='—';
+              document.getElementById('cigMargin'+i).textContent='—';
+              document.getElementById('cigDispModal'+i).textContent='—';
+              calcCigTotals();return;
+            }
+            let e=Math.max(0,Number(raw));
+            if(e>avail){e=avail;el.value=avail}
+            const sold=avail-e;
+            document.getElementById('cigSold'+i).textContent=sold;
+            document.getElementById('cigSales'+i).textContent=fmt(sold*c.sell);
+            document.getElementById('cigMargin'+i).textContent=fmt(sold*(c.sell-c.base));
+            document.getElementById('cigDispModal'+i).textContent=fmt(e*c.base);
+            calcCigTotals();
+          }
+          function calcCigTotals(){
+            let sales=0,margin=0,dm=0,wm=0,filled=0,required=0;
+            cigCatalog.forEach((c,ix)=>{
+              const i=ix+1,mv=Number(document.getElementById('move'+i).value||0),avail=c.display+mv,wh=c.warehouse+(c.purchaseQty||0)-mv;
+              wm+=wh*c.base;
+              if(avail<=0)return;
+              required++;
+              const el=document.getElementById('cigEnd'+i),raw=String(el?.value??'').trim();
+              if(raw==='')return;
+              filled++;
+              const e=Number(raw)||0,sold=avail-e;
+              sales+=sold*c.sell;margin+=sold*(c.sell-c.base);dm+=e*c.base;
+            });
+            cigWarehouseModal.textContent=fmt(wm);
+            if(filled===0){cigSalesTotal.textContent='Belum diisi';cigMarginTotal.textContent='Belum diisi';cigDisplayModal.textContent='Belum diisi';return;}
+            cigSalesTotal.textContent=fmt(sales)+(filled<required?' sementara':'');
+            cigMarginTotal.textContent=fmt(margin)+(filled<required?' sementara':'');
+            cigDisplayModal.textContent=fmt(dm)+(filled<required?' sementara':'');
+          }
+          '''
+          start=s.find('function calcCigEnd(i){')
+          after=s.find('\n\n',s.find('}',s.find('function calcCigTotals(){',start))+1) if start!=-1 else -1
+          # regex lebih aman untuk mengganti dua fungsi berurutan sampai blok berikutnya.
+          s=re.sub(r'function calcCigEnd\(i\)\{.*?\n\}\nfunction calcCigTotals\(\)\{.*?\n\}',new_cig.strip(),s,count=1,flags=re.S)
+
+          # Teks dan tampilan pending.
+          s=s.replace('UI V26 — PURPLE NEON','UI V27 — STOCK INPUT')
+          extra_css='''\n/* V27 blank latest stock inputs */\n.pkg-end:placeholder-shown,.cig-end:placeholder-shown{background:#fcfbfd!important;border-style:dashed!important;border-color:#b9a8c6!important;color:#7d7188}\n'''
+          if 'V27 blank latest stock inputs' not in s:
+            s=s.replace('</style>',extra_css+'\n</style>',1)
+
+          # Pastikan browser tidak mempertahankan nilai demo lama dari markup/cache.
+          init_js='''\nfunction initBlankEndingStocksV27(){\n  document.querySelectorAll('.pkg-end,.cig-end').forEach(el=>{el.value='';});\n  pkgCatalog.forEach((_,ix)=>calcPkgEnd(ix+1));\n  cigCatalog.forEach((_,ix)=>calcCigEnd(ix+1));\n}\nwindow.addEventListener('load',initBlankEndingStocksV27,{once:true});\n'''
+          if 'initBlankEndingStocksV27' not in s:
+            pos=s.rfind('</script>')
+            if pos!=-1:s=s[:pos]+init_js+s[pos:]
+
+          p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Validate JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts='\n'.join(re.findall(r'<script[^>]*>(.*?)</script>',s,flags=re.S))
+          Path('/tmp/konter-anisa-v27.js').write_text(scripts,encoding='utf-8')
+          PY
+          node --check /tmp/konter-anisa-v27.js
+
+      - name: Commit V27
+        run: |
+          git config user.name "chatgpt-v27"
+          git config user.email "chatgpt-v27@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add index.html
+            git commit -m "V27 blank stock inputs and remove modal diff"
+            git push
+          else
+            echo "No changes"
+          fi
