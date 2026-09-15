@@ -2426,10 +2426,10 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     const raw=String(el.value??'').trim();
 
     if(raw===''){
-      setText('pkgSold'+i,—');
+      setText('pkgSold'+i,'—');
       setText('pkgMoney'+i,'—');
       setText('pkgMargin'+i,'—');
-      setText('pkgRemainModal'+i,—');
+      setText('pkgRemainModal'+i,'—');
       calcPkgTotals();
       return;
     }
@@ -2489,7 +2489,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 
     if(raw===''){
       setText('cigSold'+i,'—');
-      setText('cigSales'+i,—');
+      setText('cigSales'+i,'—');
       setText('cigMargin'+i,'—');
       setText('cigDispModal'+i,'—');
       calcCigTotals();
