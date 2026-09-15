@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 'V29 — CORE REGULATIONS';
+  const VERSION = 'V30 — KARYAWAN ROLE';
   const DEFAULT_MIN_MARGIN = 1000;
   const PRICE_DROP_APPROVAL_TRIGGER = 3000;
   const ACTIVE_SHIFT = {
@@ -592,7 +592,9 @@
     refreshNoteSelectors();
     installModalConfirmation();
     injectRulesSummary();
-    buildAdminPanel();
+    // Admin/Purchasing controls are intentionally NOT rendered in the Karyawan portal.
+    document.getElementById('v29AdminOpen')?.remove();
+    document.getElementById('v29AdminPanel')?.remove();
     installCaptureGuards();
     syncOperationalFromNote();
   }
