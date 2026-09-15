@@ -1,0 +1,67 @@
+name: V29 Apply Core Regulations
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/v29-apply-regulations.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Finalize V29 regulation script and inject assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          js_path = Path('rules-v29.js')
+          js = js_path.read_text(encoding='utf-8')
+
+          old = """  function validatePackageRules() {\n    const note = selectedNote('pkgNoteV29', 'package');\n    const total = packagePurchaseTotal();\n    if (!validateNoteExact('belanja Paket', note, total)) return false;\n"""
+          new = """  function validatePackageRules() {\n    const purchaseCount = typeof pkgCatalog === 'undefined' ? 0 : pkgCatalog.filter(p => Number(p.purchaseQty || 0) > 0).length;\n    if (purchaseCount === 0) return true;\n    const note = selectedNote('pkgNoteV29', 'package');\n    const total = packagePurchaseTotal();\n    if (!validateNoteExact('belanja Paket', note, total)) return false;\n"""
+          if old in js:
+              js = js.replace(old, new, 1)
+
+          old = """  function validateCigaretteRules() {\n    const note = selectedNote('cigNoteV29', 'cigarette');\n    const total = cigarettePurchaseTotal();\n    if (!validateNoteExact('belanja Rokok', note, total)) return false;\n"""
+          new = """  function validateCigaretteRules() {\n    const purchaseCount = typeof cigCatalog === 'undefined' ? 0 : cigCatalog.filter(c => Number(c.purchaseQty || 0) > 0).length;\n    if (purchaseCount === 0) return true;\n    const note = selectedNote('cigNoteV29', 'cigarette');\n    const total = cigarettePurchaseTotal();\n    if (!validateNoteExact('belanja Rokok', note, total)) return false;\n"""
+          if old in js:
+              js = js.replace(old, new, 1)
+
+          old = """  function openingAllConfirmed() {\n    return state.modalConfirmed && !!window.openingPkgPreviewConfirmed && !!window.openingCigPreviewConfirmed;\n  }\n"""
+          new = """  function openingAllConfirmed() {\n    let pkg = false, cig = false;\n    try { pkg = !!openingPkgPreviewConfirmed; } catch (_) {}\n    try { cig = !!openingCigPreviewConfirmed; } catch (_) {}\n    return state.modalConfirmed && pkg && cig;\n  }\n"""
+          if old in js:
+              js = js.replace(old, new, 1)
+
+          js_path.write_text(js, encoding='utf-8')
+
+          html_path = Path('index.html')
+          html = html_path.read_text(encoding='utf-8')
+          css_tag = '<link rel="stylesheet" href="./rules-v29.css?v=29">'
+          js_tag = '<script src="./rules-v29.js?v=29"></script>'
+          if 'rules-v29.css' not in html:
+              html = html.replace('</head>', css_tag + '\n</head>', 1)
+          if 'rules-v29.js' not in html:
+              html = html.replace('</body>', js_tag + '\n</body>', 1)
+          html_path.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Validate V29 JavaScript
+        run: node --check rules-v29.js
+
+      - name: Commit V29
+        run: |
+          git config user.name "chatgpt-v29"
+          git config user.email "chatgpt-v29@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add index.html rules-v29.js rules-v29.css
+            git commit -m "V29 enforce purchasing notes stock confirmations and margin regulations"
+            git push
+          else
+            echo "No changes"
+          fi
