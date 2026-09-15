@@ -192,6 +192,8 @@
   }
 
   function validatePackageRules() {
+    const purchaseCount = typeof pkgCatalog === 'undefined' ? 0 : pkgCatalog.filter(p => Number(p.purchaseQty || 0) > 0).length;
+    if (purchaseCount === 0) return true;
     const note = selectedNote('pkgNoteV29', 'package');
     const total = packagePurchaseTotal();
     if (!validateNoteExact('belanja Paket', note, total)) return false;
@@ -225,6 +227,8 @@
   }
 
   function validateCigaretteRules() {
+    const purchaseCount = typeof cigCatalog === 'undefined' ? 0 : cigCatalog.filter(c => Number(c.purchaseQty || 0) > 0).length;
+    if (purchaseCount === 0) return true;
     const note = selectedNote('cigNoteV29', 'cigarette');
     const total = cigarettePurchaseTotal();
     if (!validateNoteExact('belanja Rokok', note, total)) return false;
@@ -365,7 +369,10 @@
   }
 
   function openingAllConfirmed() {
-    return state.modalConfirmed && !!window.openingPkgPreviewConfirmed && !!window.openingCigPreviewConfirmed;
+    let pkg = false, cig = false;
+    try { pkg = !!openingPkgPreviewConfirmed; } catch (_) {}
+    try { cig = !!openingCigPreviewConfirmed; } catch (_) {}
+    return state.modalConfirmed && pkg && cig;
   }
 
   function injectRulesSummary() {
