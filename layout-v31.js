@@ -1,14 +1,14 @@
-/* Konter Anisa V32 — Professional Input Layout */
+/* Konter Anisa V33 — Professional Input Layout */
 (() => {
   'use strict';
-  const VERSION = 'V32 — PROFESSIONAL UI';
+  const VERSION = 'V33 — CLEAN TRANSACTIONS';
 
   const focusCopy = {
     0:'Fokus: cek dan konfirmasi stok Paket, stok Rokok, serta modal shift sebelumnya.',
     1:'Fokus: pilih Nota Purchasing yang benar lalu isi data belanja.',
     2:'Fokus: isi perpindahan stok Rokok dari Gudang ke Display.',
     3:'Fokus: tambahkan Hutang/Piutang satu per satu ke daftar.',
-    4:'Fokus: isi transaksi lalu tambahkan ke daftar transaksi shift.',
+    4:'Fokus: pilih jenis transaksi, isi transaksi aktual, lalu tambahkan ke daftar shift.',
     5:'Fokus: pilih Nota Operasional yang tersedia. Nominal mengikuti Purchasing.',
     6:'Fokus: isi seluruh Stok Akhir Paket. Jika habis, isi 0.',
     7:'Fokus: isi seluruh Stok Akhir Rokok. Jika habis, isi 0.',
@@ -17,6 +17,14 @@
   };
 
   function txt(el){ return String(el?.textContent || '').trim(); }
+  function byId(id){ return document.getElementById(id); }
+  function setText(id, value){ const el=byId(id); if(el) el.textContent=value; }
+  function blank(id, placeholder){
+    const el=byId(id);
+    if(!el) return;
+    el.value='';
+    if(placeholder) el.placeholder=placeholder;
+  }
 
   function updateVersion(){
     [...document.querySelectorAll('.topbar .status.info')].forEach(el => {
@@ -25,8 +33,8 @@
   }
 
   function removeAdminControls(){
-    document.getElementById('v29AdminOpen')?.remove();
-    document.getElementById('v29AdminPanel')?.remove();
+    byId('v29AdminOpen')?.remove();
+    byId('v29AdminPanel')?.remove();
   }
 
   function addFocusCue(section){
@@ -84,7 +92,7 @@
 
   function markLiveFeedback(){
     ['openingValidationBox','pkgPreviewMessage','cigPreviewMessage','v29ModalConfirmBox'].forEach(id => {
-      document.getElementById(id)?.classList.add('v31-live-feedback');
+      byId(id)?.classList.add('v31-live-feedback');
     });
   }
 
@@ -102,10 +110,64 @@
     });
   }
 
+  /* V33: transaksi harus dimulai dari form bersih, bukan angka contoh/test. */
+  function prepareCleanTransactionForms(){
+    const moneyInputs=[
+      ['danaAmount','Isi nominal DANA'],['danaAdmin','Otomatis setelah nominal diisi'],
+      ['qrisDanaAmount','Isi nominal QRIS DANA'],['qrisDanaAdmin','Otomatis setelah nominal diisi'],
+      ['qrisBankAmount','Isi nominal QRIS BANK'],['qrisBankAdmin','Otomatis setelah nominal diisi'],
+      ['svBase','Isi harga dasar'],['svSell','Isi harga jual'],
+      ['tarikBcaAmount','Isi nominal tarik tunai'],['tarikBcaAdmin','Otomatis setelah nominal diisi'],
+      ['transferBcaAmount','Isi nominal transfer'],['transferBcaAdmin','Otomatis setelah nominal diisi']
+    ];
+    moneyInputs.forEach(([id,ph])=>blank(id,ph));
+    ['danaReason','qrisDanaReason','qrisBankReason','tarikBcaReason','transferBcaReason','svType'].forEach(id=>blank(id));
+
+    const mitra=byId('mitraNominal');
+    if(mitra){
+      if(!mitra.querySelector('option[value=""]')){
+        const opt=document.createElement('option');
+        opt.value=''; opt.textContent='Pilih nominal';
+        mitra.prepend(opt);
+      }
+      mitra.value='';
+    }
+    blank('mitraCustomNominal','Isi nominal sendiri');
+    blank('mitraQty','Isi jumlah transaksi');
+    const customWrap=byId('mitraCustomWrap'); if(customWrap) customWrap.style.display='none';
+
+    const reasonWraps=['danaReasonWrap','qrisDanaReasonWrap','qrisBankReasonWrap','tarikBcaReasonWrap','transferBcaReasonWrap'];
+    reasonWraps.forEach(id=>{ const el=byId(id); if(el) el.style.display='none'; });
+
+    const qrisAdmin=byId('qrisDanaAdmin'); if(qrisAdmin) qrisAdmin.disabled=false;
+    const svMarginInput=byId('svMarginInput'); if(svMarginInput) svMarginInput.value='';
+
+    [
+      'danaDefault','danaTotal','danaMargin',
+      'qrisDanaDefault','qrisDanaTotal',
+      'qrisBankDefault','qrisBankTotal',
+      'mitraModal','mitraMargin','mitraQtyOut',
+      'svBaseOut','svSellOut','svMargin',
+      'tarikBcaDefault','tarikBcaTotal',
+      'transferBcaBase','transferBcaDefault','transferBcaTotal'
+    ].forEach(id=>setText(id,'—'));
+
+    setText('danaStatus','Belum dihitung');
+    setText('qrisDanaStatus','Belum dihitung');
+    setText('qrisBankStatus','Belum dihitung');
+    setText('tarikBcaStatus','Belum dihitung');
+    ['danaStatusBox','qrisDanaStatusBox','qrisBankStatusBox','tarikBcaStatusBox'].forEach(id=>{
+      const el=byId(id); if(el) el.className='calcbox';
+    });
+
+    const global=byId('txGlobalSummary');
+    if(global) global.textContent='Belum ada transaksi yang dimasukkan ke daftar.';
+  }
+
   function apply(){
     removeAdminControls();
     updateVersion();
-    document.documentElement.dataset.uiVersion = 'v32';
+    document.documentElement.dataset.uiVersion = 'v33';
     document.querySelectorAll('.section').forEach(section => {
       addFocusCue(section);
       markForms(section);
@@ -113,6 +175,7 @@
       collapseRules(section);
     });
     markLiveFeedback();
+    prepareCleanTransactionForms();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, {once:true});
