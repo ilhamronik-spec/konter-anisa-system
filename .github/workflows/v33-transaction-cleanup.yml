@@ -1,0 +1,39 @@
+name: V33 Transaction Cleanup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/v33-transaction-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Attach V33 transaction cleanup
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="transactions-v33.js"></script>'
+          if tag not in s:
+              if '</body>' not in s:
+                  raise SystemExit('Missing </body> in index.html')
+              s=s.replace('</body>', tag+'\n</body>', 1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit patched index
+        run: |
+          git config user.name "chatgpt-v33"
+          git config user.email "chatgpt-v33@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No index changes needed"
+          else
+            git commit -m "V33 load transaction cleanup"
+            git push
+          fi
