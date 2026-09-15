@@ -1,7 +1,7 @@
-/* Konter Anisa V31 — Input Focus Layout */
+/* Konter Anisa V32 — Professional Input Layout */
 (() => {
   'use strict';
-  const VERSION = 'V31 — INPUT FOCUS';
+  const VERSION = 'V32 — PROFESSIONAL UI';
 
   const focusCopy = {
     0:'Fokus: cek dan konfirmasi stok Paket, stok Rokok, serta modal shift sebelumnya.',
@@ -94,7 +94,6 @@
     if (!firstFormish) return;
     directNotices.filter(n => !isStaticRuleNotice(n)).forEach(n => {
       if (n.classList.contains('red') || n.id) return;
-      // Keep compact info after the first editable block so forms are encountered first.
       if (firstFormish.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING) {
         // already after
       } else if (!/status|validasi|error|ditolak/i.test(txt(n))) {
@@ -106,6 +105,7 @@
   function apply(){
     removeAdminControls();
     updateVersion();
+    document.documentElement.dataset.uiVersion = 'v32';
     document.querySelectorAll('.section').forEach(section => {
       addFocusCue(section);
       markForms(section);
