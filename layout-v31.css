@@ -1,0 +1,72 @@
+/* Konter Anisa V31 — Input Focus Layout */
+:root{--focus-purple:#8b5cf6;--focus-purple-2:#c084fc;--focus-soft:#faf7ff;--focus-line:#ddd1ee;--focus-ink:#17131d;--focus-muted:#7a7183}
+
+/* Keep the employee screen task-first. */
+.content{max-width:1540px}
+.section{padding-bottom:12px}
+.section-head{margin-bottom:12px}
+.section-head>div:first-child{max-width:72%}
+.section-head p{max-width:760px;line-height:1.45}
+
+/* Primary task cue: compact and clearly not an input. */
+.v31-focus-cue{display:flex;align-items:center;gap:8px;margin:0 0 14px;padding:9px 12px;border:1px solid #e8def3;border-radius:11px;background:linear-gradient(90deg,#fbf9ff,#fff);color:#5f5368;font-size:11px;font-weight:700}
+.v31-focus-cue:before{content:"ISI";display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:999px;background:#17131d;color:#fff;font-size:9px;letter-spacing:.08em}
+
+/* Input forms must visually dominate. */
+.focus-form-card,.section .card.form{border:1px solid #d7c6eb!important;box-shadow:0 14px 34px rgba(86,45,115,.10)!important;position:relative;background:#fff!important}
+.focus-form-card:before,.section .card.form:before{content:"";position:absolute;left:-1px;top:18px;bottom:18px;width:3px;border-radius:999px;background:linear-gradient(180deg,#8b5cf6,#c084fc)}
+.section .form-grid{gap:14px 12px}
+.section .field label{font-size:11px;color:#51465d;letter-spacing:.045em;margin-bottom:7px}
+.section .input,.section .select{min-height:43px;border:1.5px solid #d7c9e5;border-radius:10px;background:#fff;padding:10px 11px;font-size:13px;transition:.15s ease}
+.section .input:hover,.section .select:hover{border-color:#b79dce}
+.section .input:focus,.section .select:focus{border-color:#9b5de5!important;box-shadow:0 0 0 3px rgba(155,93,229,.13)!important;background:#fff!important}
+.section input:not(:disabled):not([readonly]):placeholder-shown{background:#fdfbff}
+.section input:disabled,.section input[readonly],.section select:disabled{background:#f3f1f5!important;border-color:#e3dfe7!important;color:#746c7c!important;box-shadow:none!important}
+
+/* Editable cells in stock/modal tables are unmistakable. */
+.v31-edit-cell{background:#fbf8ff!important}
+.v31-edit-cell .input{border:1.5px solid #a96bea!important;background:#fff!important;font-weight:750;min-width:105px}
+.v31-edit-cell .input:placeholder-shown{border-style:dashed!important;color:#8f8299}
+.v31-input-table{border:1px solid #e4d8ef;border-radius:14px;overflow:auto;background:#fff;box-shadow:0 8px 24px rgba(86,45,115,.06)}
+.v31-input-table .table th{position:sticky;top:0;z-index:2;background:#f5f0fa!important}
+
+/* Secondary / automatic information should recede. */
+.section .card.summary:not(.focus-form-card){background:#fbfafc;border-color:#ece7f0;box-shadow:none}
+.section .metric-strip{gap:9px}
+.section .metric{background:#faf9fb;box-shadow:none}
+.section .calcbox{background:#faf9fb}
+.v31-auto-tag{display:inline-flex;margin-left:6px;padding:2px 6px;border-radius:999px;background:#eeeaf1;color:#7a7183;font-size:8px;font-weight:800;letter-spacing:.06em;vertical-align:middle}
+
+/* Static rules are collapsed and separated from inputs. */
+.v31-rule-drawer{margin:16px 0 4px;border:1px solid #e5deea;border-radius:12px;background:#faf9fb;overflow:hidden}
+.v31-rule-drawer summary{list-style:none;cursor:pointer;padding:11px 13px;color:#665c6e;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.v31-rule-drawer summary::-webkit-details-marker{display:none}
+.v31-rule-drawer summary:after{content:"Lihat";font-size:9px;color:#7c3aed;background:#f1eafd;border:1px solid #dfd0f5;border-radius:999px;padding:3px 7px}
+.v31-rule-drawer[open] summary:after{content:"Tutup"}
+.v31-rule-body{padding:0 12px 12px}
+.v31-rule-body .notice{margin:8px 0 0!important;padding:9px 11px!important;border-radius:9px!important;font-size:10.5px!important;box-shadow:none!important}
+.v31-rule-body .notice.red{background:#fff8f8!important;color:#8f3131!important;border-color:#efd6d6!important}
+.v31-rule-body .notice.amber{background:#fffaf2!important;color:#8b5c25!important;border-color:#eddfc8!important}
+.v31-rule-body .notice.blue{background:#f8f7ff!important;color:#65568a!important;border-color:#e2dcf3!important}
+
+/* Dynamic validation must still be obvious when it actually matters. */
+.v31-live-feedback{margin:10px 0!important;border-width:1.5px!important;box-shadow:0 7px 18px rgba(0,0,0,.04)}
+.hard-block-input{border-color:#e5484d!important;background:#fff7f7!important;box-shadow:0 0 0 3px rgba(229,72,77,.08)!important}
+
+/* Action buttons are clearer and separated from explanatory text. */
+.section-head>.btn,.section-head>.actions .btn,.footer-actions .btn{min-height:40px;padding:10px 15px;font-size:12px}
+.btn.primary{font-weight:850}
+.footer-actions{position:sticky;bottom:0;z-index:15;margin-left:-8px;margin-right:-8px;padding:12px 8px;background:linear-gradient(180deg,rgba(248,247,251,0),rgba(248,247,251,.96) 26%,rgba(248,247,251,.99));backdrop-filter:blur(6px)}
+
+/* Multi-entry lists are clearly separated as results, not forms. */
+.multi-list-card{margin-top:16px!important;background:#fbfafc!important;box-shadow:none!important}
+.multi-list-card .section-head h4:before{content:"HASIL • ";font-size:9px;color:#8b5cf6;letter-spacing:.08em}
+
+/* Hide the long V29 static regulation summary from the employee's main task area. */
+#v29RuleSummary{display:none!important}
+#v29AdminOpen,#v29AdminPanel{display:none!important}
+
+@media(max-width:900px){
+  .section-head>div:first-child{max-width:100%}
+  .footer-actions{position:static;background:transparent;backdrop-filter:none}
+}
