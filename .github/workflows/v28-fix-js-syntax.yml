@@ -1,0 +1,47 @@
+name: V28 Fix JS Syntax
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/v28-fix-js-syntax.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair V28 JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("setText('pkgSold'+i,—');", "setText('pkgSold'+i,'—');")
+          s=s.replace("setText('pkgRemainModal'+i,—');", "setText('pkgRemainModal'+i,'—');")
+          s=s.replace("setText('cigSales'+i,—');", "setText('cigSales'+i,'—');")
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts='\n'.join(re.findall(r'<script[^>]*>(.*?)</script>',s,flags=re.S))
+          Path('/tmp/check.js').write_text(scripts,encoding='utf-8')
+          PY
+          node --check /tmp/check.js
+      - name: Commit syntax repair
+        run: |
+          git config user.name "chatgpt-v28"
+          git config user.email "chatgpt-v28@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add index.html
+            git commit -m "Fix V28 JavaScript syntax"
+            git push
+          fi
