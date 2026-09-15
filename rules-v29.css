@@ -1,0 +1,10 @@
+/* Konter Anisa V29 — admin regulation overlay */
+#v29AdminPanel{position:fixed;inset:0;z-index:30000;background:rgba(8,8,11,.72);backdrop-filter:blur(6px);display:none;padding:24px;overflow:auto}
+#v29AdminPanel.open{display:block}
+.v29-admin-shell{max-width:1180px;margin:0 auto;background:#fbfaff;border:1px solid #c084fc;border-radius:20px;padding:22px;box-shadow:0 30px 90px rgba(30,10,45,.35)}
+.v29-rule-row{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid #eee7f2}
+.v29-rule-row:last-child{border-bottom:0}
+.v29-rule-row small{display:block;color:var(--muted);margin-top:4px;line-height:1.45}
+#v29AdminOpen{border-color:#a855f7;background:#17111d;color:#fff;box-shadow:0 0 0 1px rgba(168,85,247,.12),0 6px 18px rgba(124,58,237,.16)}
+#v29ModalConfirmBox .status{vertical-align:middle}
+@media(max-width:760px){#v29AdminPanel{padding:8px}.v29-admin-shell{padding:14px;border-radius:14px}.v29-rule-row{align-items:flex-start;flex-direction:column}}
