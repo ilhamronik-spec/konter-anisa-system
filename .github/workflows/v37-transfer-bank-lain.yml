@@ -1,0 +1,32 @@
+name: V37 Transfer Bank Lain
+on:
+  push:
+    paths:
+      - '.github/workflows/v37-transfer-bank-lain.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load V37 transfer bank lain
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="transactions-v37.js?v=37"></script>'
+          if tag not in s:
+              s=s.replace('</body>', tag+'\n</body>')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate V37 JavaScript
+        run: node --check transactions-v37.js
+      - name: Commit V37
+        run: |
+          git config user.name "chatgpt-v37"
+          git config user.email "chatgpt-v37@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "V37 load Transfer Bank Lain BCA and SeaBank"
+          git push
