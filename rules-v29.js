@@ -558,10 +558,10 @@
         } else toast('WAJIB: Preview & Konfirmasi Stok Paket dan Stok Rokok sebelumnya belum lengkap.', 'bad');
         return;
       }
-      if (step === 6 && !validateEndingStock('.pkg-end', typeof pkgCatalog !== 'undefined' ? pkgCatalog : [], 'Paket')) {
+      if (step === 7 && !validateEndingStock('.pkg-end', typeof pkgCatalog !== 'undefined' ? pkgCatalog : [], 'Paket')) {
         e.preventDefault(); e.stopImmediatePropagation(); return;
       }
-      if (step === 7 && !validateEndingStock('.cig-end', typeof cigCatalog !== 'undefined' ? cigCatalog : [], 'Rokok')) {
+      if (step === 8 && !validateEndingStock('.cig-end', typeof cigCatalog !== 'undefined' ? cigCatalog : [], 'Rokok')) {
         e.preventDefault(); e.stopImmediatePropagation(); return;
       }
     }, true);
