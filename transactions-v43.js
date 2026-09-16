@@ -1,8 +1,13 @@
-/* Konter Anisa V43 — expose Aksesoris/Obat as dedicated step + harden dynamic transaction tabs */
+/* Konter Anisa V44 — dedicated Aksesoris/Obat step + end-to-end Modal & Balance reconciliation */
 (() => {
   'use strict';
 
   const byId = id => document.getElementById(id);
+  const fmt44 = n => typeof fmt === 'function' ? fmt(Number(n)||0) : 'Rp' + Math.round(Number(n)||0).toLocaleString('id-ID');
+  const money44 = v => {
+    try { return typeof moneyValue === 'function' ? moneyValue(v) : Number(String(v?.value ?? v ?? '').replace(/[^\d-]/g,'')) || 0; }
+    catch(_) { return 0; }
+  };
 
   function getLabels(){
     try { return (typeof labels !== 'undefined' && Array.isArray(labels)) ? labels : null; }
@@ -15,12 +20,10 @@
     const has=arr.some(x=>/Aksesoris\s*\/\s*Obat|Aksesoris\s*&\s*Obat/i.test(String(x||'')));
     if(!has) arr.splice(6,0,'Aksesoris/Obat');
 
-    // Pastikan tombol lama Aksesoris & Obat tidak lagi berada di submenu Transaksi.
     document.querySelectorAll('.tx-tab').forEach(tab=>{
       if(/^Aksesoris\s*&\s*Obat$/i.test(String(tab.textContent||'').trim())) tab.remove();
     });
 
-    // V42 sudah membuat section khusus. Jika ada, paksa berada di step ke-7 (index 6).
     const accSection=byId('v42-accobat-section');
     if(accSection) accSection.dataset.i='6';
 
@@ -32,7 +35,6 @@
     if(document.documentElement.dataset.v43TxDelegation==='1') return;
     document.documentElement.dataset.v43TxDelegation='1';
 
-    // Capture dipakai agar tombol dinamis tetap hidup meskipun binding lama tidak mengenal tombol tersebut.
     document.addEventListener('click',e=>{
       const tab=e.target.closest('.tx-tab[data-ui-click]');
       if(!tab) return;
@@ -49,13 +51,11 @@
   }
 
   function verifyStepSection(){
-    // Fallback jika V42 dijalankan terlalu awal: pindahkan pane ACC/Obat sekarang.
     if(byId('v42-accobat-section')) return;
     const accPane=byId('tx-accobat');
     const pkg=[...document.querySelectorAll('section.section')].find(s=>/Paket/i.test(String(s.querySelector('.section-head h3')?.textContent||'')));
     if(!accPane || !pkg) return;
 
-    // Geser Paket dst hanya bila belum digeser oleh V42.
     [...document.querySelectorAll('section.section')]
       .map(s=>({s,i:Number(s.dataset.i)}))
       .filter(x=>Number.isFinite(x.i) && x.i>=6)
@@ -74,13 +74,359 @@
     byId('v43AccObatDone')?.addEventListener('click',()=>{ if(typeof nextStep==='function') nextStep(); });
   }
 
+  // ---------------------------------------------------------------------------
+  // V44 — FINAL MODAL & BALANCE
+  // BALANCE = Modal Baru(A) - (Modal Lama(A) + Margin + Modal Minyak - Operasional)
+  //           + Selisih Rokok + Selisih Paket
+  // ---------------------------------------------------------------------------
+
+  function openingValue(index){
+    const el=byId('prevModalCheck'+index);
+    if(el) return money44(el);
+    try { return Number(openingPrevModal?.[index-1]?.value || 0); }
+    catch(_) { return 0; }
+  }
+
+  function openingTotal(){
+    let total=0;
+    for(let i=1;i<=25;i++) total+=openingValue(i);
+    return total;
+  }
+
+  function openingPiutang(){ return openingValue(25); }
+
+  function setModalValue(index,value,allowBlank=false){
+    const el=byId('modalInput'+index);
+    if(!el) return;
+    const n=Number(value);
+    if(value===null || value===undefined || !Number.isFinite(n) || n<0){
+      // Nilai modal aset tidak boleh negatif. Jangan diam-diam diubah menjadi nol:
+      // kosongkan agar Balance tetap terblokir sampai sumber datanya diperbaiki.
+      if(allowBlank || n<0) el.value='';
+      el.dataset.autoInvalid = n<0 ? '1' : '';
+      el.classList.toggle('hard-block-input',n<0);
+      return;
+    }
+    delete el.dataset.autoInvalid;
+    el.classList.remove('hard-block-input');
+    if(typeof setMoneyInput==='function') setMoneyInput(el,n);
+    else el.value=Math.round(n).toLocaleString('id-ID');
+  }
+
+  function rowForModal(index){ return byId('modalInput'+index)?.closest('tr') || null; }
+
+  function makeModalManual(index,sourceText){
+    const input=byId('modalInput'+index), row=rowForModal(index);
+    if(!input || !row) return;
+    input.readOnly=false;
+    input.removeAttribute('readonly');
+    row.classList.remove('modal-auto');
+    row.classList.add('modal-manual');
+    const cells=row.querySelectorAll('td');
+    if(cells[1]) cells[1].innerHTML=`<span class="status ok">Input</span><div style="font-size:11px;color:var(--muted);margin-top:4px">${sourceText}</div>`;
+  }
+
+  function makeModalAuto(index,sourceText){
+    const input=byId('modalInput'+index), row=rowForModal(index);
+    if(!input || !row) return;
+    input.readOnly=true;
+    input.setAttribute('readonly','');
+    row.classList.remove('modal-manual');
+    row.classList.add('modal-auto');
+    const cells=row.querySelectorAll('td');
+    if(cells[1]) cells[1].innerHTML=`<span class="status info">Otomatis</span><div style="font-size:11px;color:var(--muted);margin-top:4px">${sourceText}</div>`;
+  }
+
+  function packageClosing(){
+    try {
+      if(typeof pkgCatalog==='undefined' || !Array.isArray(pkgCatalog)) return {complete:false,total:0,margin:0,selisih:0};
+      let total=0,margin=0,selisih=0,complete=true;
+      pkgCatalog.forEach((p,ix)=>{
+        const avail=Number(p.stock||0)+Number(p.purchaseQty||0);
+        const endEl=byId('pkgEnd'+(ix+1));
+        const raw=String(endEl?.value ?? '').trim();
+        if(avail>0 && raw==='') complete=false;
+        const end=raw==='' ? 0 : Math.min(avail,Math.max(0,Number(raw)||0));
+        const sold=Math.max(0,avail-end);
+        const base=Number(p.activeBase ?? p.base ?? 0);
+        const sell=Number(p.activeSell ?? p.sell ?? 0);
+        total+=end*base;
+        margin+=sold*(sell-base);
+        // Neutralize repricing of stock that already existed at shift opening.
+        selisih+=Number(p.stock||0)*(Number(p.base||0)-base);
+      });
+      return {complete,total,margin,selisih};
+    } catch(_) { return {complete:false,total:0,margin:0,selisih:0}; }
+  }
+
+  function cigaretteClosing(){
+    try {
+      if(typeof cigCatalog==='undefined' || !Array.isArray(cigCatalog)) return {complete:false,total:0,margin:0,selisih:0};
+      let total=0,margin=0,selisih=0,complete=true;
+      cigCatalog.forEach((c,ix)=>{
+        const moveEl=byId('cigMove'+(ix+1));
+        const whEl=byId('cigWh'+(ix+1));
+        const endEl=byId('cigEnd'+(ix+1));
+        const moved=Number(String(moveEl?.textContent||'').replace(/[^\d.-]/g,''))||0;
+        const avail=Number(c.display||0)+moved;
+        const raw=String(endEl?.value ?? '').trim();
+        if(avail>0 && raw==='') complete=false;
+        const end=raw==='' ? 0 : Math.min(avail,Math.max(0,Number(raw)||0));
+        const sold=Math.max(0,avail-end);
+        const warehouse=Number(String(whEl?.textContent||'').replace(/[^\d.-]/g,''))||0;
+        const base=Number(c.base||0), sell=Number(c.sell||0);
+        total+=(end+warehouse)*base;
+        margin+=sold*(sell-base);
+        // Actual cigarette invoice can differ from catalog valuation.
+        const q=Number(c.purchaseQty||0), cost=Number(c.purchaseCost||0);
+        if(q>0 && cost>0) selisih+=cost-(q*base);
+      });
+      return {complete,total,margin,selisih};
+    } catch(_) { return {complete:false,total:0,margin:0,selisih:0}; }
+  }
+
+  function v41Purchases(){
+    try {
+      const x=JSON.parse(localStorage.getItem('ka_v41_acc_obat_purchases')||'{"accessory":[],"medicine":[]}');
+      return {accessory:Array.isArray(x.accessory)?x.accessory:[],medicine:Array.isArray(x.medicine)?x.medicine:[]};
+    } catch(_) { return {accessory:[],medicine:[]}; }
+  }
+
+  function txArray(name){
+    try { return (typeof txEntries!=='undefined' && Array.isArray(txEntries[name])) ? txEntries[name] : []; }
+    catch(_) { return []; }
+  }
+
+  function accObatClosing(type){
+    const modalIndex=type==='accessory'?23:21;
+    const key=type==='accessory'?'aksesoris':'obat';
+    const previous=openingValue(modalIndex);
+    const purchases=v41Purchases()[type].reduce((s,x)=>s+Number(x.amount||0),0);
+    const used=txArray(key).reduce((s,x)=>s+Number(x.modal||0),0);
+    return previous+purchases-used;
+  }
+
+  function piutangClosing(){
+    let add=0,paid=0;
+    try { if(typeof debtEntries!=='undefined') add=debtEntries.reduce((s,x)=>s+Number(x.amount||0),0); } catch(_) {}
+    try { if(typeof paymentEntries!=='undefined') paid=paymentEntries.reduce((s,x)=>s+Number(x.amount||0),0); } catch(_) {}
+    return Math.max(0,openingPiutang()+add-paid);
+  }
+
+  function transactionMargin(){
+    let total=0;
+    try {
+      if(typeof txEntries!=='undefined' && txEntries && typeof txEntries==='object'){
+        Object.values(txEntries).forEach(arr=>{
+          if(!Array.isArray(arr)) return;
+          arr.forEach(x=>{ total+=Number(x?.margin||0); });
+        });
+      }
+    } catch(_) {}
+    return total;
+  }
+
+  function minyakModal(){ return txArray('minyak').reduce((s,x)=>s+Number(x.modal||0),0); }
+
+  function operationalTotal(){
+    try { return typeof opEntries!=='undefined' ? opEntries.reduce((s,x)=>s+Number(x.amount||0),0) : 0; }
+    catch(_) { return 0; }
+  }
+
+  function modalClosingTotal(){
+    let total=0,complete=true,filled=0;
+    for(let i=1;i<=25;i++){
+      const el=byId('modalInput'+i);
+      if(!el){ complete=false; continue; }
+      const raw=String(el.value??'').trim();
+      if(raw===''){ complete=false; continue; }
+      filled++;
+      total+=money44(el);
+    }
+    return {total,complete,filled};
+  }
+
+  function setText(id,value){ const el=byId(id); if(el) el.textContent=value; }
+
+  function updateAutoFinalModals(){
+    const pkg=packageClosing(), cig=cigaretteClosing();
+    setModalValue(20,pkg.complete?pkg.total:null,true);
+    setModalValue(21,accObatClosing('medicine'),true);
+    setModalValue(23,accObatClosing('accessory'),true);
+    setModalValue(24,cig.complete?cig.total:null,true);
+    setModalValue(25,piutangClosing());
+
+    try { if(typeof calcModalInput==='function') calcModalInput(); } catch(_) {}
+    return {pkg,cig};
+  }
+
+  function pureBalance(x){
+    return Number(x.closing||0) - (Number(x.opening||0)+Number(x.margin||0)+Number(x.minyak||0)-Number(x.operasional||0)) + Number(x.selisihRokok||0)+Number(x.selisihPaket||0);
+  }
+
+  function balanceSnapshot(skipAuto=false){
+    const auto=skipAuto?{pkg:packageClosing(),cig:cigaretteClosing()}:updateAutoFinalModals();
+    const closing=modalClosingTotal();
+    const opening=openingTotal();
+    const txMargin=transactionMargin();
+    const margin=auto.pkg.margin+auto.cig.margin+txMargin;
+    const minyak=minyakModal();
+    const operasional=operationalTotal();
+    const selisihPaket=auto.pkg.selisih;
+    const selisihRokok=auto.cig.selisih;
+    const piutangAkhir=piutangClosing();
+    const piutangAwal=openingPiutang();
+    const modalBaruB=closing.total-piutangAkhir;
+    const modalLamaB=opening-piutangAwal;
+    const balance=pureBalance({closing:closing.total,opening,margin,minyak,operasional,selisihRokok,selisihPaket});
+    return {opening,closing:closing.total,complete:closing.complete,filled:closing.filled,margin,minyak,operasional,selisihRokok,selisihPaket,balance,piutangAwal,piutangAkhir,modalBaruB,modalLamaB,pkgComplete:auto.pkg.complete,cigComplete:auto.cig.complete};
+  }
+
+  function renderBalance(){
+    if(!byId('v44BalanceValue')) return;
+    const s=balanceSnapshot(false);
+    setText('v44ModalLamaA',fmt44(s.opening));
+    setText('v44ModalBaruA',s.complete?fmt44(s.closing):`Belum lengkap (${s.filled}/25)`);
+    setText('v44Margin',fmt44(s.margin));
+    setText('v44MinyakModal',fmt44(s.minyak));
+    setText('v44Operasional',fmt44(s.operasional));
+    setText('v44SelisihRokok',fmt44(s.selisihRokok));
+    setText('v44SelisihPaket',fmt44(s.selisihPaket));
+    setText('v44PiutangAwal',fmt44(s.piutangAwal));
+    setText('v44PiutangAkhir',fmt44(s.piutangAkhir));
+    setText('v44ModalLamaB',fmt44(s.modalLamaB));
+    setText('v44ModalBaruB',s.complete?fmt44(s.modalBaruB):'—');
+
+    const value=byId('v44BalanceValue'), status=byId('v44BalanceStatus'), card=byId('v44BalanceCard');
+    if(!s.complete || !s.pkgComplete || !s.cigComplete){
+      value.textContent='BELUM BISA DIHITUNG';
+      status.textContent=!s.pkgComplete?'Lengkapi stok akhir Paket':!s.cigComplete?'Lengkapi stok akhir Rokok':`Lengkapi Modal Inputan (${s.filled}/25)`;
+      status.className='status warn';
+      card.className='card summary';
+      return s;
+    }
+
+    const rounded=Math.round(s.balance);
+    value.textContent=fmt44(rounded);
+    if(rounded===0){
+      status.textContent='BALANCE PAS';
+      status.className='status ok';
+      card.className='card summary';
+    }else if(rounded>0){
+      status.textContent='LEBIH '+fmt44(rounded);
+      status.className='status warn';
+      card.className='card summary';
+    }else{
+      status.textContent='MINUS '+fmt44(Math.abs(rounded));
+      status.className='status bad';
+      card.className='card summary';
+    }
+    return s;
+  }
+
+  function installModalRules(){
+    // Rekening/e-wallet dan cash adalah saldo aktual akhir shift, bukan saldo hasil tebakan transaksi.
+    makeModalManual(11,'Input Karyawan — saldo QRIS BCA aktual');
+    makeModalManual(22,'Input Karyawan — hasil hitung fisik Cash');
+
+    // Baris yang deterministik dihitung dari tahapan sebelumnya.
+    makeModalAuto(20,'Otomatis dari stok akhir Paket × Harga Dasar aktif');
+    makeModalAuto(21,'Otomatis: Modal Obat awal + Belanja − Modal terpakai');
+    makeModalAuto(23,'Otomatis: Modal ACC awal + Belanja − Modal terpakai');
+    makeModalAuto(24,'Otomatis dari stok akhir Display + Gudang Rokok');
+    makeModalAuto(25,'Otomatis: Piutang awal + Hutang baru − Pembayaran');
+  }
+
+  function installBalanceStep(){
+    const arr=getLabels();
+    if(arr && arr.length) arr[arr.length-1]='Balance';
+
+    let section=[...document.querySelectorAll('section.section')].find(s=>/Batas Preview|\bStop\b/i.test(String(s.querySelector('.section-head h3')?.textContent||'')));
+    if(!section){
+      section=[...document.querySelectorAll('section.section')].sort((a,b)=>Number(a.dataset.i||0)-Number(b.dataset.i||0)).pop();
+    }
+    if(!section || section.id==='v44-balance-section') return;
+    const stepNo=Number(section.dataset.i||10)+1;
+    section.id='v44-balance-section';
+    section.innerHTML=`
+      <div class="section-head">
+        <div><h3>${stepNo}. Balance Akhir Shift</h3><p>Rekonsiliasi otomatis dari Modal Lama sampai Modal Baru. Balance hanya final setelah stok akhir dan 25 Modal Inputan lengkap.</p></div>
+        <button class="btn primary" id="v44RefreshBalance" type="button">Hitung Ulang Balance</button>
+      </div>
+      <div class="notice blue"><b>Rumus sumber:</b> BALANCE = Modal Baru(A) − [Modal Lama(A) + Margin + Modal Minyak − Operasional] + Selisih Rokok + Selisih Paket.</div>
+      <div class="grid two">
+        <div class="card summary">
+          <h4>Rekonsiliasi Modal</h4>
+          <div class="sumrow"><span>Modal Lama (A)</span><b id="v44ModalLamaA">—</b></div>
+          <div class="sumrow"><span>Total Margin</span><b id="v44Margin">—</b></div>
+          <div class="sumrow"><span>Modal Minyak</span><b id="v44MinyakModal">—</b></div>
+          <div class="sumrow"><span>Operasional</span><b id="v44Operasional">—</b></div>
+          <div class="sumrow"><span>Selisih Rokok</span><b id="v44SelisihRokok">—</b></div>
+          <div class="sumrow"><span>Selisih Paket</span><b id="v44SelisihPaket">—</b></div>
+          <div class="sumrow"><span>Modal Baru (A)</span><b id="v44ModalBaruA">—</b></div>
+        </div>
+        <div class="card summary" id="v44BalanceCard">
+          <h4>Hasil Balance</h4>
+          <div style="font-size:30px;font-weight:900;margin:8px 0 12px" id="v44BalanceValue">BELUM BISA DIHITUNG</div>
+          <span class="status warn" id="v44BalanceStatus">Menunggu data lengkap</span>
+          <div style="height:14px"></div>
+          <div class="sumrow"><span>Piutang Awal</span><b id="v44PiutangAwal">—</b></div>
+          <div class="sumrow"><span>Piutang Akhir</span><b id="v44PiutangAkhir">—</b></div>
+          <div class="sumrow"><span>Modal Lama (B)</span><b id="v44ModalLamaB">—</b></div>
+          <div class="sumrow"><span>Modal Baru (B)</span><b id="v44ModalBaruB">—</b></div>
+          <div class="notice amber" style="margin-top:12px;margin-bottom:0">Nilai positif berarti lebih; nilai negatif berarti minus. Sistem tidak memaksa angka menjadi nol—selisih harus terlihat apa adanya.</div>
+        </div>
+      </div>`;
+    byId('v44RefreshBalance')?.addEventListener('click',renderBalance);
+    if(typeof renderSteps==='function') renderSteps();
+    if(typeof refreshGlobalNextButton==='function') refreshGlobalNextButton();
+  }
+
+  let queued=false;
+  function queueRecalc(){
+    if(queued) return;
+    queued=true;
+    setTimeout(()=>{ queued=false; try { renderBalance(); } catch(e){ console.error('V44 balance recalc',e); } },0);
+  }
+
+  function bindBalanceRecalc(){
+    document.addEventListener('input',queueRecalc,true);
+    document.addEventListener('change',queueRecalc,true);
+    document.addEventListener('click',queueRecalc,false);
+  }
+
+  function selfTest(){
+    const eq=(a,b)=>Math.abs(Number(a)-Number(b))<0.000001;
+    const tests=[];
+    tests.push(['base formula',eq(pureBalance({closing:125,opening:100,margin:10,minyak:20,operasional:5}),0)]);
+    tests.push(['worksheet 1 Sep regression',eq(pureBalance({closing:123332919,opening:125870299,margin:981260,minyak:869100,operasional:4300000}),-87740)]);
+    tests.push(['package repricing neutralized',eq(pureBalance({closing:110,opening:100,selisihPaket:-10}),0)]);
+    tests.push(['cigarette purchase cost variance neutralized',eq(pureBalance({closing:95,opening:100,selisihRokok:5}),0)]);
+    const pass=tests.every(x=>x[1]);
+    document.documentElement.dataset.v44Selftest=pass?'PASS':'FAIL';
+    if(!pass) console.error('V44 SELFTEST FAIL',tests);
+    else console.info('V44 SELFTEST PASS',tests);
+    return {pass,tests};
+  }
+
   function install(){
     hardenDynamicTransactionTabs();
     verifyStepSection();
     ensureAccObatStepLabel();
+    installModalRules();
+    installBalanceStep();
+    bindBalanceRecalc();
+    updateAutoFinalModals();
+    renderBalance();
+    selfTest();
+
+    window.KABalanceV44={
+      openingTotal,packageClosing,cigaretteClosing,piutangClosing,transactionMargin,minyakModal,operationalTotal,
+      updateAutoFinalModals,balanceSnapshot,renderBalance,pureBalance,selfTest
+    };
 
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
-      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V43 — ACC/OBAT STEP FIX';
+      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V44 — BALANCE END-TO-END';
     });
   }
 
