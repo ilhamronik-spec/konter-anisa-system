@@ -1,0 +1,42 @@
+name: V38 ShopeePay
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/v38-shopeepay.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load ShopeePay transaction module
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="./transactions-v38.js?v=38"></script>'
+          if tag not in s:
+              s=s.replace('</body>', tag+'\n</body>', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate JavaScript syntax
+        run: node --check transactions-v38.js
+
+      - name: Commit V38
+        run: |
+          git config user.name "chatgpt-v38"
+          git config user.email "chatgpt-v38@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add index.html
+            git commit -m "V38 load ShopeePay transaction form"
+            git push
+          else
+            echo "No changes"
+          fi
