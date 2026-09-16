@@ -1,0 +1,61 @@
+name: V42 Tab Fix and ACC Obat Step
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'transactions-v42.js'
+      - '.github/workflows/v42-tab-fix-acc-obat-step.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-v42:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Load V42 and shift ending-stock guards
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # Load V42 after V41.
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="transactions-v42.js?v=42"></script>'
+          if tag not in s:
+              if '</body>' not in s:
+                  raise SystemExit('No </body> tag found')
+              s = s.replace('</body>', tag + '\n</body>')
+              p.write_text(s, encoding='utf-8')
+
+          # Aksesoris/Obat becomes its own step at index 6,
+          # so Paket/Rokok ending-stock validation moves from 6/7 to 7/8.
+          r = Path('rules-v29.js')
+          rs = r.read_text(encoding='utf-8')
+          old_pkg = "if (step === 6 && !validateEndingStock('.pkg-end'"
+          new_pkg = "if (step === 7 && !validateEndingStock('.pkg-end'"
+          old_cig = "if (step === 7 && !validateEndingStock('.cig-end'"
+          new_cig = "if (step === 8 && !validateEndingStock('.cig-end'"
+          if old_pkg in rs:
+              rs = rs.replace(old_pkg, new_pkg)
+          if old_cig in rs:
+              rs = rs.replace(old_cig, new_cig)
+          r.write_text(rs, encoding='utf-8')
+          PY
+
+      - name: Commit V42 loader and guards
+        run: |
+          if git diff --quiet -- index.html rules-v29.js; then
+            echo 'V42 loader and guards already applied.'
+            exit 0
+          fi
+          git config user.name 'chatgpt-v42'
+          git config user.email 'chatgpt-v42@users.noreply.github.com'
+          git add index.html rules-v29.js
+          git commit -m 'V42 load tab fix and move ACC Obat to dedicated step'
+          git push
