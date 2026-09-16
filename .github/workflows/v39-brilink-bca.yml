@@ -1,0 +1,48 @@
+name: V39 BRILINK and BCA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'transactions-v39.js'
+      - '.github/workflows/v39-brilink-bca.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate V39 JavaScript
+        run: node --check transactions-v39.js
+
+      - name: Load V39 after previous transaction patches
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="./transactions-v39.js?v=39"></script>'
+          if tag not in s:
+              if '</body>' not in s:
+                  raise SystemExit('index.html has no </body>')
+              s = s.replace('</body>', tag + '\n</body>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit V39 loader
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "V39 already loaded"
+            exit 0
+          fi
+          git config user.name "chatgpt-v39"
+          git config user.email "chatgpt-v39@users.noreply.github.com"
+          git add index.html
+          git commit -m "V39 load BRILINK and unified Transaksi BCA"
+          git push
