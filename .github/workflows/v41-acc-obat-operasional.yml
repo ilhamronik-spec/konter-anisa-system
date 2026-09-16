@@ -1,0 +1,45 @@
+name: V41 ACC Obat Operasional
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'transactions-v41.js'
+      - '.github/workflows/v41-acc-obat-operasional.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-load:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate JavaScript
+        run: node --check transactions-v41.js
+      - name: Load V41 script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="transactions-v41.js?v=41"></script>'
+          if tag not in s:
+              if '</body>' not in s:
+                  raise SystemExit('No </body> tag found')
+              s=s.replace('</body>', tag+'\n</body>')
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit loader
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'Loader already present.'
+            exit 0
+          fi
+          git config user.name 'chatgpt-v41'
+          git config user.email 'chatgpt-v41@users.noreply.github.com'
+          git add index.html
+          git commit -m 'V41 load Aksesoris Obat and Operasional order'
+          git push
