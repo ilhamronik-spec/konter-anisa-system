@@ -1,4 +1,4 @@
-/* Konter Anisa V62 — Admin layout fix + Rp5.000 Admin Keluar */
+/* Konter Anisa V63 — Admin layout no-overlap */
 (function(){
 'use strict';
 
@@ -206,24 +206,64 @@ function installAdminStep(){
     const style=document.createElement('style');
     style.id='v62AdminStyle';
     style.textContent=`
-      #v61-admin-section{min-width:0;overflow:hidden}
-      #v61-admin-section .card{min-width:0}
+      #v61-admin-section{min-width:0;overflow:visible;padding-bottom:120px}
+      #v61-admin-section .card{min-width:0;overflow:visible}
       #v61-admin-section .table-wrap{max-width:100%;overflow-x:auto}
-      #v61-admin-section .v62-admin-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
-      #v61-admin-section .v62-admin-rates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
-      #v61-admin-section .v62-admin-rate{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.9fr);gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
-      #v61-admin-section .v62-admin-rate small,#v61-admin-section .v62-admin-rate-input label{display:block;font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
-      #v61-admin-section .v62-admin-rate-input{display:grid;grid-template-columns:minmax(70px,90px) minmax(74px,auto);column-gap:8px;align-items:end}
-      #v61-admin-section .v62-admin-rate-input label{grid-column:1/-1}
-      #v61-admin-section .v62-admin-rate-input .input{min-width:0;width:100%}
-      #v61-admin-section .v62-admin-rate-input b{white-space:nowrap;align-self:center}
-      #v61-admin-section .v62-admin-out-total{grid-template-columns:minmax(0,240px);margin-top:12px}
-      #v61-admin-section .v62-admin-results{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:14px}
-      #v61-admin-section .v62-admin-table{min-width:620px}
-      @media(max-width:980px){
-        #v61-admin-section .v62-admin-top{grid-template-columns:minmax(0,1fr)}
+      #v61-admin-section .grid.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+      #v61-admin-section .v62-admin-rates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+      #v61-admin-section .v62-admin-rate{
+        display:grid;
+        grid-template-columns:minmax(72px,1fr) minmax(118px,1.15fr);
+        gap:10px;
+        align-items:center;
+        padding:11px 12px;
+        border:1px solid var(--line);
+        border-radius:12px;
+        background:#fff;
+        min-width:0
       }
-      @media(max-width:720px){
+      #v61-admin-section .v62-admin-rate>div:first-child{min-width:0}
+      #v61-admin-section .v62-admin-rate small,
+      #v61-admin-section .v62-admin-rate-input label{
+        display:block;font-size:9px;color:var(--muted);font-weight:800;
+        text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px
+      }
+      #v61-admin-section .v62-admin-rate>div:first-child b{display:block;white-space:nowrap;font-size:13px}
+      #v61-admin-section .v62-admin-rate-input{
+        min-width:0;
+        display:grid;
+        grid-template-columns:minmax(58px,72px) minmax(52px,1fr);
+        gap:6px 8px;
+        align-items:center
+      }
+      #v61-admin-section .v62-admin-rate-input label{grid-column:1/-1;margin:0}
+      #v61-admin-section .v62-admin-rate-input .input{
+        min-width:0;width:100%;height:42px;padding:8px 9px;text-align:center
+      }
+      #v61-admin-section .v62-admin-rate-input b{
+        min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        font-size:12px;text-align:right
+      }
+      #v61-admin-section .v62-admin-out-total{grid-template-columns:minmax(0,1fr);margin-top:12px}
+      #v61-admin-section .v62-admin-out-total .calcbox{min-height:auto}
+      #v61-admin-section .v62-admin-results{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:16px}
+      #v61-admin-section .v62-admin-table{min-width:620px}
+      #v61-admin-section #adminOutAdd{margin-top:2px}
+      body:has(#v61-admin-section.active) .footer-actions{
+        position:static!important;
+        margin-top:18px!important;
+        background:transparent!important;
+        backdrop-filter:none!important;
+      }
+      @media(max-width:1180px){
+        #v61-admin-section .grid.two{grid-template-columns:minmax(0,1fr)}
+        #v61-admin-section .v62-admin-rates{grid-template-columns:repeat(3,minmax(0,1fr))}
+      }
+      @media(max-width:900px){
+        #v61-admin-section{padding-bottom:40px}
+        #v61-admin-section .v62-admin-rates{grid-template-columns:repeat(2,minmax(0,1fr))}
+      }
+      @media(max-width:620px){
         #v61-admin-section .v62-admin-rates{grid-template-columns:minmax(0,1fr)}
         #v61-admin-section .v62-admin-table{min-width:560px}
       }
@@ -321,7 +361,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V62 — ADMIN LAYOUT FIX + Rp5.000';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V63 — ADMIN LAYOUT NO-OVERLAP';});
 }
 function selfTest(){
   const t=[],ok=(n,c)=>t.push([n,!!c]);
