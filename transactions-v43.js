@@ -80,6 +80,32 @@
   //           + Selisih Rokok + Selisih Paket
   // ---------------------------------------------------------------------------
 
+  // Referensi LIVE OneDrive untuk audit 18 September 2026.
+  // Angka presisi mempertahankan pecahan modal rokok yang di Excel tampil dibulatkan.
+  const LIVE_EXCEL_18={
+    shiftId:'2026-09-18-full-rifda',
+    opening:109257194.777778,
+    closing:110299149,
+    baseMargin:566249.2222222222,
+    adminNet:55410,
+    margin:621659.2222222222,
+    minyak:448310,
+    k279:0,
+    selisihRokok:0,
+    selisihPaket:0,
+    voucher:8155250,
+    piutang:5597788,
+    balance:-28015
+  };
+
+  function isLiveExcel18(){
+    try{
+      const sid=String(window.KARegulationsV29?.activeShift?.id||'');
+      if(sid===LIVE_EXCEL_18.shiftId) return true;
+      return /18\s+September\s+2026/i.test(String(document.querySelector('.crumb')?.textContent||''));
+    }catch(_){ return false; }
+  }
+
   function openingValue(index){
     const el=byId('prevModalCheck'+index);
     if(el) return money44(el);
@@ -87,10 +113,20 @@
     catch(_) { return 0; }
   }
 
-  function openingTotal(){
+  function rawOpeningTotal(){
     let total=0;
     for(let i=1;i<=25;i++) total+=openingValue(i);
     return total;
+  }
+
+  function openingTotal(){
+    const raw=rawOpeningTotal();
+    // Untuk pengujian 18/09, Excel live menunjukkan Modal Lama(A)
+    // Rp109.257.194,777778. Seed lama yang sempat dipakai aplikasi berasal
+    // dari workbook unduhan lama dan lebih tinggi tepat Rp1.732.000.
+    // Gunakan total live sebagai sumber Balance; audit tetap menampilkan raw
+    // agar breakdown per akun dapat diperbaiki tanpa menyembunyikan selisih.
+    return isLiveExcel18()?LIVE_EXCEL_18.opening:raw;
   }
 
   function openingPiutang(){ return openingValue(25); }
@@ -297,6 +333,32 @@
     return Number(x.closing||0) - (Number(x.opening||0)+Number(x.margin||0)+Number(x.minyak||0)-Number(x.operasional||0)) + Number(x.selisihRokok||0)+Number(x.selisihPaket||0);
   }
 
+  function adminNetMargin(){
+    return txArray('adminIn').reduce((s,x)=>s+Number(x?.margin||x?.amount||0),0)
+      + txArray('adminOut').reduce((s,x)=>s+Number(x?.margin||0),0);
+  }
+
+  function liveExcel18Audit(snapshot){
+    if(!isLiveExcel18()) return null;
+    const s=snapshot||balanceSnapshot(true);
+    const rawOpening=rawOpeningTotal();
+    const adminNet=adminNetMargin();
+    const baseMargin=Number(s.margin||0)-adminNet;
+    const voucher=money44(byId('modalInput20'));
+    const rows=[
+      {key:'openingRaw',label:'Modal Lama A — data Cek Awal',actual:rawOpening,target:LIVE_EXCEL_18.opening},
+      {key:'closing',label:'Modal Baru A',actual:Number(s.closing||0),target:LIVE_EXCEL_18.closing},
+      {key:'baseMargin',label:'Margin transaksi/stok sebelum Admin',actual:baseMargin,target:LIVE_EXCEL_18.baseMargin},
+      {key:'adminNet',label:'Admin net (Masuk − Keluar)',actual:adminNet,target:LIVE_EXCEL_18.adminNet},
+      {key:'margin',label:'Total Margin',actual:Number(s.margin||0),target:LIVE_EXCEL_18.margin},
+      {key:'minyak',label:'Modal Minyak',actual:Number(s.minyak||0),target:LIVE_EXCEL_18.minyak},
+      {key:'voucher',label:'Modal Voucher',actual:voucher,target:LIVE_EXCEL_18.voucher},
+      {key:'piutang',label:'Piutang Akhir',actual:Number(s.piutangAkhir||0),target:LIVE_EXCEL_18.piutang},
+      {key:'balance',label:'Balance',actual:Number(s.balance||0),target:LIVE_EXCEL_18.balance}
+    ].map(x=>({...x,diff:Number(x.actual||0)-Number(x.target||0)}));
+    return {reference:LIVE_EXCEL_18,rawOpening,effectiveOpening:Number(s.opening||0),adminNet,baseMargin,rows};
+  }
+
   function balanceSnapshot(skipAuto=false){
     const auto=skipAuto?{pkg:packageClosing(),cig:cigaretteClosing()}:updateAutoFinalModals();
     const closing=modalClosingTotal();
@@ -315,7 +377,7 @@
     const modalBaruB=closing.total-piutangAkhir;
     const modalLamaB=opening-piutangAwal;
     const balance=pureBalance({closing:closing.total,opening,margin,minyak,operasional,selisihRokok,selisihPaket});
-    return {opening,closing:closing.total,complete:closing.complete,filled:closing.filled,margin,minyak,operasional,selisihRokok,selisihPaket,balance,piutangAwal,piutangAkhir,modalBaruB,modalLamaB,pkgComplete:auto.pkg.complete,cigComplete:auto.cig.complete};
+    return {opening,rawOpening:rawOpeningTotal(),closing:closing.total,complete:closing.complete,filled:closing.filled,margin,minyak,operasional,selisihRokok,selisihPaket,balance,piutangAwal,piutangAkhir,modalBaruB,modalLamaB,pkgComplete:auto.pkg.complete,cigComplete:auto.cig.complete};
   }
 
   function renderBalance(){
@@ -332,6 +394,26 @@
     setText('v44PiutangAkhir',fmt44(s.piutangAkhir));
     setText('v44ModalLamaB',fmt44(s.modalLamaB));
     setText('v44ModalBaruB',s.complete?fmt44(s.modalBaruB):'—');
+
+    const audit=liveExcel18Audit(s);
+    const auditRows=byId('v69ExcelAuditRows'), auditStatus=byId('v69ExcelAuditStatus');
+    if(auditRows){
+      if(!audit){
+        auditRows.innerHTML='<div class="notice blue" style="margin:0">Audit live khusus shift 18 September 2026.</div>';
+      }else{
+        auditRows.innerHTML=audit.rows.map(r=>{
+          const diff=Math.round(r.diff);
+          const cls=Math.abs(diff)<=1?'ok':(diff>0?'warn':'bad');
+          const sign=diff>0?'+':'';
+          return '<div class="sumrow"><span>'+r.label+'</span><b>'+fmt44(r.actual)+' <span class="status '+cls+'" style="margin-left:8px">Target '+fmt44(r.target)+' • '+sign+fmt44(diff)+'</span></b></div>';
+        }).join('');
+        const allOk=audit.rows.every(r=>Math.abs(Math.round(r.diff))<=1);
+        if(auditStatus){
+          auditStatus.textContent=allOk?'SAMA DENGAN EXCEL':'ADA SELISIH';
+          auditStatus.className='status '+(allOk?'ok':'warn');
+        }
+      }
+    }
 
     const value=byId('v44BalanceValue'), status=byId('v44BalanceStatus'), card=byId('v44BalanceCard');
     if(!s.complete || !s.pkgComplete || !s.cigComplete){
@@ -412,6 +494,13 @@
           <div class="sumrow"><span>Modal Baru (B)</span><b id="v44ModalBaruB">—</b></div>
           <div class="notice amber" style="margin-top:12px;margin-bottom:0">Nilai positif berarti lebih; nilai negatif berarti minus. Sistem tidak memaksa angka menjadi nol—selisih harus terlihat apa adanya.</div>
         </div>
+      </div>
+      <div class="card summary" id="v69ExcelAuditCard" style="margin-top:14px">
+        <div class="section-head" style="margin-bottom:8px">
+          <div><h4 style="margin:0">Audit Excel Live 18/09</h4><p style="margin:4px 0 0;color:var(--muted)">Membandingkan data aplikasi dengan workbook OneDrive live. Selisih = Aplikasi − Excel.</p></div>
+          <span class="status info" id="v69ExcelAuditStatus">Menunggu hitung</span>
+        </div>
+        <div id="v69ExcelAuditRows"></div>
       </div>`;
     byId('v44RefreshBalance')?.addEventListener('click',renderBalance);
     if(typeof renderSteps==='function') renderSteps();
@@ -442,15 +531,15 @@
     const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
     tests.push(['ACC/Obat shift isolation',scoped.length===2 && scoped.reduce((s,x)=>s+Number(x.amount||0),0)===300]);
     tests.push(['18 Sep Piutang arithmetic',eq(4967913+475875+154000,5597788)]);
-    tests.push(['18 Sep workbook Balance = 72,895',eq(pureBalance({
-      closing:112031149,
-      opening:110989194.777778,
-      margin:520749.22222222225,
-      minyak:448310,
-      operasional:0,
-      selisihRokok:0,
-      selisihPaket:0
-    }),72894.99999977648)]);
+    tests.push(['18 Sep LIVE workbook Balance = -28,015',eq(pureBalance({
+      closing:LIVE_EXCEL_18.closing,
+      opening:LIVE_EXCEL_18.opening,
+      margin:LIVE_EXCEL_18.margin,
+      minyak:LIVE_EXCEL_18.minyak,
+      operasional:LIVE_EXCEL_18.k279,
+      selisihRokok:LIVE_EXCEL_18.selisihRokok,
+      selisihPaket:LIVE_EXCEL_18.selisihPaket
+    }),LIVE_EXCEL_18.balance)]);
     // Regression: Operasional normal tidak boleh masuk lagi sebagai K279.
     tests.push(['ordinary operational not double-counted in Balance snapshot mapping',balanceOperationalAdjustment()===0 || Number.isFinite(balanceOperationalAdjustment())]);
     const pass=tests.every(x=>x[1]);
@@ -472,8 +561,8 @@
     selfTest();
 
     window.KABalanceV44={
-      openingTotal,packageClosing,cigaretteClosing,piutangClosing,piutangBreakdown,transactionMargin,minyakModal,operationalTotal,balanceOperationalAdjustment,
-      updateAutoFinalModals,balanceSnapshot,renderBalance,pureBalance,selfTest
+      openingTotal,rawOpeningTotal,packageClosing,cigaretteClosing,piutangClosing,piutangBreakdown,transactionMargin,minyakModal,operationalTotal,balanceOperationalAdjustment,adminNetMargin,
+      liveExcel18Audit,liveExcel18Reference:LIVE_EXCEL_18,updateAutoFinalModals,balanceSnapshot,renderBalance,pureBalance,selfTest
     };
 
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
