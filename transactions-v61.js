@@ -369,10 +369,24 @@ function revealAndFocusMissing(kind,result){
   }
 }
 
+function refreshStockNextVisual(){
+  const btn=$('globalNextBtn');
+  if(!btn)return;
+  let cur=0;try{cur=Number(typeof idx!=='undefined'?idx:0);}catch(_){}
+  if(cur===9){
+    const r=stockCompletion('pkg');
+    if(!r.complete)btn.textContent='Lengkapi Paket ('+r.filled+'/'+r.required+') →';
+  }else if(cur===10){
+    const r=stockCompletion('cig');
+    if(!r.complete)btn.textContent='Lengkapi Rokok ('+r.filled+'/'+r.required+') →';
+  }
+}
+
 function requireStockComplete(kind){
   const r=stockCompletion(kind);
   if(r.complete)return true;
   const label=kind==='pkg'?'Paket':'Rokok';
+  refreshStockNextVisual();
   revealAndFocusMissing(kind,r);
   toast('Stok akhir '+label+' belum lengkap: '+r.filled+'/'+r.required+' terisi. Lengkapi semua sebelum lanjut.','warn');
   return false;
@@ -422,6 +436,9 @@ function visibleInput(el){
 function installStockEnterNavigation(){
   if(document.documentElement.dataset.v64StockEnter==='1')return;
   document.documentElement.dataset.v64StockEnter='1';
+  document.addEventListener('input',e=>{
+    if(stockEnterGroup(e.target))setTimeout(refreshStockNextVisual,0);
+  },true);
   document.addEventListener('keydown',e=>{
     if(e.key!=='Enter'||e.shiftKey||e.ctrlKey||e.altKey||e.metaKey||e.isComposing||e.repeat)return;
     const info=stockEnterGroup(e.target);
@@ -472,6 +489,7 @@ function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
   document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V64 — STOCK REQUIRED + ENTER NEXT ROW';});
+  setTimeout(refreshStockNextVisual,0);
 }
 function selfTest(){
   const t=[],ok=(n,c)=>t.push([n,!!c]);
