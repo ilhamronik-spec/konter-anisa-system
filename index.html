@@ -731,7 +731,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <h4 style="margin:0 0 12px">Hutang Baru</h4>
 <div class="subtabs" style="margin-bottom:14px"><button class="subtab active" data-ui-click="setDebtMode(false)" id="debtNoneBtn" type="button">Tidak Ada</button><button class="subtab" data-ui-click="setDebtMode(true)" id="debtAddBtn" type="button">+ Ada Hutang</button></div>
 <div class="notice blue" id="debtEmpty" style="margin-bottom:0">Tidak ada hutang baru pada hitungan ini.</div>
-<div id="debtFields" style="display:none"><div class="form-grid"><div class="field"><label>Jenis</label><select class="select" id="debtType"><option value="employee">Hutang Karyawan</option><option value="owner">Hutang Owner</option><option value="purchasing">Hutang Purchasing</option><option value="other">Hutang Orang Lain</option></select></div><div class="field" id="debtEmployeeWrap"><label>Debitur Karyawan</label><select class="select" id="debtDebtor"><option>Egi</option><option>Sifa</option><option>Fathur</option></select></div><div class="field" id="debtOtherWrap" style="display:none"><label id="debtManualLabel">Nama Debitur</label><input autocomplete="off" class="input" id="debtDebtorOther" placeholder="Ketik nama debitur"/></div><div class="field"><label>Jumlah</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this)" id="debtAmount" inputmode="numeric" type="text" value="50.000"/></div><div class="field"><label>Catatan</label><input class="input" id="debtNote" value="Kasbon"/></div></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-ui-click="addDebtEntry()" type="button">+ Tambahkan Hutang ke Daftar</button></div></div>
+<div id="debtFields" style="display:none"><div class="form-grid"><div class="field"><label>Jenis</label><select class="select" id="debtType"><option value="employee">Hutang Karyawan</option><option value="owner">Hutang Owner</option><option value="purchasing">Hutang Purchasing</option><option value="other">Hutang Orang Lain</option></select></div><div class="field" id="debtEmployeeWrap"><label id="debtInternalLabel">Debitur Karyawan</label><select class="select" id="debtDebtor"><option value="">Memuat akun Admin...</option></select><div class="tiny" id="debtInternalHint" style="margin-top:6px">Sumber: master akun Admin</div></div><div class="field" id="debtOtherWrap" style="display:none"><label id="debtManualLabel">Nama Debitur</label><input autocomplete="off" class="input" id="debtDebtorOther" placeholder="Ketik nama debitur"/></div><div class="field"><label>Jumlah</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this)" id="debtAmount" inputmode="numeric" type="text" value="50.000"/></div><div class="field"><label>Catatan</label><input class="input" id="debtNote" value="Kasbon"/></div></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-ui-click="addDebtEntry()" type="button">+ Tambahkan Hutang ke Daftar</button></div></div>
 </div>
 <div class="card form">
 <h4 style="margin:0 0 12px">Pembayaran Piutang</h4>
@@ -890,20 +890,56 @@ function showBuy(name,btn){
 }
 function syncDebtDebtorMode(){
   const type=document.getElementById('debtType')?.value||'employee';
-  const employeeWrap=document.getElementById('debtEmployeeWrap');
+  const internalWrap=document.getElementById('debtEmployeeWrap');
   const manualWrap=document.getElementById('debtOtherWrap');
+  const internalLabel=document.getElementById('debtInternalLabel');
+  const internalHint=document.getElementById('debtInternalHint');
+  const internalSelect=document.getElementById('debtDebtor');
   const manualLabel=document.getElementById('debtManualLabel');
   const manualInput=document.getElementById('debtDebtorOther');
-  const isEmployee=type==='employee';
-  if(employeeWrap) employeeWrap.style.display=isEmployee?'block':'none';
-  if(manualWrap) manualWrap.style.display=isEmployee?'none':'block';
-  const meta={
-    owner:['Nama Owner','Ketik nama owner'],
-    purchasing:['Nama Purchasing','Ketik nama purchasing'],
-    other:['Nama Debitur','Ketik nama orang yang berhutang']
-  }[type]||['Nama Debitur','Ketik nama debitur'];
-  if(manualLabel) manualLabel.textContent=meta[0];
-  if(manualInput) manualInput.placeholder=meta[1];
+  const isOther=type==='other';
+
+  if(internalWrap) internalWrap.style.display=isOther?'none':'block';
+  if(manualWrap) manualWrap.style.display=isOther?'block':'none';
+
+  if(isOther){
+    if(manualLabel) manualLabel.textContent='Nama Debitur';
+    if(manualInput) manualInput.placeholder='Ketik nama orang yang berhutang';
+    return;
+  }
+
+  const roleMeta={
+    employee:['employee','Debitur Karyawan'],
+    owner:['owner','Debitur Owner'],
+    purchasing:['purchasing','Debitur Purchasing']
+  }[type]||['employee','Debitur Karyawan'];
+
+  if(internalLabel) internalLabel.textContent=roleMeta[1];
+  if(internalHint) internalHint.textContent='Sumber: master akun Admin';
+
+  if(internalSelect){
+    const previous=internalSelect.value;
+    const master=window.KAAdminAccounts;
+    const accounts=master?.activeByRole ? master.activeByRole(roleMeta[0]) : [];
+    internalSelect.innerHTML='';
+    if(!accounts.length){
+      const opt=document.createElement('option');
+      opt.value='';
+      opt.textContent='Belum ada akun '+roleMeta[1].replace('Debitur ','');
+      internalSelect.appendChild(opt);
+      internalSelect.disabled=true;
+    }else{
+      accounts.forEach(acc=>{
+        const opt=document.createElement('option');
+        opt.value=acc.name;
+        opt.textContent=acc.name;
+        opt.dataset.accountId=acc.id;
+        internalSelect.appendChild(opt);
+      });
+      internalSelect.disabled=false;
+      if(accounts.some(a=>a.name===previous)) internalSelect.value=previous;
+    }
+  }
 }
 function setDebtMode(has){
   if(!has && debtEntries.length){uiToast('Masih ada '+debtEntries.length+' hutang di daftar. Hapus dulu jika memang tidak ada hutang.','warn');has=true;}
@@ -1555,9 +1591,9 @@ function addDebtEntry(){
     other:'Hutang Orang Lain'
   };
   const type=typeMap[typeValue]||'Hutang Karyawan';
-  const debtor=typeValue==='employee'
-    ? document.getElementById('debtDebtor').value
-    : (document.getElementById('debtDebtorOther').value||'').trim();
+  const debtor=typeValue==='other'
+    ? (document.getElementById('debtDebtorOther').value||'').trim()
+    : (document.getElementById('debtDebtor').value||'').trim();
   const amount=moneyValue(document.getElementById('debtAmount'));
   const note=(document.getElementById('debtNote').value||'').trim();
 
@@ -1566,7 +1602,7 @@ function addDebtEntry(){
   debtEntries.push({type,typeKey:typeValue,debtor,amount,note});
   renderDebtEntries();
   setDebtMode(true);
-  if(typeValue!=='employee') document.getElementById('debtDebtorOther').value='';
+  if(typeValue==='other') document.getElementById('debtDebtorOther').value='';
   uiToast('Hutang ditambahkan ke daftar.','ok');
 }
 function removeDebt(i){debtEntries.splice(i,1);renderDebtEntries();}
@@ -2577,6 +2613,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
   window.addEventListener('load',refreshBlankRowsV28,{once:true});
 })();
 </script>
+<script src="./account-master-v59.js?v=59"></script>
 <script src="./rules-v29.js?v=56"></script>
 <script src="layout-v31.js?v=31"></script>
 <script src="transactions-v33.js"></script>
