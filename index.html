@@ -849,12 +849,12 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <div class="section-head"><div><h3>10. Batas Preview</h3><p>Desain dan logika visual dihentikan sampai Rokok agar kita dapat mengunci tahap ini terlebih dahulu.</p></div></div>
 <div class="card summary"><h4>Tahapan yang sudah dimasukkan</h4><div class="sumrow"><span>Cek/koreksi data awal</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Belanja Paket lengkap</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Belanja Rokok → Gudang</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Pemasukan Display Rokok</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Hutang/Piutang</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Transaksi: DANA, QRIS, Mitra, SVPLUS, BCA</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Operasional Karyawan</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Stok Akhir Paket</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Stok Akhir Rokok + modal Gudang/Display</span><b style="color:var(--green)">✓</b></div><div class="sumrow"><span>Modal Inputan detail</span><b style="color:var(--green)">✓</b></div></div>
 </section>
-<div class="footer-actions"><div class="right-note">Tombol kanan bawah selalu aktif • jika ada syarat belum selesai, tombol otomatis membuka bagian yang harus diperiksa</div><div class="actions"><a class="btn" data-ui-click="smartPrevStep()" href="#" id="globalPrevBtn" onclick="smartPrevStep();return false" role="button">← Sebelumnya</a><a class="btn blue" data-ui-click="smartNextStep()" href="#" id="globalNextBtn" onclick="smartNextStep();return false" role="button">Berikutnya →</a></div></div>
+<div class="footer-actions"><div class="right-note">Tombol kanan bawah selalu aktif • jika ada syarat belum selesai, tombol otomatis membuka bagian yang harus diperiksa</div><div class="actions"><a class="btn" data-ui-click="smartPrevStep()" href="#" id="globalPrevBtn" role="button">← Sebelumnya</a><a class="btn blue" data-ui-click="smartNextStep()" href="#" id="globalNextBtn" role="button">Berikutnya →</a></div></div>
 </div>
 </main>
 </div>
 <script>
-const labels=['Cek Awal','Belanja','Display Rokok','Hutang/Piutang','Transaksi','Operasional','Paket','Rokok','Modal Inputan','Stop'];let idx=0;
+const labels=['Cek Awal','Belanja','Display Rokok','Operasional','Hutang/Piutang','Transaksi','Paket','Rokok','Modal Inputan','Stop'];let idx=0;
 const fmt=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 
 function moneyValue(elOrValue){
