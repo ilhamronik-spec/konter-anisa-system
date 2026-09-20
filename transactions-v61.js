@@ -1,4 +1,4 @@
-/* Konter Anisa V61 — Minyak main step + Bayaran Listrik + Admin Masuk/Keluar */
+/* Konter Anisa V62 — Admin layout fix + Rp5.000 Admin Keluar */
 (function(){
 'use strict';
 
@@ -90,7 +90,7 @@ function installListrik(){
   const pane=document.createElement('div');
   pane.className='subpane tx-pane';pane.id='tx-electricity';
   pane.innerHTML=`
-    <div class="grid two">
+    <div class="v62-admin-top">
       <div class="card form focus-form-card">
         <h4 style="margin:0 0 14px">Bayaran Listrik</h4>
         <div class="notice blue">Karyawan hanya mengisi nominal transaksi. Margin otomatis <b>Rp4.500</b> sampai Rp500.000; di atas Rp500.000 mengikuti admin default Tarik Tunai BCA. Sisanya adalah modal.</div>
@@ -143,7 +143,7 @@ function installMinyakStep(){
 }
 
 /* ---------------- Admin Masuk / Admin Keluar ---------------- */
-const OUT_RATES=[2500,14000,1500,6500,7000];
+const OUT_RATES=[2500,14000,1500,6500,7000,5000];
 function adminArrays(){
   if(typeof txEntries==='undefined')return;
   if(!Array.isArray(txEntries.adminIn))txEntries.adminIn=[];
@@ -202,12 +202,40 @@ function addAdminOut(){
 }
 function installAdminStep(){
   adminArrays();
+  if(!$('v62AdminStyle')){
+    const style=document.createElement('style');
+    style.id='v62AdminStyle';
+    style.textContent=`
+      #v61-admin-section{min-width:0;overflow:hidden}
+      #v61-admin-section .card{min-width:0}
+      #v61-admin-section .table-wrap{max-width:100%;overflow-x:auto}
+      #v61-admin-section .v62-admin-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+      #v61-admin-section .v62-admin-rates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+      #v61-admin-section .v62-admin-rate{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.9fr);gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+      #v61-admin-section .v62-admin-rate small,#v61-admin-section .v62-admin-rate-input label{display:block;font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+      #v61-admin-section .v62-admin-rate-input{display:grid;grid-template-columns:minmax(70px,90px) minmax(74px,auto);column-gap:8px;align-items:end}
+      #v61-admin-section .v62-admin-rate-input label{grid-column:1/-1}
+      #v61-admin-section .v62-admin-rate-input .input{min-width:0;width:100%}
+      #v61-admin-section .v62-admin-rate-input b{white-space:nowrap;align-self:center}
+      #v61-admin-section .v62-admin-out-total{grid-template-columns:minmax(0,240px);margin-top:12px}
+      #v61-admin-section .v62-admin-results{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:14px}
+      #v61-admin-section .v62-admin-table{min-width:620px}
+      @media(max-width:980px){
+        #v61-admin-section .v62-admin-top{grid-template-columns:minmax(0,1fr)}
+      }
+      @media(max-width:720px){
+        #v61-admin-section .v62-admin-rates{grid-template-columns:minmax(0,1fr)}
+        #v61-admin-section .v62-admin-table{min-width:560px}
+      }
+    `;
+    document.head.appendChild(style);
+  }
   let section=$('v61-admin-section');
   if(section){renderAdmin();return section;}
   const acc=$('v42-accobat-section')||findSection(/Aksesoris\s*(?:&|\/)\s*Obat/i);
   if(!acc)return null;
   section=document.createElement('section');section.className='section';section.id='v61-admin-section';
-  const rows=OUT_RATES.map((rate,i)=>`<div class="sumrow"><span><b>${fmt61(rate)}</b></span><span style="display:flex;gap:8px;align-items:center"><input class="input" id="adminOutQty${i}" type="number" min="0" step="1" value="0" style="width:90px" aria-label="Jumlah admin keluar ${fmt61(rate)}"><b id="adminOutSub${i}">${fmt61(0)}</b></span></div>`).join('');
+  const rows=OUT_RATES.map((rate,i)=>`<div class="v62-admin-rate"><div><small>Tarif</small><b>${fmt61(rate)}</b></div><div class="v62-admin-rate-input"><label for="adminOutQty${i}">Jumlah</label><input class="input" id="adminOutQty${i}" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Jumlah admin keluar ${fmt61(rate)}"><b id="adminOutSub${i}">${fmt61(0)}</b></div></div>`).join('');
   section.innerHTML=`
     <div class="section-head"><div><h3>8. Admin</h3><p>Admin Masuk menambah Margin Total; Admin Keluar mengurangi Margin Total.</p></div><button class="btn primary" id="v61AdminDone" type="button">Admin Selesai</button></div>
     <div class="grid two">
@@ -220,15 +248,15 @@ function installAdminStep(){
       <div class="card form focus-form-card">
         <h4>Admin Keluar</h4>
         <div class="notice amber">Karyawan hanya mengisi <b>berapa kali</b>. Sistem menghitung tarif × jumlah dan menguranginya dari Margin Total.</div>
-        ${rows}
-        <div class="calc-grid" style="margin-top:12px"><div class="calcbox bad"><small>Total Admin Keluar</small><b id="adminOutTotal">${fmt61(0)}</b></div></div>
+        <div class="v62-admin-rates">${rows}</div>
+        <div class="calc-grid v62-admin-out-total"><div class="calcbox bad"><small>Total Admin Keluar</small><b id="adminOutTotal">${fmt61(0)}</b></div></div>
         <div class="actions"><button class="btn primary" id="adminOutAdd" type="button">+ Tambahkan Admin Keluar</button></div>
       </div>
     </div>
     <div class="calc-grid" style="margin-top:14px"><div class="calcbox good"><small>Total Admin Masuk</small><b id="adminTotalIn">${fmt61(0)}</b></div><div class="calcbox bad"><small>Total Admin Keluar</small><b id="adminTotalOut">${fmt61(0)}</b></div><div class="calcbox"><small>Dampak Bersih ke Margin</small><b id="adminNet">${fmt61(0)}</b></div></div>
-    <div class="grid two" style="margin-top:14px">
-      <div class="card multi-list-card"><div class="section-head"><h4 style="margin:0">Daftar Admin Masuk</h4><span class="status info" id="adminInCount">0 input</span></div><div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>Catatan</th><th>Nominal</th><th>Aksi</th></tr></thead><tbody id="adminInList"></tbody></table></div></div>
-      <div class="card multi-list-card"><div class="section-head"><h4 style="margin:0">Daftar Admin Keluar</h4><span class="status info" id="adminOutCount">0 input</span></div><div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>Perhitungan</th><th>Total</th><th>Aksi</th></tr></thead><tbody id="adminOutList"></tbody></table></div></div>
+    <div class="v62-admin-results">
+      <div class="card multi-list-card"><div class="section-head"><h4 style="margin:0">Daftar Admin Masuk</h4><span class="status info" id="adminInCount">0 input</span></div><div class="table-wrap"><table class="table v62-admin-table"><thead><tr><th>#</th><th>Catatan</th><th>Nominal</th><th>Aksi</th></tr></thead><tbody id="adminInList"></tbody></table></div></div>
+      <div class="card multi-list-card"><div class="section-head"><h4 style="margin:0">Daftar Admin Keluar</h4><span class="status info" id="adminOutCount">0 input</span></div><div class="table-wrap"><table class="table v62-admin-table"><thead><tr><th>#</th><th>Perhitungan</th><th>Total</th><th>Aksi</th></tr></thead><tbody id="adminOutList"></tbody></table></div></div>
     </div>`;
   acc.insertAdjacentElement('beforebegin',section);
   $('adminInAmount')?.addEventListener('input',e=>{try{formatMoneyInput(e.target);}catch(_){}});
@@ -293,7 +321,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V61 — MINYAK + LISTRIK + ADMIN';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V62 — ADMIN LAYOUT FIX + Rp5.000';});
 }
 function selfTest(){
   const t=[],ok=(n,c)=>t.push([n,!!c]);
@@ -303,7 +331,7 @@ function selfTest(){
   ok('Electricity tab/pane',!!$('tx-electricity'));
   ok('Electricity <=500k margin 4500',listrikMargin(500000)===4500);
   ok('Electricity >500k follows BCA',listrikMargin(500001)===5000);
-  ok('Admin rates exact',OUT_RATES.join(',')==='2500,14000,1500,6500,7000');
+  ok('Admin rates exact',OUT_RATES.join(',')==='2500,14000,1500,6500,7000,5000');
   const pass=t.every(x=>x[1]);document.documentElement.dataset.v61Selftest=pass?'PASS':'FAIL';
   window.KAFeaturesV61={pass,tests:t,refresh,renderListrik,renderAdmin,listrikMargin};
   if(!pass)console.error('V61 SELFTEST FAIL',t);
