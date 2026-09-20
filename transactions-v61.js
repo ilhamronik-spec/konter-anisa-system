@@ -423,11 +423,11 @@ function enforceStockCheckpoint(){
 }
 
 function stockEnterGroup(el){
-  const m=String(el?.id||'').match(/^(pkgCheck|cigDispCheck|cigWhCheck|move|pkgEnd|cigEnd)(\d+)$/);
+  const m=String(el?.id||'').match(/^(pkgCheck|cigDispCheck|cigWhCheck|move|pkgEnd|cigEnd|modalInput)(\d+)$/);
   return m?{prefix:m[1],index:Number(m[2])}:null;
 }
 function visibleInput(el){
-  if(!el||el.disabled)return false;
+  if(!el||el.disabled||el.readOnly)return false;
   const row=el.closest('tr');
   if(row && getComputedStyle(row).display==='none')return false;
   const cs=getComputedStyle(el);
@@ -454,6 +454,12 @@ function installStockEnterNavigation(){
     if(next){
       next.scrollIntoView({behavior:'smooth',block:'center'});
       setTimeout(()=>{try{next.focus({preventScroll:true});next.select?.();}catch(_){}},100);
+    }else if(info.prefix==='modalInput'){
+      const btn=$('globalNextBtn');
+      if(btn){
+        btn.scrollIntoView({behavior:'smooth',block:'center'});
+        setTimeout(()=>{try{btn.focus({preventScroll:true});}catch(_){}},100);
+      }
     }
   },true);
 }
@@ -488,7 +494,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V65 — ADMIN KELUAR + RP5.000';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V66 — MODAL ENTER NEXT ROW';});
   setTimeout(refreshStockNextVisual,0);
 }
 function selfTest(){
