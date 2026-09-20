@@ -191,6 +191,8 @@
       toast('Perhitungan minyak ditambahkan.','ok');
     });
 
+    window.KAPersistRenderV40=render;
+
     if(typeof bindRuntimeActions==='function') bindRuntimeActions();
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
       if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V40 — MINYAK';
