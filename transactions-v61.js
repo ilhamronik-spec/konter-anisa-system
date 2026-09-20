@@ -1,4 +1,4 @@
-/* Konter Anisa V63 — Admin layout no-overlap */
+/* Konter Anisa V64 — stock checkpoint + Enter row navigation */
 (function(){
 'use strict';
 
@@ -143,7 +143,7 @@ function installMinyakStep(){
 }
 
 /* ---------------- Admin Masuk / Admin Keluar ---------------- */
-const OUT_RATES=[2500,14000,1500,6500,7000,5000];
+const OUT_RATES=[2500,14000,1500,6500,7000];
 function adminArrays(){
   if(typeof txEntries==='undefined')return;
   if(!Array.isArray(txEntries.adminIn))txEntries.adminIn=[];
@@ -331,6 +331,133 @@ function remapSteps(){
   try{if(typeof renderSteps==='function')renderSteps();}catch(_){}
   try{if(typeof refreshGlobalNextButton==='function')refreshGlobalNextButton();}catch(_){}
 }
+function stockCompletion(kind){
+  const missing=[],required=[];
+  if(kind==='pkg' && typeof pkgCatalog!=='undefined'){
+    pkgCatalog.forEach((p,ix)=>{
+      const available=n(p.stock)+n(p.purchaseQty);
+      if(available<=0)return;
+      const input=$('pkgEnd'+(ix+1));
+      if(!input)return;
+      required.push(input);
+      if(String(input.value??'').trim()==='')missing.push(input);
+    });
+  }
+  if(kind==='cig' && typeof cigCatalog!=='undefined'){
+    cigCatalog.forEach((c,ix)=>{
+      const i=ix+1,move=n($('move'+i)?.value),available=n(c.display)+move;
+      if(available<=0)return;
+      const input=$('cigEnd'+i);
+      if(!input)return;
+      required.push(input);
+      if(String(input.value??'').trim()==='')missing.push(input);
+    });
+  }
+  return {required:required.length,filled:required.length-missing.length,missing,complete:missing.length===0};
+}
+
+function revealAndFocusMissing(kind,result){
+  const search=$(kind==='pkg'?'v51PkgEndSearch':'v51CigEndSearch');
+  if(search && String(search.value||'').trim()){
+    search.value='';
+    search.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  const first=result?.missing?.[0];
+  if(first){
+    first.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>{try{first.focus({preventScroll:true});first.select?.();}catch(_){}},180);
+  }
+}
+
+function refreshStockNextVisual(){
+  const btn=$('globalNextBtn');
+  if(!btn)return;
+  let cur=0;try{cur=Number(typeof idx!=='undefined'?idx:0);}catch(_){}
+  if(cur===9){
+    const r=stockCompletion('pkg');
+    if(!r.complete)btn.textContent='Lengkapi Paket ('+r.filled+'/'+r.required+') →';
+  }else if(cur===10){
+    const r=stockCompletion('cig');
+    if(!r.complete)btn.textContent='Lengkapi Rokok ('+r.filled+'/'+r.required+') →';
+  }
+}
+
+function requireStockComplete(kind){
+  const r=stockCompletion(kind);
+  if(r.complete)return true;
+  const label=kind==='pkg'?'Paket':'Rokok';
+  refreshStockNextVisual();
+  revealAndFocusMissing(kind,r);
+  toast('Stok akhir '+label+' belum lengkap: '+r.filled+'/'+r.required+' terisi. Lengkapi semua sebelum lanjut.','warn');
+  return false;
+}
+
+function advanceFrom(cur){
+  if(cur===9 && !requireStockComplete('pkg'))return false;
+  if(cur===10 && !requireStockComplete('cig'))return false;
+  if(typeof showStep==='function')showStep(Math.min(STEP_LABELS.length-1,cur+1));
+  return true;
+}
+
+function enforceStockCheckpoint(){
+  let cur=0;try{cur=Number(typeof idx!=='undefined'?idx:0);}catch(_){}
+  if(cur>9){
+    const pkg=stockCompletion('pkg');
+    if(!pkg.complete){
+      try{if(typeof showStep==='function')showStep(9);}catch(_){}
+      revealAndFocusMissing('pkg',pkg);
+      toast('Data Paket belum lengkap. Sistem mengembalikan ke Stok Akhir Paket.','warn');
+      return false;
+    }
+  }
+  if(cur>10){
+    const cig=stockCompletion('cig');
+    if(!cig.complete){
+      try{if(typeof showStep==='function')showStep(10);}catch(_){}
+      revealAndFocusMissing('cig',cig);
+      toast('Data Rokok belum lengkap. Sistem mengembalikan ke Stok Akhir Rokok.','warn');
+      return false;
+    }
+  }
+  return true;
+}
+
+function stockEnterGroup(el){
+  const m=String(el?.id||'').match(/^(pkgCheck|cigDispCheck|cigWhCheck|move|pkgEnd|cigEnd)(\d+)$/);
+  return m?{prefix:m[1],index:Number(m[2])}:null;
+}
+function visibleInput(el){
+  if(!el||el.disabled)return false;
+  const row=el.closest('tr');
+  if(row && getComputedStyle(row).display==='none')return false;
+  const cs=getComputedStyle(el);
+  return cs.display!=='none'&&cs.visibility!=='hidden';
+}
+function installStockEnterNavigation(){
+  if(document.documentElement.dataset.v64StockEnter==='1')return;
+  document.documentElement.dataset.v64StockEnter='1';
+  document.addEventListener('input',e=>{
+    if(stockEnterGroup(e.target))setTimeout(refreshStockNextVisual,0);
+  },true);
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||e.shiftKey||e.ctrlKey||e.altKey||e.metaKey||e.isComposing||e.repeat)return;
+    const info=stockEnterGroup(e.target);
+    if(!info)return;
+    e.preventDefault();
+    e.stopPropagation();
+    if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+    const candidates=[...document.querySelectorAll('input[id^="'+info.prefix+'"]')]
+      .map(el=>({el,info:stockEnterGroup(el)}))
+      .filter(x=>x.info&&x.info.prefix===info.prefix&&x.info.index>info.index&&visibleInput(x.el))
+      .sort((a,b)=>a.info.index-b.info.index);
+    const next=candidates[0]?.el;
+    if(next){
+      next.scrollIntoView({behavior:'smooth',block:'center'});
+      setTimeout(()=>{try{next.focus({preventScroll:true});next.select?.();}catch(_){}},100);
+    }
+  },true);
+}
+
 let oldSmartNext=null;
 function installNavigation(){
   if(document.documentElement.dataset.v61Nav==='1')return;
@@ -340,7 +467,7 @@ function installNavigation(){
     smartNextStep=function(){
       const cur=Number(typeof idx!=='undefined'?idx:0);
       if(cur<=2&&oldSmartNext)return oldSmartNext();
-      if(typeof showStep==='function')showStep(Math.min(STEP_LABELS.length-1,cur+1));
+      return advanceFrom(cur);
     };
     smartPrevStep=function(){
       const cur=Number(typeof idx!=='undefined'?idx:0);
@@ -354,14 +481,15 @@ function installNavigation(){
     if(btn.id==='v61MinyakDone'||btn.id==='v61AdminDone')return;
     e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
     const section=btn.closest('section'),i=Number(section?.dataset.i);
-    if(Number.isFinite(i)&&typeof showStep==='function')showStep(Math.min(STEP_LABELS.length-1,i+1));
+    if(Number.isFinite(i))advanceFrom(i);
   },true);
 }
 
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V63 — ADMIN LAYOUT NO-OVERLAP';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V64 — STOCK REQUIRED + ENTER NEXT ROW';});
+  setTimeout(refreshStockNextVisual,0);
 }
 function selfTest(){
   const t=[],ok=(n,c)=>t.push([n,!!c]);
@@ -371,11 +499,21 @@ function selfTest(){
   ok('Electricity tab/pane',!!$('tx-electricity'));
   ok('Electricity <=500k margin 4500',listrikMargin(500000)===4500);
   ok('Electricity >500k follows BCA',listrikMargin(500001)===5000);
-  ok('Admin rates exact',OUT_RATES.join(',')==='2500,14000,1500,6500,7000,5000');
+  ok('Admin rates exact',OUT_RATES.join(',')==='2500,14000,1500,6500,7000');
+  ok('Paket checkpoint step 10',Number(findSection(/Stok Akhir Paket/i)?.dataset.i)===9);
+  ok('Rokok checkpoint step 11',Number(findSection(/Stok Akhir Rokok/i)?.dataset.i)===10);
+  ok('Stock Enter navigation installed',document.documentElement.dataset.v64StockEnter==='1');
   const pass=t.every(x=>x[1]);document.documentElement.dataset.v61Selftest=pass?'PASS':'FAIL';
   window.KAFeaturesV61={pass,tests:t,refresh,renderListrik,renderAdmin,listrikMargin};
   if(!pass)console.error('V61 SELFTEST FAIL',t);
 }
-function install(){refresh();installNavigation();setTimeout(()=>{refresh();selfTest();},0);setTimeout(refresh,1100);}
+function install(){
+  refresh();
+  installNavigation();
+  installStockEnterNavigation();
+  setTimeout(()=>{refresh();selfTest();},0);
+  setTimeout(()=>{refresh();enforceStockCheckpoint();},1100);
+  window.addEventListener('load',()=>setTimeout(enforceStockCheckpoint,350),{once:true});
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
