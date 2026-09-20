@@ -230,10 +230,15 @@
         reasonWrap.style.display='none';
         toast(`${label} BRILINK ditambahkan. Form siap untuk transaksi berikutnya.`,'ok');
       });
+      return render;
     };
 
-    buildBrilinkPanel('transfer','Transfer');
-    buildBrilinkPanel('tarik','Tarik Tunai');
+    const renderBrilinkTransfer=buildBrilinkPanel('transfer','Transfer');
+    const renderBrilinkTarik=buildBrilinkPanel('tarik','Tarik Tunai');
+    window.KAPersistRenderV39=()=>{
+      if(typeof renderBrilinkTransfer==='function') renderBrilinkTransfer();
+      if(typeof renderBrilinkTarik==='function') renderBrilinkTarik();
+    };
 
     const showBrilinkInner=which=>{
       const tarik=which==='tarik';
