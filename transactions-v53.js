@@ -340,6 +340,9 @@
   function initDom(){
     restoreNow('dom');
     bindAutosave();
+    document.querySelectorAll('.topbar .status.info').forEach(el=>{
+      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V53 — AUTOSAVE + RECOVERY';
+    });
     setTimeout(()=>{
       restoring=false;
       if(!lastSavedAt) saveNow('initial');
