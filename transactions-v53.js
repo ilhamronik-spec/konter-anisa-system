@@ -286,6 +286,7 @@
     safeCall(()=>window.KABalanceV44?.updateAutoFinalModals?.());
     safeCall(()=>window.KABalanceV44?.renderBalance?.());
     safeCall(()=>window.KAUIV51?.refresh?.());
+    safeCall(()=>window.KAFeaturesV61?.refresh?.());
   }
 
   function restoreStep(saved){
