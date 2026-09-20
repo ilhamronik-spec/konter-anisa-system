@@ -174,7 +174,18 @@
       return !st.usedNotes?.[n.id];
     });
   }
-  function totalPurchases(type){ return (purchases[type]||[]).reduce((s,x)=>s+Number(x.amount||0),0); }
+  function activeShiftId(){
+    try { return String(activeState()?.activeShift?.id || ''); }
+    catch(_) { return ''; }
+  }
+  function purchaseInActiveShift(rec){
+    const sid=activeShiftId();
+    return sid ? String(rec?.shiftId || '')===sid : true;
+  }
+  function activePurchases(type){
+    return (purchases[type]||[]).filter(purchaseInActiveShift);
+  }
+  function totalPurchases(type){ return activePurchases(type).reduce((s,x)=>s+Number(x.amount||0),0); }
   function totalUsed(type){
     const key=type==='accessory'?'aksesoris':'obat';
     return ((typeof txEntries!=='undefined' && txEntries[key])||[]).reduce((s,x)=>s+Number(x.modal||0),0);
@@ -286,10 +297,14 @@
     savePurchases(); refreshPurchaseUI(); updateAutoModals();
   }
   function renderPurchaseList(type){
-    const pfx=type==='accessory'?'accBuy':'medBuy', arr=purchases[type]||[], body=$(`${pfx}List`), count=$(`${pfx}Count`);
+    const pfx=type==='accessory'?'accBuy':'medBuy';
+    const arr=(purchases[type]||[])
+      .map((x,rawIndex)=>({x,rawIndex}))
+      .filter(rec=>purchaseInActiveShift(rec.x));
+    const body=$(`${pfx}List`), count=$(`${pfx}Count`);
     if(!body||!count) return;
-    if(!arr.length){ body.innerHTML='<tr><td class="multi-empty" colspan="5">Belum ada nota belanja yang digunakan.</td></tr>'; count.textContent='0 nota'; return; }
-    body.innerHTML=arr.map((x,i)=>`<tr><td>${i+1}</td><td><b>${x.id}</b></td><td class="money">${fmt(x.amount)}</td><td>${x.uploadedAt||'—'}</td><td><button class="btn" type="button" data-v41-purchase-remove="${type}:${i}">Batalkan</button></td></tr>`).join('');
+    if(!arr.length){ body.innerHTML='<tr><td class="multi-empty" colspan="5">Belum ada nota belanja pada shift ini.</td></tr>'; count.textContent='0 nota'; return; }
+    body.innerHTML=arr.map((rec,i)=>`<tr><td>${i+1}</td><td><b>${rec.x.id}</b></td><td class="money">${fmt(rec.x.amount)}</td><td>${rec.x.uploadedAt||'—'}</td><td><button class="btn" type="button" data-v41-purchase-remove="${type}:${rec.rawIndex}">Batalkan</button></td></tr>`).join('');
     count.textContent=`${arr.length} nota • ${fmt(totalPurchases(type))}`;
     body.querySelectorAll('[data-v41-purchase-remove]').forEach(btn=>btn.addEventListener('click',()=>{ const [t,i]=btn.dataset.v41PurchaseRemove.split(':'); removePurchase(t,Number(i)); }));
   }
