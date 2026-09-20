@@ -494,7 +494,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V66 — MODAL ENTER NEXT ROW';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V67 — PIUTANG EXCEL SYNC';});
   setTimeout(refreshStockNextVisual,0);
 }
 function selfTest(){
