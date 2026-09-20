@@ -242,6 +242,7 @@
 
   function renderRecovered(){
     safeCall(()=>{ if(typeof renderDebtEntries==='function') renderDebtEntries(); });
+    safeCall(()=>{ if(typeof syncDebtDebtorMode==='function') syncDebtDebtorMode(); });
     safeCall(()=>{ if(typeof renderPaymentEntries==='function') renderPaymentEntries(); });
     safeCall(()=>{ if(typeof renderOperationalEntries==='function') renderOperationalEntries(); });
     safeCall(()=>{
@@ -341,7 +342,7 @@
     restoreNow('dom');
     bindAutosave();
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
-      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V54 — CONFIRM FIX + AUTOSAVE';
+      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V57 — MANUAL DEBTOR + AUTOSAVE';
     });
     setTimeout(()=>{
       restoring=false;
