@@ -153,6 +153,8 @@
     const ths=section?.querySelectorAll('thead th');
     if(ths?.[4]) ths[4].textContent='Stok Awal';
     if(ths?.[6]) ths[6].textContent='Stok Tersedia';
+    const notice=section?.querySelector('.notice.blue');
+    if(notice) notice.innerHTML='<b>Alur stok:</b> Stok Awal = stok akhir tanggal 17 • Belanja = pembelian tanggal 18 • Stok Tersedia = Stok Awal + Belanja • Terjual = Stok Tersedia − Stok Akhir.';
     try{ if(typeof calcPkgTotals==='function') calcPkgTotals(); }catch(_){}
   }
 
