@@ -119,6 +119,8 @@
       toast('Transaksi ShopeePay ditambahkan. Form siap untuk transaksi berikutnya.','ok');
     });
 
+    window.KAPersistRenderV38=render;
+
     if(typeof bindRuntimeActions==='function') bindRuntimeActions();
     document.querySelectorAll('.topbar .status.info').forEach(el=>{ if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V38 — SHOPEEPAY'; });
   }

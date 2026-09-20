@@ -138,6 +138,8 @@
       toast('Transfer SeaBank ditambahkan. Form siap untuk transaksi berikutnya.','ok');
     });
 
+    window.KAPersistRenderV37=renderSeaBank;
+
     document.querySelectorAll('.topbar .status.info').forEach(el=>{ if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V37 — TRANSFER BANK LAIN'; });
   }
 

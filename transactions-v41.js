@@ -363,7 +363,13 @@
         return true;
       },
       refresh:refreshPurchaseUI,
-      updateModal:updateAutoModals
+      updateModal:updateAutoModals,
+      refreshSales(){
+        renderSales('aksesoris','Aksesoris','acc');
+        renderSales('obat','Obat','med');
+        refreshPurchaseUI();
+        updateAutoModals();
+      }
     };
   }
 

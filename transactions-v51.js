@@ -387,7 +387,24 @@
     }
     const pass=tests.every(x=>x[1]);
     document.documentElement.dataset.v51Selftest=pass?'PASS':'FAIL';
-    window.KAUIV51={pass,tests,refresh:refreshEverything,previewDisplay};
+    window.KAUIV51={
+      pass,tests,refresh:refreshEverything,previewDisplay,
+      getPersistentState(){
+        return {displayPreviewConfirmed,displayPreviewSignature};
+      },
+      restorePersistentState(state){
+        displayPreviewConfirmed=!!state?.displayPreviewConfirmed;
+        displayPreviewSignature=String(state?.displayPreviewSignature||'');
+        const badge=byId('v51DisplayPreviewBadge');
+        if(badge){
+          const valid=displayPreviewConfirmed && displaySignature()===displayPreviewSignature;
+          badge.textContent=valid?'Sudah Dikonfirmasi':'Belum Dikonfirmasi';
+          badge.className='status '+(valid?'ok':'warn');
+          if(!valid){displayPreviewConfirmed=false;displayPreviewSignature='';}
+        }
+        if(typeof refreshGlobalNextButton==='function') refreshGlobalNextButton();
+      }
+    };
     if(!pass) console.error('V51 SELFTEST FAIL',tests);
     return {pass,tests};
   }
