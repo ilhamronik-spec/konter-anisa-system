@@ -1,4 +1,4 @@
-/* Konter Anisa V62 — Admin layout fix + Rp5.000 Admin Keluar */
+/* Konter Anisa V63 — Admin layout no-overlap */
 (function(){
 'use strict';
 
@@ -355,7 +355,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V62 — ADMIN LAYOUT FIX + Rp5.000';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V63 — ADMIN LAYOUT NO-OVERLAP';});
 }
 function selfTest(){
   const t=[],ok=(n,c)=>t.push([n,!!c]);
