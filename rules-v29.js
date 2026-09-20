@@ -180,7 +180,7 @@
       const o = document.createElement('option');
       o.value = n.id;
       o.disabled = noteUsed(n.id);
-      o.textContent = `${n.id} • ${fmtMoney(n.amount)} • ${n.shiftLabel}${noteUsed(n.id) ? ' • SUDAH DIPAKAI' : ''}`;
+      o.textContent = `${n.id}${n.label ? ' • '+n.label : ''} • ${fmtMoney(n.amount)} • ${n.shiftLabel}${noteUsed(n.id) ? ' • SUDAH DIPAKAI' : ''}`;
       select.appendChild(o);
     });
     if (current && notes.some(n => n.id === current && !noteUsed(n.id))) select.value = current;
@@ -652,4 +652,13 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
   else init();
+
+  // V53 melakukan recovery setelah window.load. Refresh lagi sesudahnya agar
+  // daftar nota Purchasing baru tidak tertimpa snapshot form lama.
+  window.addEventListener('load', () => setTimeout(refreshNoteSelectors, 150), {once:true});
+
+  window.KAPurchasingV56 = {
+    refreshNotes: refreshNoteSelectors,
+    testNoteId: 'NBO-0918-01'
+  };
 })();
