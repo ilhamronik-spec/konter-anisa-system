@@ -5,6 +5,7 @@
   const STORE='ka_admin_accounts_v59';
   const VERSION=1;
   const DEFAULTS=[
+    {id:'acct-ilham',name:'Ilham',role:'owner',active:true,source:'admin'},
     {id:'acct-egi',name:'Egi',role:'purchasing',active:true,source:'admin'},
     {id:'acct-sifa',name:'Sifa',role:'employee',active:true,source:'admin'},
     {id:'acct-fitri',name:'Fitri',role:'employee',active:true,source:'admin'},
