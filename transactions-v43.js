@@ -219,11 +219,18 @@
     return previous+purchases-used;
   }
 
-  function piutangClosing(){
-    let add=0,paid=0;
+  function piutangBreakdown(){
+    let add=0,paid=0,operasional=0;
     try { if(typeof debtEntries!=='undefined') add=debtEntries.reduce((s,x)=>s+Number(x.amount||0),0); } catch(_) {}
     try { if(typeof paymentEntries!=='undefined') paid=paymentEntries.reduce((s,x)=>s+Number(x.amount||0),0); } catch(_) {}
-    return Math.max(0,openingPiutang()+add-paid);
+    try { operasional=operationalTotal(); } catch(_) {}
+    const opening=openingPiutang();
+    const total=Math.max(0,opening+add-paid+operasional);
+    return {opening,add,paid,operasional,total};
+  }
+
+  function piutangClosing(){
+    return piutangBreakdown().total;
   }
 
   function transactionMargin(){
@@ -418,6 +425,7 @@
     tests.push(['cigarette purchase cost variance neutralized',eq(pureBalance({closing:95,opening:100,selisihRokok:5}),0)]);
     const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
     tests.push(['ACC/Obat shift isolation',scoped.length===2 && scoped.reduce((s,x)=>s+Number(x.amount||0),0)===300]);
+    tests.push(['18 Sep Piutang arithmetic',eq(4967913+475875+154000,5597788)]);
     const pass=tests.every(x=>x[1]);
     document.documentElement.dataset.v44Selftest=pass?'PASS':'FAIL';
     if(!pass) console.error('V44 SELFTEST FAIL',tests);
@@ -437,7 +445,7 @@
     selfTest();
 
     window.KABalanceV44={
-      openingTotal,packageClosing,cigaretteClosing,piutangClosing,transactionMargin,minyakModal,operationalTotal,
+      openingTotal,packageClosing,cigaretteClosing,piutangClosing,piutangBreakdown,transactionMargin,minyakModal,operationalTotal,
       updateAutoFinalModals,balanceSnapshot,renderBalance,pureBalance,selfTest
     };
 
