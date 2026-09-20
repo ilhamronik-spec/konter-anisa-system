@@ -1669,6 +1669,53 @@ function requireAdminReason(prefix){
   }
   return true;
 }
+function resetAdminTxnForm(prefix){
+  const amount=document.getElementById(prefix+'Amount');
+  const admin=document.getElementById(prefix+'Admin');
+  const reason=document.getElementById(prefix+'Reason');
+  const reasonWrap=document.getElementById(prefix+'ReasonWrap');
+  const def=document.getElementById(prefix+'Default');
+  const total=document.getElementById(prefix+'Total');
+  const status=document.getElementById(prefix+'Status');
+  const box=document.getElementById(prefix+'StatusBox');
+
+  if(amount) amount.value='';
+  if(admin){ admin.value=''; admin.disabled=false; delete admin.dataset.manual; }
+  if(reason) reason.value='';
+  if(reasonWrap) reasonWrap.style.display='none';
+  if(def) def.textContent='—';
+  if(total) total.textContent='—';
+  if(status) status.textContent='Menunggu input';
+  if(box) box.className='calcbox';
+  if(Object.prototype.hasOwnProperty.call(adminState,prefix)) adminState[prefix]=null;
+
+  if(prefix==='dana'){
+    const margin=document.getElementById('danaMargin');
+    if(margin) margin.textContent='—';
+  }
+  if(prefix==='transferBca'){
+    const base=document.getElementById('transferBcaBase');
+    if(base) base.textContent='—';
+  }
+}
+
+function resetTxnAfterSave(type){
+  if(['dana','qrisDana','qrisBank','tarikBca','transferBca'].includes(type)){
+    resetAdminTxnForm(type);
+  }
+  if(type==='mitra'){
+    const qty=document.getElementById('mitraQty');
+    if(qty) qty.value='0';
+    const custom=document.getElementById('mitraCustomNominal');
+    if(custom) custom.value='';
+    if(typeof calcMitra==='function') calcMitra();
+  }
+  if(type==='svplus'){
+    ['svType','svBase','svSell','svMarginInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['svBaseOut','svSellOut','svMargin'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
+  }
+}
+
 function addTxn(type){
   let row=null;
 
@@ -1726,7 +1773,8 @@ function addTxn(type){
   txEntries[type].push(row);
   renderTxnList(type);
   renderTxGlobalSummary();
-  uiToast('Transaksi ditambahkan. Form siap untuk transaksi berikutnya.','ok');
+  resetTxnAfterSave(type);
+  uiToast('Transaksi ditambahkan. Form berikutnya kembali ke admin default.','ok');
 }
 function removeTxn(type,i){txEntries[type].splice(i,1);renderTxnList(type);renderTxGlobalSummary();}
 function renderTxnList(type){
@@ -2629,6 +2677,6 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="transactions-v50.js?v=50"></script>
 <script src="transactions-v51.js?v=54"></script>
 <script src="transactions-v53.js?v=57"></script>
-<script src="transactions-v55.js?v=59"></script>
+<script src="transactions-v55.js?v=60"></script>
 </body>
 </html>
