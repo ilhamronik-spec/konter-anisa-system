@@ -249,6 +249,12 @@ function installAdminStep(){
       #v61-admin-section .v62-admin-results{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:16px}
       #v61-admin-section .v62-admin-table{min-width:620px}
       #v61-admin-section #adminOutAdd{margin-top:2px}
+      body:has(#v61-admin-section.active) .footer-actions{
+        position:static!important;
+        margin-top:18px!important;
+        background:transparent!important;
+        backdrop-filter:none!important;
+      }
       @media(max-width:1180px){
         #v61-admin-section .grid.two{grid-template-columns:minmax(0,1fr)}
         #v61-admin-section .v62-admin-rates{grid-template-columns:repeat(3,minmax(0,1fr))}
