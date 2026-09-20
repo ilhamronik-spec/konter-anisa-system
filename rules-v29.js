@@ -5,10 +5,7 @@
   const VERSION = 'V30 — KARYAWAN ROLE';
   const DEFAULT_MIN_MARGIN = 1000;
   const PRICE_DROP_APPROVAL_TRIGGER = 3000;
-  const ACTIVE_SHIFT = {
-    id: '2026-09-13-full-rifda',
-    label: '13 September 2026 • Shift Full • Rifda'
-  };
+  const ACTIVE_SHIFT = resolveActiveShift();
 
   const STORE = {
     exceptions: 'ka_v29_margin_exceptions',
@@ -17,11 +14,44 @@
     usedNotes: 'ka_v29_used_notes'
   };
 
+  // Seed lama tetap terikat ke tanggal asal; jangan pernah dipindahkan otomatis ke shift lain.
   const seedNotes = [
-    { id: 'NBJ-0913-01', type: 'package', amount: 1680000, shiftId: ACTIVE_SHIFT.id, shiftLabel: ACTIVE_SHIFT.label, uploadedAt: '07:18', status: 'ready' },
-    { id: 'NBJ-0913-02', type: 'cigarette', amount: 850000, shiftId: ACTIVE_SHIFT.id, shiftLabel: ACTIVE_SHIFT.label, uploadedAt: '09:02', status: 'ready' },
-    { id: 'NBO-0913-01', type: 'operational', amount: 10000, shiftId: ACTIVE_SHIFT.id, shiftLabel: ACTIVE_SHIFT.label, uploadedAt: '10:15', status: 'ready' }
+    { id: 'NBJ-0913-01', type: 'package', amount: 1680000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '07:18', status: 'ready' },
+    { id: 'NBJ-0913-02', type: 'cigarette', amount: 850000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '09:02', status: 'ready' },
+    { id: 'NBO-0913-01', type: 'operational', amount: 10000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '10:15', status: 'ready' }
   ];
+
+  function slugShift(value) {
+    return String(value || 'unknown').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'unknown';
+  }
+  function monthNumber(name) {
+    const months={januari:'01',februari:'02',maret:'03',april:'04',mei:'05',juni:'06',juli:'07',agustus:'08',september:'09',oktober:'10',november:'11',desember:'12'};
+    return months[String(name||'').toLowerCase()] || '';
+  }
+  function pageShiftDate() {
+    const source=String(document.querySelector('.crumb')?.textContent || '');
+    const m=source.match(/(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i);
+    if(!m) return {iso:'2026-09-13',label:'13 September 2026'};
+    const mm=monthNumber(m[2]);
+    return {iso:`${m[3]}-${mm}-${String(m[1]).padStart(2,'0')}`,label:`${Number(m[1])} ${m[2]} ${m[3]}`};
+  }
+  function pageShiftHolder() {
+    const pill=[...document.querySelectorAll('.hero .pill')].find(x=>/Pemegang\s*:/i.test(String(x.textContent||'')));
+    return String(pill?.textContent || '').replace(/^.*?Pemegang\s*:\s*/i,'').trim() || 'Rifda';
+  }
+  function resolveActiveShift() {
+    const override=(window.KA_SHIFT_CONTEXT && typeof window.KA_SHIFT_CONTEXT==='object') ? window.KA_SHIFT_CONTEXT : {};
+    const fromPage=pageShiftDate();
+    const date=String(override.date || fromPage.iso);
+    const dateLabel=String(override.dateLabel || fromPage.label);
+    const shift=String(override.shift || 'Full');
+    const holder=String(override.holder || pageShiftHolder());
+    return {
+      id:String(override.id || `${date}-${slugShift(shift)}-${slugShift(holder)}`),
+      label:String(override.label || `${dateLabel} • Shift ${shift} • ${holder}`),
+      date, shift, holder
+    };
+  }
 
   const state = window.KARegulationsV29 = {
     activeShift: ACTIVE_SHIFT,
@@ -69,7 +99,10 @@
   function noteUsable(note, type) {
     return !!note && note.type === type && note.shiftId === ACTIVE_SHIFT.id && note.status !== 'void';
   }
-  function noteUsed(id) { return !!state.usedNotes[id]; }
+  function noteUsed(id) {
+    const rec=state.usedNotes[id];
+    return !!rec && (!rec.shiftId || rec.shiftId===ACTIVE_SHIFT.id);
+  }
   function markNoteUsed(id, area) {
     state.usedNotes[id] = { area, at: new Date().toISOString(), shiftId: ACTIVE_SHIFT.id };
     save(STORE.usedNotes, state.usedNotes);
