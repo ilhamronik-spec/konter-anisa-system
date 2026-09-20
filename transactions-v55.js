@@ -75,7 +75,7 @@
   function refresh(){
     installHints();
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
-      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V57 — MANUAL DEBTOR + ENTER SAVE + AUTOSAVE';
+      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V58 — OWNER/KARYAWAN/PURCHASING DEBT + AUTOSAVE';
     });
   }
 
