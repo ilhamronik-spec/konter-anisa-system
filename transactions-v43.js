@@ -185,10 +185,23 @@
     } catch(_) { return {complete:false,total:0,margin:0,selisih:0}; }
   }
 
+  function activeShiftId44(){
+    try { return String(window.KARegulationsV29?.activeShift?.id || ''); }
+    catch(_) { return ''; }
+  }
+
+  function filterShiftPurchases(records,shiftId=activeShiftId44()){
+    const arr=Array.isArray(records)?records:[];
+    return shiftId ? arr.filter(x=>String(x?.shiftId || '')===String(shiftId)) : arr;
+  }
+
   function v41Purchases(){
     try {
       const x=JSON.parse(localStorage.getItem('ka_v41_acc_obat_purchases')||'{"accessory":[],"medicine":[]}');
-      return {accessory:Array.isArray(x.accessory)?x.accessory:[],medicine:Array.isArray(x.medicine)?x.medicine:[]};
+      return {
+        accessory:filterShiftPurchases(x.accessory),
+        medicine:filterShiftPurchases(x.medicine)
+      };
     } catch(_) { return {accessory:[],medicine:[]}; }
   }
 
@@ -400,8 +413,11 @@
     const tests=[];
     tests.push(['base formula',eq(pureBalance({closing:125,opening:100,margin:10,minyak:20,operasional:5}),0)]);
     tests.push(['worksheet 1 Sep regression',eq(pureBalance({closing:123332919,opening:125870299,margin:981260,minyak:869100,operasional:4300000}),-87740)]);
+    tests.push(['1-day balanced simulation',eq(pureBalance({closing:126140299,opening:125870299,margin:445000,minyak:125000,operasional:300000}),0)]);
     tests.push(['package repricing neutralized',eq(pureBalance({closing:110,opening:100,selisihPaket:-10}),0)]);
     tests.push(['cigarette purchase cost variance neutralized',eq(pureBalance({closing:95,opening:100,selisihRokok:5}),0)]);
+    const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
+    tests.push(['ACC/Obat shift isolation',scoped.length===2 && scoped.reduce((s,x)=>s+Number(x.amount||0),0)===300]);
     const pass=tests.every(x=>x[1]);
     document.documentElement.dataset.v44Selftest=pass?'PASS':'FAIL';
     if(!pass) console.error('V44 SELFTEST FAIL',tests);
