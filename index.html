@@ -731,7 +731,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <h4 style="margin:0 0 12px">Hutang Baru</h4>
 <div class="subtabs" style="margin-bottom:14px"><button class="subtab active" data-ui-click="setDebtMode(false)" id="debtNoneBtn" type="button">Tidak Ada</button><button class="subtab" data-ui-click="setDebtMode(true)" id="debtAddBtn" type="button">+ Ada Hutang</button></div>
 <div class="notice blue" id="debtEmpty" style="margin-bottom:0">Tidak ada hutang baru pada hitungan ini.</div>
-<div id="debtFields" style="display:none"><div class="form-grid"><div class="field"><label>Jenis</label><select class="select" id="debtType"><option>Hutang Karyawan</option><option>Hutang Orang Lain</option></select></div><div class="field"><label>Debitur</label><select class="select" id="debtDebtor"><option>Egi</option><option>Sifa</option><option>Fathur</option></select></div><div class="field"><label>Jumlah</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this)" id="debtAmount" inputmode="numeric" type="text" value="50.000"/></div><div class="field"><label>Catatan</label><input class="input" id="debtNote" value="Kasbon"/></div></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-ui-click="addDebtEntry()" type="button">+ Tambahkan Hutang ke Daftar</button></div></div>
+<div id="debtFields" style="display:none"><div class="form-grid"><div class="field"><label>Jenis</label><select class="select" id="debtType"><option value="employee">Hutang Karyawan</option><option value="other">Hutang Orang Lain</option></select></div><div class="field" id="debtEmployeeWrap"><label>Debitur Karyawan</label><select class="select" id="debtDebtor"><option>Egi</option><option>Sifa</option><option>Fathur</option></select></div><div class="field" id="debtOtherWrap" style="display:none"><label>Nama Debitur</label><input autocomplete="off" class="input" id="debtDebtorOther" placeholder="Ketik nama orang yang berhutang"/></div><div class="field"><label>Jumlah</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this)" id="debtAmount" inputmode="numeric" type="text" value="50.000"/></div><div class="field"><label>Catatan</label><input class="input" id="debtNote" value="Kasbon"/></div></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-ui-click="addDebtEntry()" type="button">+ Tambahkan Hutang ke Daftar</button></div></div>
 </div>
 <div class="card form">
 <h4 style="margin:0 0 12px">Pembayaran Piutang</h4>
@@ -872,6 +872,8 @@ function setMoneyInput(el,value){
 }
 function formatAllMoneyInputs(){
   document.querySelectorAll('.money-entry').forEach(formatMoneyInput);
+document.getElementById('debtType')?.addEventListener('change',syncDebtDebtorMode);
+syncDebtDebtorMode();
 }
 
 function renderSteps(){const el=document.getElementById('steps');el.innerHTML='';labels.forEach((x,i)=>{const d=document.createElement('div');d.className='step '+(i<idx?'done':i===idx?'active':'');d.innerHTML=`<div class="n">${i<idx?'✓':i+1}</div>${x}`;d.onclick=()=>showStep(i);el.appendChild(d)});document.getElementById('progressText').textContent=`${idx+1} / ${labels.length}`}
@@ -886,9 +888,17 @@ function showBuy(name,btn){
   if(pane)pane.classList.add('active');
   btn.classList.add('active');
 }
+function syncDebtDebtorMode(){
+  const type=document.getElementById('debtType')?.value||'employee';
+  const employeeWrap=document.getElementById('debtEmployeeWrap');
+  const otherWrap=document.getElementById('debtOtherWrap');
+  if(employeeWrap) employeeWrap.style.display=type==='employee'?'block':'none';
+  if(otherWrap) otherWrap.style.display=type==='other'?'block':'none';
+}
 function setDebtMode(has){
   if(!has && debtEntries.length){uiToast('Masih ada '+debtEntries.length+' hutang di daftar. Hapus dulu jika memang tidak ada hutang.','warn');has=true;}
-  debtFields.style.display=has?'block':'none';debtEmpty.style.display=has?'none':'block';debtNoneBtn.classList.toggle('active',!has);debtAddBtn.classList.toggle('active',has)
+  debtFields.style.display=has?'block':'none';debtEmpty.style.display=has?'none':'block';debtNoneBtn.classList.toggle('active',!has);debtAddBtn.classList.toggle('active',has);
+  if(has) syncDebtDebtorMode();
 }
 function setPaymentMode(has){
   if(!has && paymentEntries.length){uiToast('Masih ada '+paymentEntries.length+' pembayaran di daftar. Hapus dulu jika memang tidak ada pembayaran.','warn');has=true;}
@@ -1527,15 +1537,20 @@ function optionText(sel){return sel?.options?.[sel.selectedIndex]?.text||''}
 
 // ---------- Hutang ----------
 function addDebtEntry(){
-  const type=document.getElementById('debtType').value;
-  const debtor=document.getElementById('debtDebtor').value;
+  const typeValue=document.getElementById('debtType').value;
+  const type=typeValue==='other'?'Hutang Orang Lain':'Hutang Karyawan';
+  const debtor=typeValue==='other'
+    ? (document.getElementById('debtDebtorOther').value||'').trim()
+    : document.getElementById('debtDebtor').value;
   const amount=moneyValue(document.getElementById('debtAmount'));
   const note=(document.getElementById('debtNote').value||'').trim();
 
+  if(!debtor){uiToast('Nama debitur wajib diisi.','warn');return;}
   if(amount<=0){uiToast('Jumlah hutang harus lebih dari Rp0.','warn');return;}
   debtEntries.push({type,debtor,amount,note});
   renderDebtEntries();
   setDebtMode(true);
+  if(typeValue==='other') document.getElementById('debtDebtorOther').value='';
   uiToast('Hutang ditambahkan ke daftar.','ok');
 }
 function removeDebt(i){debtEntries.splice(i,1);renderDebtEntries();}
@@ -2560,7 +2575,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="transactions-v43.js?v=43"></script>
 <script src="transactions-v50.js?v=50"></script>
 <script src="transactions-v51.js?v=54"></script>
-<script src="transactions-v53.js?v=54"></script>
-<script src="transactions-v55.js?v=55"></script>
+<script src="transactions-v53.js?v=57"></script>
+<script src="transactions-v55.js?v=57"></script>
 </body>
 </html>
