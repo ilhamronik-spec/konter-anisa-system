@@ -218,16 +218,24 @@
     if(card) card.insertAdjacentElement('afterend',box);
     else section.appendChild(box);
 
+    function closeDisplayPreview(){
+      box.classList.remove('open');
+      box.style.setProperty('display','none','important');
+      if(location.hash==='#v51DisplayPreview'){
+        try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){}
+      }
+    }
+
     byId('v51ConfirmDisplay')?.addEventListener('click',()=>{
       displayPreviewSignature=displaySignature();
       displayPreviewConfirmed=true;
       const badge=byId('v51DisplayPreviewBadge');
       if(badge){badge.textContent='Sudah Dikonfirmasi';badge.className='status ok';}
-      box.style.display='none';
+      closeDisplayPreview();
       toast('Display Rokok sudah dikonfirmasi','ok');
       if(typeof refreshGlobalNextButton==='function') refreshGlobalNextButton();
     });
-    byId('v51EditDisplay')?.addEventListener('click',()=>{box.style.display='none';});
+    byId('v51EditDisplay')?.addEventListener('click',()=>{ closeDisplayPreview(); });
   }
 
   function previewDisplay(){
@@ -261,7 +269,7 @@
       badge.textContent=displayPreviewConfirmed&&displaySignature()===displayPreviewSignature?'Sudah Dikonfirmasi':'Belum Dikonfirmasi';
       badge.className='status '+(displayPreviewConfirmed&&displaySignature()===displayPreviewSignature?'ok':'warn');
     }
-    box.style.display='block';
+    box.style.removeProperty('display');
     box.classList.add('open');
     box.scrollIntoView({behavior:'smooth',block:'center'});
     return invalid===0;
