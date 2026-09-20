@@ -150,12 +150,24 @@
   }
 
   function commitOpeningToCatalog(){
-    if(typeof cigCatalog==='undefined') return;
-    cigCatalog.forEach((c,ix)=>{
-      const s=openingSnapshot(ix);
-      c.display=s.display;
-      c.warehouse=s.warehouse;
-    });
+    if(typeof pkgCatalog!=='undefined'){
+      pkgCatalog.forEach((p,ix)=>{
+        const input=byId('pkgCheck'+(ix+1));
+        if(input) p.stock=num(input.value);
+        if(typeof openingPkg!=='undefined' && openingPkg[ix]) openingPkg[ix].stock=num(p.stock);
+      });
+    }
+    if(typeof cigCatalog!=='undefined'){
+      cigCatalog.forEach((c,ix)=>{
+        const s=openingSnapshot(ix);
+        c.display=s.display;
+        c.warehouse=s.warehouse;
+        if(typeof openingCig!=='undefined' && openingCig[ix]){
+          openingCig[ix].display=s.display;
+          openingCig[ix].warehouse=s.warehouse;
+        }
+      });
+    }
   }
 
   function refreshDisplayRow(i,{resetMove=false}={}){
