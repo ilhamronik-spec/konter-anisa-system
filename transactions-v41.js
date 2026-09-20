@@ -165,13 +165,18 @@
     const t=normalizeType(note?.type);
     return type==='accessory' ? ['accessory','aksesoris','acc'].includes(t) : ['medicine','obat'].includes(t);
   }
+  function noteUsedForShift(st,note){
+    const rec=st?.usedNotes?.[note?.id];
+    if(!rec) return false;
+    return !rec.shiftId || !note?.shiftId || String(rec.shiftId)===String(note.shiftId);
+  }
   function usableNotes(type){
     const st=activeState();
     if(!st || !Array.isArray(st.notes)) return [];
     return st.notes.filter(n=>{
       if(!noteTypeMatches(n,type) || n.status==='void') return false;
       if(st.activeShift?.id && n.shiftId && n.shiftId!==st.activeShift.id) return false;
-      return !st.usedNotes?.[n.id];
+      return !noteUsedForShift(st,n);
     });
   }
   function activeShiftId(){
@@ -275,7 +280,7 @@
     const st=activeState();
     const note=st?.notes?.find(n=>n.id===sel?.value && noteTypeMatches(n,type));
     if(!note){ toast('Pilih Nota Purchasing terlebih dahulu.','warn'); return; }
-    if(st.usedNotes?.[note.id]){ toast('Nota ini sudah pernah dipakai.','bad'); refreshPurchaseUI(); return; }
+    if(noteUsedForShift(st,note)){ toast('Nota ini sudah pernah dipakai pada shift ini.','bad'); refreshPurchaseUI(); return; }
     const amount=Number(note.amount||0);
     if(amount<=0){ toast('Nominal nota tidak valid.','bad'); return; }
     purchases[type].push({id:note.id,amount,uploadedAt:note.uploadedAt||'',shiftId:note.shiftId||st.activeShift?.id||'',usedAt:new Date().toISOString()});
@@ -292,7 +297,7 @@
     if(!rec) return;
     purchases[type].splice(index,1);
     const st=activeState();
-    if(st?.usedNotes?.[rec.id]) delete st.usedNotes[rec.id];
+    if(st?.usedNotes?.[rec.id] && (!st.usedNotes[rec.id].shiftId || String(st.usedNotes[rec.id].shiftId)===String(rec.shiftId||''))) delete st.usedNotes[rec.id];
     try { if(st) localStorage.setItem('ka_v29_used_notes',JSON.stringify(st.usedNotes||{})); } catch(_){}
     savePurchases(); refreshPurchaseUI(); updateAutoModals();
   }
