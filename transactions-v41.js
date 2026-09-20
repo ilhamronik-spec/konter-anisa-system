@@ -25,7 +25,7 @@
       const sections=[...document.querySelectorAll('section.section')];
       const byHeading=pattern=>sections.find(s=>pattern.test(String(s.querySelector('.section-head h3')?.textContent||'')));
       const op=byHeading(/Operasional/i);
-      const debt=byHeading(/Hutang\s*\/\s*Piutang/i);
+      const debt=byHeading(/Hutang\s*(?:\/|&|dan)\s*Piutang/i);
       const tx=byHeading(/Transaksi/i);
       if(op){ op.dataset.i='3'; const h=op.querySelector('.section-head h3'); if(h) h.textContent='4. Operasional'; }
       if(debt){ debt.dataset.i='4'; const h=debt.querySelector('.section-head h3'); if(h) h.textContent='5. Hutang / Piutang'; }
