@@ -494,7 +494,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V68 — BALANCE EXCEL SYNC';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V69 — LIVE EXCEL BALANCE -28.015';});
   setTimeout(refreshStockNextVisual,0);
 }
 function selfTest(){
