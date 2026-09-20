@@ -75,7 +75,7 @@
   function refresh(){
     installHints();
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
-      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V59 — ADMIN ACCOUNT MASTER + AUTOSAVE';
+      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V60 — ADMIN DEFAULT RESET + AUTOSAVE';
     });
   }
 
