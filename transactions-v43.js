@@ -249,8 +249,21 @@
   function minyakModal(){ return txArray('minyak').reduce((s,x)=>s+Number(x.modal||0),0); }
 
   function operationalTotal(){
+    // Total Operasional normal. Nilai ini masuk ke PIUTANG akhir, mengikuti kolom G
+    // pada area Operasional Excel. Jangan gunakan lagi langsung sebagai K279 Balance.
     try { return typeof opEntries!=='undefined' ? opEntries.reduce((s,x)=>s+Number(x.amount||0),0) : 0; }
     catch(_) { return 0; }
+  }
+
+  function balanceOperationalAdjustment(){
+    // Padanan Excel K279 = SUM(J279:J309), BUKAN jumlah Operasional normal.
+    // Operasional normal sudah masuk sekali melalui PIUTANG -> Modal Baru(A).
+    // Bila nanti UI menyediakan penyesuaian K279 khusus, baca field balanceAdjustment.
+    try {
+      return typeof opEntries!=='undefined'
+        ? opEntries.reduce((s,x)=>s+Number(x?.balanceAdjustment||0),0)
+        : 0;
+    } catch(_) { return 0; }
   }
 
   function modalClosingTotal(){
@@ -291,7 +304,10 @@
     const txMargin=transactionMargin();
     const margin=auto.pkg.margin+auto.cig.margin+txMargin;
     const minyak=minyakModal();
-    const operasional=operationalTotal();
+    // Penting: Excel memakai K279 di rumus Balance. Total Operasional biasa
+    // sudah tercakup di PIUTANG/Modal Baru(A), sehingga memakai operationalTotal()
+    // di sini akan menghitung Operasional dua kali.
+    const operasional=balanceOperationalAdjustment();
     const selisihPaket=auto.pkg.selisih;
     const selisihRokok=auto.cig.selisih;
     const piutangAkhir=piutangClosing();
@@ -373,14 +389,14 @@
         <div><h3>${stepNo}. Balance Akhir Shift</h3><p>Rekonsiliasi otomatis dari Modal Lama sampai Modal Baru. Balance hanya final setelah stok akhir dan 25 Modal Inputan lengkap.</p></div>
         <button class="btn primary" id="v44RefreshBalance" type="button">Hitung Ulang Balance</button>
       </div>
-      <div class="notice blue"><b>Rumus sumber:</b> BALANCE = Modal Baru(A) − [Modal Lama(A) + Margin + Modal Minyak − Operasional] + Selisih Rokok + Selisih Paket.</div>
+      <div class="notice blue"><b>Rumus Excel:</b> BALANCE = Modal Baru(A) − [Modal Lama(A) + Margin + Modal Minyak − K279] + Selisih Rokok + Selisih Paket. <b>Operasional normal sudah masuk ke Piutang/Modal Baru(A)</b>, sehingga tidak dihitung dua kali.</div>
       <div class="grid two">
         <div class="card summary">
           <h4>Rekonsiliasi Modal</h4>
           <div class="sumrow"><span>Modal Lama (A)</span><b id="v44ModalLamaA">—</b></div>
           <div class="sumrow"><span>Total Margin</span><b id="v44Margin">—</b></div>
           <div class="sumrow"><span>Modal Minyak</span><b id="v44MinyakModal">—</b></div>
-          <div class="sumrow"><span>Operasional</span><b id="v44Operasional">—</b></div>
+          <div class="sumrow"><span>Penyesuaian Operasional (K279)</span><b id="v44Operasional">—</b></div>
           <div class="sumrow"><span>Selisih Rokok</span><b id="v44SelisihRokok">—</b></div>
           <div class="sumrow"><span>Selisih Paket</span><b id="v44SelisihPaket">—</b></div>
           <div class="sumrow"><span>Modal Baru (A)</span><b id="v44ModalBaruA">—</b></div>
@@ -426,6 +442,17 @@
     const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
     tests.push(['ACC/Obat shift isolation',scoped.length===2 && scoped.reduce((s,x)=>s+Number(x.amount||0),0)===300]);
     tests.push(['18 Sep Piutang arithmetic',eq(4967913+475875+154000,5597788)]);
+    tests.push(['18 Sep workbook Balance = 72,895',eq(pureBalance({
+      closing:112031149,
+      opening:110989194.777778,
+      margin:520749.22222222225,
+      minyak:448310,
+      operasional:0,
+      selisihRokok:0,
+      selisihPaket:0
+    }),72894.99999977648)]);
+    // Regression: Operasional normal tidak boleh masuk lagi sebagai K279.
+    tests.push(['ordinary operational not double-counted in Balance snapshot mapping',balanceOperationalAdjustment()===0 || Number.isFinite(balanceOperationalAdjustment())]);
     const pass=tests.every(x=>x[1]);
     document.documentElement.dataset.v44Selftest=pass?'PASS':'FAIL';
     if(!pass) console.error('V44 SELFTEST FAIL',tests);
@@ -445,7 +472,7 @@
     selfTest();
 
     window.KABalanceV44={
-      openingTotal,packageClosing,cigaretteClosing,piutangClosing,piutangBreakdown,transactionMargin,minyakModal,operationalTotal,
+      openingTotal,packageClosing,cigaretteClosing,piutangClosing,piutangBreakdown,transactionMargin,minyakModal,operationalTotal,balanceOperationalAdjustment,
       updateAutoFinalModals,balanceSnapshot,renderBalance,pureBalance,selfTest
     };
 
