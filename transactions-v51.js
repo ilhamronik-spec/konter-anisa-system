@@ -64,6 +64,8 @@
       .v51-search-meta{font-size:10px;color:var(--muted);margin-top:5px}
       .v51-display-preview{margin-top:14px}
       .v51-display-preview table{min-width:820px}
+      .v51-display-preview .actions{position:relative;z-index:10002}
+      .v51-display-preview .actions button{pointer-events:auto!important;cursor:pointer!important;user-select:none!important;position:relative;z-index:10003}
       .v51-confirmed{color:var(--green)!important}
     `;
     document.head.appendChild(s);
@@ -183,6 +185,37 @@
     if(typeof cigCatalog==='undefined') return '';
     return cigCatalog.map((_,ix)=>String(num(byId('move'+(ix+1))?.value))).join('|');
   }
+
+  function closeDisplayPreviewV51(){
+    const box=byId('v51DisplayPreview');
+    if(!box) return;
+    box.classList.remove('open');
+    box.style.setProperty('display','none','important');
+    box.setAttribute('aria-hidden','true');
+    if(location.hash==='#v51DisplayPreview'){
+      try{history.replaceState(null,'',location.pathname+location.search);}catch(_){}
+    }
+  }
+
+  function confirmDisplayV51(){
+    displayPreviewSignature=displaySignature();
+    displayPreviewConfirmed=true;
+    const badge=byId('v51DisplayPreviewBadge');
+    if(badge){badge.textContent='Sudah Dikonfirmasi';badge.className='status ok';}
+    closeDisplayPreviewV51();
+    toast('Display Rokok sudah dikonfirmasi','ok');
+    try{window.KAAutosaveV53?.save?.();}catch(_){}
+    if(typeof refreshGlobalNextButton==='function') refreshGlobalNextButton();
+    return true;
+  }
+
+  function editDisplayV51(){
+    closeDisplayPreviewV51();
+    return true;
+  }
+
+  window.confirmDisplayV51=confirmDisplayV51;
+  window.editDisplayV51=editDisplayV51;
   function invalidateDisplayPreview(){
     if(displayPreviewConfirmed && displaySignature()!==displayPreviewSignature){
       displayPreviewConfirmed=false;
@@ -211,31 +244,14 @@
         <tbody id="v51DisplayPreviewBody"></tbody>
       </table></div>
       <div class="actions" style="margin-top:12px">
-        <button class="btn primary" type="button" id="v51ConfirmDisplay">Konfirmasi Display Benar</button>
-        <button class="btn" type="button" id="v51EditDisplay">Kembali Edit</button>
+        <button class="btn primary" type="button" id="v51ConfirmDisplay" aria-label="Konfirmasi Display Benar">Konfirmasi Display Benar</button>
+        <button class="btn" type="button" id="v51EditDisplay" aria-label="Kembali Edit">Kembali Edit</button>
       </div>`;
     const card=section.querySelector('.card');
     if(card) card.insertAdjacentElement('afterend',box);
     else section.appendChild(box);
 
-    function closeDisplayPreview(){
-      box.classList.remove('open');
-      box.style.setProperty('display','none','important');
-      if(location.hash==='#v51DisplayPreview'){
-        try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){}
-      }
-    }
 
-    byId('v51ConfirmDisplay')?.addEventListener('click',()=>{
-      displayPreviewSignature=displaySignature();
-      displayPreviewConfirmed=true;
-      const badge=byId('v51DisplayPreviewBadge');
-      if(badge){badge.textContent='Sudah Dikonfirmasi';badge.className='status ok';}
-      closeDisplayPreview();
-      toast('Display Rokok sudah dikonfirmasi','ok');
-      if(typeof refreshGlobalNextButton==='function') refreshGlobalNextButton();
-    });
-    byId('v51EditDisplay')?.addEventListener('click',()=>{ closeDisplayPreview(); });
   }
 
   function previewDisplay(){
@@ -411,6 +427,27 @@
 
   function install(){
     addStyle();
+
+    if(document.documentElement.dataset.v54DisplayDelegate!=='1'){
+      document.documentElement.dataset.v54DisplayDelegate='1';
+      document.addEventListener('click',e=>{
+        const confirm=e.target?.closest?.('#v51ConfirmDisplay');
+        if(confirm){
+          e.preventDefault();
+          e.stopPropagation();
+          if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation();
+          confirmDisplayV51();
+          return;
+        }
+        const edit=e.target?.closest?.('#v51EditDisplay');
+        if(edit){
+          e.preventDefault();
+          e.stopPropagation();
+          if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation();
+          editDisplayV51();
+        }
+      },true);
+    }
     normalizeSteps();
     syncPackageClosingUI();
     syncCigaretteClosingUI();
@@ -420,7 +457,7 @@
     refreshEverything();
 
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
-      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V51 — FLOW CLEAN + SEARCH + DISPLAY PREVIEW';
+      if(/UI\s+V/i.test(String(el.textContent||''))) el.textContent='UI V54 — DISPLAY CONFIRM HARD FIX';
     });
     selfTest();
   }
