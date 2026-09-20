@@ -271,8 +271,14 @@
       if(typeof calcCigTotals==='function') calcCigTotals();
     });
 
-    safeCall(()=>{ if(typeof setDebtMode==='function') setDebtMode(typeof debtEntries!=='undefined' && debtEntries.length>0); });
-    safeCall(()=>{ if(typeof setPaymentMode==='function') setPaymentMode(typeof paymentEntries!=='undefined' && paymentEntries.length>0); });
+    safeCall(()=>{
+      const hasDraft=String(byId('debtAmount')?.value||'').trim()!=='' || String(byId('debtNote')?.value||'').trim()!=='';
+      if(typeof setDebtMode==='function') setDebtMode((typeof debtEntries!=='undefined' && debtEntries.length>0)||hasDraft);
+    });
+    safeCall(()=>{
+      const hasDraft=String(byId('payDebtBalance')?.value||'').trim()!=='';
+      if(typeof setPaymentMode==='function') setPaymentMode((typeof paymentEntries!=='undefined' && paymentEntries.length>0)||hasDraft);
+    });
     safeCall(()=>{ if(typeof syncOpeningPreviewConfirmation==='function') syncOpeningPreviewConfirmation(); });
     safeCall(()=>{ if(typeof updateBuyNextState==='function') updateBuyNextState(); });
     safeCall(()=>{ if(typeof calcModalInput==='function') calcModalInput(); });
