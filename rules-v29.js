@@ -18,7 +18,8 @@
   const seedNotes = [
     { id: 'NBJ-0913-01', type: 'package', amount: 1680000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '07:18', status: 'ready' },
     { id: 'NBJ-0913-02', type: 'cigarette', amount: 850000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '09:02', status: 'ready' },
-    { id: 'NBO-0913-01', type: 'operational', amount: 10000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '10:15', status: 'ready' }
+    { id: 'NBO-0913-01', type: 'operational', amount: 10000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '10:15', status: 'ready' },
+    { id: 'NBO-0918-01', type: 'operational', category: 'sedekah', label: 'Sedekah', amount: 154000, shiftId: '2026-09-18-full-rifda', shiftLabel: '18 September 2026 • Shift Full • Rifda', uploadedAt: '10:00', status: 'ready' }
   ];
 
   function slugShift(value) {
@@ -62,6 +63,12 @@
     usedNotes: load(STORE.usedNotes, {})
   };
 
+  // Migrasi nota uji Purchasing tanggal 18 ke browser yang sudah punya localStorage lama.
+  // Tidak menggandakan nota bila sudah ada.
+  const requiredTestNote = seedNotes.find(n => n.id === 'NBO-0918-01');
+  if (requiredTestNote && !state.notes.some(n => n.id === requiredTestNote.id)) {
+    state.notes.push({ ...requiredTestNote });
+  }
   save(STORE.notes, state.notes);
 
   function load(key, fallback) {
@@ -173,7 +180,7 @@
       const o = document.createElement('option');
       o.value = n.id;
       o.disabled = noteUsed(n.id);
-      o.textContent = `${n.id} • ${fmtMoney(n.amount)} • ${n.shiftLabel}${noteUsed(n.id) ? ' • SUDAH DIPAKAI' : ''}`;
+      o.textContent = `${n.id}${n.label ? ' • '+n.label : ''} • ${fmtMoney(n.amount)} • ${n.shiftLabel}${noteUsed(n.id) ? ' • SUDAH DIPAKAI' : ''}`;
       select.appendChild(o);
     });
     if (current && notes.some(n => n.id === current && !noteUsed(n.id))) select.value = current;
@@ -184,6 +191,11 @@
     populateNoteSelect(document.getElementById('pkgNoteV29'), 'package');
     populateNoteSelect(document.getElementById('cigNoteV29'), 'cigarette');
     populateNoteSelect(document.getElementById('opReceipt'), 'operational');
+    const opSel = document.getElementById('opReceipt');
+    if (opSel && !opSel.value) {
+      const usable = [...opSel.options].filter(o => o.value && !o.disabled);
+      if (usable.length === 1) opSel.value = usable[0].value;
+    }
     syncOperationalFromNote();
   }
 
@@ -306,6 +318,12 @@
       amountEl.value = '';
     } else {
       amountEl.value = Number(note.amount).toLocaleString('id-ID');
+      const catEl = document.getElementById('opCat');
+      if (catEl && note.category && [...catEl.options].some(o => o.value === note.category)) {
+        catEl.value = note.category;
+      }
+      const noteEl = document.getElementById('opNote');
+      if (noteEl && note.label) noteEl.value = note.label;
     }
     if (typeof window.calcOp === 'function') window.calcOp();
   }
@@ -634,4 +652,13 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
   else init();
+
+  // V53 melakukan recovery setelah window.load. Refresh lagi sesudahnya agar
+  // daftar nota Purchasing baru tidak tertimpa snapshot form lama.
+  window.addEventListener('load', () => setTimeout(refreshNoteSelectors, 150), {once:true});
+
+  window.KAPurchasingV56 = {
+    refreshNotes: refreshNoteSelectors,
+    testNoteId: 'NBO-0918-01'
+  };
 })();
