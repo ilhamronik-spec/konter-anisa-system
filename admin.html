@@ -53,6 +53,7 @@
 <button class="active" data-view="dashboard" data-group="dashboard"><span class="dot"></span>Dashboard</button>
 <button data-view="margin" data-group="finance"><span class="dot"></span>Keuangan</button>
 <button data-view="capital" data-group="capitaldebt"><span class="dot"></span>Modal & Hutang</button>
+<button data-view="purchases" data-group="purchases"><span class="dot"></span>Input Belanja</button>
 <button data-view="review" data-group="review"><span class="dot"></span>Cek Inputan</button>
 <button data-view="attendance" data-group="people"><span class="dot"></span>Karyawan & Akses</button>
 <button data-view="reports" data-group="reports"><span class="dot"></span>Laporan & Audit</button>
@@ -71,7 +72,7 @@
 <div class="card kpi warn"><small>Total Operasional</small><strong id="kpiOperational">Rp0</strong><div id="kpiOperationalSub">Seluruh shift terekam</div></div>
 <div class="card kpi purple"><small>Absen Hari Ini</small><strong id="kpiAttendance">0</strong><div id="kpiAttendanceSub">Karyawan sudah absen masuk</div></div>
 </div>
-<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button><button data-go="reports">Laporan & Audit</button></div>
+<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="purchases">Input Belanja</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button><button data-go="reports">Laporan & Audit</button></div>
 <div class="grid two">
 <div class="card section-card"><h3>Kehadiran Hari Ini</h3><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>Karyawan</th><th>Shift</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th></tr></thead><tbody id="dashAttendance"></tbody></table></div></div>
 <div class="card section-card"><h3>Minus Perlu Perhatian</h3><div class="notice amber">Semua minus ditampilkan. Nilai ≥ Rp50.000 diberi status <b>MINUS BESAR</b> untuk dikaji pada menu Cek Inputan.</div><div id="dashMinusList" class="summary-list"></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-go="review">Buka Cek Inputan</button></div></div>
@@ -128,6 +129,26 @@
 <div class="card kpi good"><small>Total Pembayaran Terekam</small><strong id="debtPaid">Rp0</strong><div>Otomatis mengurangi hutang</div></div>
 </div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="debtSearch" placeholder="Cari nama debitur / jenis"><select class="select" id="debtTypeFilter"><option value="">Semua jenis</option><option value="Hutang Karyawan">Hutang Karyawan</option><option value="Hutang Owner">Hutang Owner</option><option value="Hutang Purchasing">Hutang Purchasing</option><option value="Hutang Orang Lain">Hutang Orang Lain</option></select><button class="btn" id="debtRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Debitur</th><th>Jenis</th><th>Total Hutang Masuk</th><th>Total Dibayar</th><th>Sisa Hutang</th><th>Status</th><th>Detail</th></tr></thead><tbody id="debtBody"></tbody></table></div></div>
+</section>
+
+<section class="view" id="view-purchases">
+<div class="hero"><div><h2>Pemantauan Input Belanja</h2><p>Admin memantau Nota Purchasing dan input belanja Karyawan per shift. Paket/Rokok dibandingkan dengan total detail yang divalidasi; Aksesoris, Obat, Minyak, dan Operasional mengikuti nominal nota yang dikunci workflow.</p></div><div class="actions"><span class="pill purple">Read Only</span><span class="pill green">Sinkron Database</span></div></div>
+<div class="notice blue"><b>Tujuan:</b> memastikan setiap Nota Purchasing masuk ke shift yang benar, terlihat apakah sudah dipakai Karyawan, dan mendeteksi selisih nominal sebelum menjadi masalah pada Balance. Admin hanya memantau; perubahan transaksi tetap dilakukan dari workflow Karyawan/Purchasing.</div>
+<div class="grid kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+<div class="card kpi purple"><small>Total Nota</small><strong id="purchaseKpiTotal">0</strong><div>Semua nota Purchasing terekam</div></div>
+<div class="card kpi good"><small>Sudah Dipakai</small><strong id="purchaseKpiUsed">0</strong><div>Terhubung ke input Karyawan</div></div>
+<div class="card kpi warn"><small>Belum Dipakai</small><strong id="purchaseKpiPending">0</strong><div>Masih menunggu input</div></div>
+<div class="card kpi bad"><small>Perlu Perhatian</small><strong id="purchaseKpiIssue">0</strong><div>Selisih / validasi lama</div></div>
+</div>
+<div class="card table-card">
+<div class="table-toolbar" style="grid-template-columns:1fr .72fr .72fr auto">
+<input class="input" id="purchaseSearch" placeholder="Cari nota / karyawan / Purchasing">
+<select class="select" id="purchaseType"><option value="">Semua jenis</option><option value="package">Paket</option><option value="cigarette">Rokok</option><option value="accessory">Aksesoris</option><option value="medicine">Obat</option><option value="oil">Minyak</option><option value="operational">Operasional</option></select>
+<select class="select" id="purchaseStatus"><option value="">Semua status</option><option value="used">Sudah dipakai</option><option value="pending">Belum dipakai</option><option value="issue">Perlu perhatian</option><option value="void">Dibatalkan</option></select>
+<button class="btn" id="purchaseRefresh">↻ Refresh</button>
+</div>
+<div class="table-wrap"><table class="table" style="min-width:1180px"><thead><tr><th>Nota</th><th>Tanggal / Shift</th><th>Pemegang</th><th>Jenis</th><th>Total Nota</th><th>Input Karyawan</th><th>Status</th><th>Purchasing</th><th>Update</th><th>Detail</th></tr></thead><tbody id="purchaseBody"></tbody></table></div>
+</div>
 </section>
 
 <section class="view" id="view-review">
@@ -193,6 +214,7 @@
 </main>
 </div>
 
+<div class="modal" id="purchaseModal"><div class="modal-card" style="width:min(980px,100%)"><div class="modal-head"><h3 id="purchaseModalTitle">Detail Input Belanja</h3><button class="btn" id="purchaseModalClose">Tutup ✕</button></div><div class="notice blue" id="purchaseModalInfo">—</div><div class="grid two" style="margin-bottom:14px"><div class="card section-card"><h4>Nota Purchasing</h4><div id="purchaseModalNote"></div></div><div class="card section-card"><h4>Bukti Nota</h4><div id="purchasePhotoState" class="notice blue" style="margin:0">Memuat bila tersedia…</div><img id="purchasePhotoImg" alt="Foto nota" style="display:none;max-width:100%;max-height:360px;border-radius:12px;margin:auto"></div></div><div class="table-wrap"><table class="table" style="min-width:760px"><thead><tr><th>Item / Komponen</th><th>Qty</th><th>Harga/Modal</th><th>Subtotal</th></tr></thead><tbody id="purchaseDetailBody"></tbody></table></div></div></div>
 <div class="modal" id="returnModal"><div class="modal-card"><div class="modal-head"><h3>Kembalikan Hitungan ke Karyawan</h3><button class="btn" id="returnClose">Tutup ✕</button></div><div class="notice amber" id="returnInfo">—</div><div class="field"><label>Alasan / Temuan Admin — Wajib</label><textarea class="textarea" id="returnReason" placeholder="Contoh: Selisih minus terlalu besar. Periksa kembali Cash, QRIS BCA, dan transaksi transfer."></textarea></div><div class="actions" style="margin-top:12px"><button class="btn danger" id="returnConfirm">Kembalikan untuk Perbaikan</button></div></div></div>
 <div class="modal" id="capitalModal"><div class="modal-card" style="width:min(900px,100%)"><div class="modal-head"><h3 id="capitalModalTitle">Detail Modal</h3><button class="btn" id="capitalModalClose">Tutup ✕</button></div><div class="notice blue" id="capitalModalInfo">—</div><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>#</th><th>Kategori Modal</th><th>Nilai</th><th>Status</th></tr></thead><tbody id="capitalDetailBody"></tbody></table></div></div></div>
 <div class="modal" id="debtModal"><div class="modal-card" style="width:min(900px,100%)"><div class="modal-head"><h3 id="debtModalTitle">Detail Hutang</h3><button class="btn" id="debtModalClose">Tutup ✕</button></div><div class="notice blue" id="debtModalInfo">—</div><div class="table-wrap"><table class="table" style="min-width:720px"><thead><tr><th>Waktu/Shift</th><th>Jenis Transaksi</th><th>Nominal</th><th>Keterangan</th></tr></thead><tbody id="debtDetailBody"></tbody></table></div></div></div>
@@ -201,7 +223,7 @@
 <script>
 (function(){
 'use strict';
-const SUM='ka_admin_shift_summaries_v1',ATT='ka_attendance_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81',PNOTES='ka_v29_purchasing_notes',ACCOUNTS='ka_admin_accounts_v59',BIG=50000;
+const SUM='ka_admin_shift_summaries_v1',ATT='ka_attendance_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81',PNOTES='ka_v29_purchasing_notes',USED='ka_v29_used_notes',ACCOUNTS='ka_admin_accounts_v59',SHIFT_PREFIX='ka_shift_autosave_v53_',OIL_PREFIX='ka_oil_purchase_v75_',BIG=50000;
 const $=id=>document.getElementById(id);
 const read=(k,f)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}};
 const write=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));try{window.dispatchEvent(new StorageEvent('storage',{key:k,newValue:JSON.stringify(v)}))}catch(_){}};
@@ -351,6 +373,102 @@ function openDebtDetail(key){
   const ev=x.events.slice().sort((a,b)=>a.order-b.order);
   $('debtDetailBody').innerHTML=ev.length?ev.map(e=>'<tr><td>'+esc(dateLabel(e.date))+' • '+esc(e.shift||'—')+'</td><td>'+(e.kind==='payment'?'<span class="status ok">Pembayaran</span>':'<span class="status warn">'+esc(e.type)+'</span>')+'</td><td class="money '+(e.kind==='payment'?'green':'red')+'"><b>'+(e.kind==='payment'?'- ':'+ ')+fmt(e.amount)+'</b></td><td>'+esc(e.note||'—')+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">Belum ada detail.</td></tr>';
   $('debtModal').classList.add('open');
+}
+
+
+const PURCHASE_TYPES={package:'Paket',cigarette:'Rokok',accessory:'Aksesoris',medicine:'Obat',oil:'Minyak',operational:'Operasional'};
+function purchasingNotes(){const a=read(PNOTES,[]);return Array.isArray(a)?a:[]}
+function usedNotes(){const x=read(USED,{});return x&&typeof x==='object'?x:{}}
+function shiftPayload(id){return read(SHIFT_PREFIX+String(id||''),null)}
+function formMoney(payload,id){
+  const v=payload?.forms?.[id]?.value;
+  if(v==null||v==='')return 0;
+  return Number(String(v).replace(/[^0-9-]/g,''))||0;
+}
+function purchaseSummaryForNote(note){
+  const usage=usedNotes()[note.id]||null,shift=shiftPayload(note.shiftId)||{},summary=summaries().find(x=>x.shiftId===note.shiftId)||null;
+  let input=0,items=[],source='Belum ada input Karyawan';
+  if(note.type==='package'){
+    const rows=Array.isArray(shift?.catalogs?.pkg)?shift.catalogs.pkg:[];
+    items=rows.filter(x=>Number(x.purchaseQty||0)>0).map(x=>{const qty=Number(x.purchaseQty||0),base=Number(x.activeBase||x.base||0);return {name:x.key||x.name||'Paket',qty,unit:base,subtotal:qty*base}});
+    input=Number(usage?.validatedTotal);
+    if(!Number.isFinite(input))input=items.reduce((s,x)=>s+x.subtotal,0);
+    source='Total detail Paket';
+  }else if(note.type==='cigarette'){
+    const rows=Array.isArray(shift?.catalogs?.cig)?shift.catalogs.cig:[];
+    items=rows.filter(x=>Number(x.purchaseQty||0)>0).map(x=>{const qty=Number(x.purchaseQty||0),subtotal=Number(x.purchaseCost||0),unit=qty?subtotal/qty:0;return {name:x.key||x.name||'Rokok',qty,unit,subtotal}});
+    input=Number(usage?.validatedTotal);
+    if(!Number.isFinite(input))input=items.reduce((s,x)=>s+x.subtotal,0);
+    source='Total detail Rokok';
+  }else if(note.type==='accessory'){
+    input=formMoney(shift,'accBuyAmount');
+    if(!input&&usage)input=Number(note.amount||0);
+    items=[{name:'Belanja Aksesoris (nominal nota terkunci)',qty:1,unit:input||Number(note.amount||0),subtotal:input||Number(note.amount||0)}];
+    source='Nominal Nota Purchasing';
+  }else if(note.type==='medicine'){
+    input=formMoney(shift,'medBuyAmount');
+    if(!input&&usage)input=Number(note.amount||0);
+    items=[{name:'Belanja Obat (nominal nota terkunci)',qty:1,unit:input||Number(note.amount||0),subtotal:input||Number(note.amount||0)}];
+    source='Nominal Nota Purchasing';
+  }else if(note.type==='oil'){
+    const oil=read(OIL_PREFIX+String(note.shiftId||''),[]);
+    const row=(Array.isArray(oil)?oil:[]).find(x=>String(x.noteId||'')===String(note.id));
+    input=Number(row?.amount||0);
+    if(!input&&usage)input=Number(note.amount||0);
+    items=[{name:row?.description||'Belanja Minyak (nominal nota terkunci)',qty:1,unit:input||Number(note.amount||0),subtotal:input||Number(note.amount||0)}];
+    source='Nominal Nota Purchasing';
+  }else if(note.type==='operational'){
+    const row=(summary?.operationalEntries||[]).find(x=>String(x.receipt||'').includes(String(note.id)));
+    input=Number(row?.amount||0);
+    if(!input&&usage)input=Number(note.amount||0);
+    items=[{name:row?.note||note.description||note.categoryLabel||'Operasional',qty:1,unit:input||Number(note.amount||0),subtotal:input||Number(note.amount||0)}];
+    source='Input Operasional';
+  }
+  const amount=Number(note.amount||0),used=!!usage,voided=note.status==='void';
+  let state='pending',label='Belum Dipakai',cls='warn';
+  if(voided){state='void';label='Dibatalkan';cls='bad'}
+  else if(used){
+    if((note.type==='package'||note.type==='cigarette') && !Number.isFinite(Number(usage.validatedTotal))){
+      state='issue';label='Dipakai • Validasi Lama';cls='bad';
+    }else if(input>0&&Math.round(input)!==Math.round(amount)){
+      state='issue';label='SELISIH';cls='bad';
+    }else{
+      state='used';label='Sesuai / Dipakai';cls='ok';
+    }
+  }
+  return {note,usage,shift,summary,input,items,amount,source,state,label,cls};
+}
+function purchaseRows(){return purchasingNotes().map(purchaseSummaryForNote).sort((a,b)=>String(b.note.createdAt||'').localeCompare(String(a.note.createdAt||'')))}
+function renderPurchases(){
+  const all=purchaseRows(),q=String($('purchaseSearch')?.value||'').toLowerCase(),ty=$('purchaseType')?.value||'',st=$('purchaseStatus')?.value||'';
+  const rows=all.filter(x=>(!ty||x.note.type===ty)&&(!st||x.state===st)&&(!q||[x.note.id,x.note.shiftLabel,x.summary?.holder,x.note.createdByName,PURCHASE_TYPES[x.note.type],x.note.description].join(' ').toLowerCase().includes(q)));
+  $('purchaseKpiTotal').textContent=String(all.length);
+  $('purchaseKpiUsed').textContent=String(all.filter(x=>x.state==='used').length);
+  $('purchaseKpiPending').textContent=String(all.filter(x=>x.state==='pending').length);
+  $('purchaseKpiIssue').textContent=String(all.filter(x=>x.state==='issue').length);
+  $('purchaseBody').innerHTML=rows.length?rows.map(x=>{
+    const holder=x.summary?.holder||String(x.note.shiftLabel||'').split('•').pop()?.trim()||'—';
+    const date=String(x.note.shiftId||'').slice(0,10);
+    return '<tr><td><b>'+esc(x.note.id)+'</b></td><td>'+esc(dateLabel(date))+'<div style="font-size:10px;color:var(--muted)">'+esc(x.summary?.shift||x.note.shiftLabel||'—')+'</div></td><td><b>'+esc(holder)+'</b></td><td>'+esc(PURCHASE_TYPES[x.note.type]||x.note.type)+'</td><td class="money"><b>'+fmt(x.amount)+'</b></td><td class="money '+(x.state==='issue'?'red':x.state==='used'?'green':'')+'"><b>'+(x.input?fmt(x.input):'—')+'</b><div style="font-size:10px;color:var(--muted)">'+esc(x.source)+'</div></td><td><span class="status '+x.cls+'">'+esc(x.label)+'</span></td><td>'+esc(x.note.createdByName||'—')+'</td><td>'+when(x.note.createdAt||x.summary?.savedAt)+'</td><td><button class="btn" data-purchase-detail="'+esc(x.note.id)+'">Detail</button></td></tr>';
+  }).join(''):'<tr><td colspan="10" class="empty">Belum ada data belanja sesuai filter.</td></tr>';
+  document.querySelectorAll('[data-purchase-detail]').forEach(b=>b.onclick=()=>openPurchaseDetail(b.dataset.purchaseDetail));
+}
+async function openPurchaseDetail(id){
+  const x=purchaseRows().find(r=>String(r.note.id)===String(id));if(!x)return;
+  $('purchaseModalTitle').textContent='Detail Belanja • '+x.note.id;
+  $('purchaseModalInfo').innerHTML='<b>'+esc(PURCHASE_TYPES[x.note.type]||x.note.type)+'</b> • '+esc(x.note.shiftLabel||x.note.shiftId||'—')+' • Status: <span class="status '+x.cls+'">'+esc(x.label)+'</span>';
+  $('purchaseModalNote').innerHTML='<div class="summary-list"><div class="summary-row"><span>Total Nota</span><b>'+fmt(x.amount)+'</b></div><div class="summary-row"><span>Input Karyawan</span><b class="'+(x.state==='issue'?'red':'green')+'">'+(x.input?fmt(x.input):'—')+'</b></div><div class="summary-row"><span>Dibuat oleh</span><b>'+esc(x.note.createdByName||'—')+'</b></div><div class="summary-row"><span>Waktu</span><b>'+esc(when(x.note.createdAt))+'</b></div></div>';
+  $('purchaseDetailBody').innerHTML=x.items.length?x.items.map(r=>'<tr><td><b>'+esc(r.name)+'</b></td><td>'+Number(r.qty||0).toLocaleString('id-ID')+'</td><td class="money">'+fmt(r.unit)+'</td><td class="money"><b>'+fmt(r.subtotal)+'</b></td></tr>').join(''):'<tr><td colspan="4" class="empty">Belum ada detail item dari Karyawan.</td></tr>';
+  const state=$('purchasePhotoState'),img=$('purchasePhotoImg');img.style.display='none';img.removeAttribute('src');
+  if(!x.note.hasPhoto){state.style.display='block';state.textContent='Nota ini tidak memiliki foto.'}
+  else{
+    state.style.display='block';state.textContent='Memuat foto nota dari penyimpanan bersama…';
+    try{
+      const url=await window.KASharedDBV1?.getMediaUrl?.(x.note.photoRef||x.note.id);
+      if(url){img.src=url;img.style.display='block';state.style.display='none'}else state.textContent='Foto belum tersedia pada penyimpanan bersama.';
+    }catch(_){state.textContent='Foto gagal dimuat.'}
+  }
+  $('purchaseModal').classList.add('open');
 }
 
 function corrBadge(c){if(!c)return '<span class="status info">Belum Review</span>';if(c.status==='returned')return '<span class="status bad">Dikembalikan</span>';if(c.status==='resubmitted')return '<span class="status warn">Dikirim Ulang</span>';if(c.status==='resolved')return '<span class="status ok">Selesai</span>';return '<span class="status info">'+esc(c.status)+'</span>'}
@@ -510,17 +628,17 @@ function renderAudit(){
   $('auditList').innerHTML=rows.length?rows.map(x=>'<div class="audit-item"><div class="audit-time">'+esc(new Date(x.ts).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</div><div class="audit-actor">'+esc(x.actor)+'</div><div class="audit-desc">'+esc(x.desc)+'</div><div class="audit-source"><span class="status '+(x.source==='Admin'?'bad':x.source==='Purchasing'?'warn':x.source==='Karyawan'?'ok':'info')+'">'+esc(x.source)+'</span></div></div>').join(''):'<div class="empty">Belum ada aktivitas yang sesuai filter.</div>';
 }
 
-function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderReview();renderAttendance();renderAccounts();renderReport();renderAudit()}
+function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderPurchases();renderReview();renderAttendance();renderAccounts();renderReport();renderAudit()}
 function show(v){
-  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',review:'review',attendance:'people',accounts:'people',reports:'reports',audit:'reports'};
-  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Keuangan / Selisih & Minus',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',review:'Cek Inputan',attendance:'Karyawan & Akses / Kehadiran',accounts:'Karyawan & Akses / Akun & Role',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
+  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',purchases:'purchases',review:'review',attendance:'people',accounts:'people',reports:'reports',audit:'reports'};
+  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Keuangan / Selisih & Minus',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',purchases:'Pemantauan Input Belanja',review:'Cek Inputan',attendance:'Karyawan & Akses / Kehadiran',accounts:'Karyawan & Akses / Akun & Role',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
   document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.group===groups[v]));
   document.querySelectorAll('.group-tabs [data-go]').forEach(x=>x.classList.toggle('active',x.dataset.go===v));
   $('crumbView').textContent=crumbs[v]||v;
   $('side').classList.remove('mobile-open');
 }
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};window.addEventListener('storage',e=>{if([SUM,ATT,CORR,PNOTES,ACCOUNTS].includes(e.key))renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',renderAll);window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){bind();renderAll()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
