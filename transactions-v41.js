@@ -326,6 +326,20 @@
   }
   function refreshPurchaseUI(){ ['accessory','medicine'].forEach(type=>{ refreshSelect(type); renderPurchaseList(type); refreshPurchaseSummary(type); }); }
 
+  function replaceShiftPurchases(shiftId,payload){
+    const sid=String(shiftId||'');
+    if(!sid || !payload || typeof payload!=='object') return false;
+    ['accessory','medicine'].forEach(type=>{
+      const keep=(purchases[type]||[]).filter(x=>String(x?.shiftId||'')!==sid);
+      const incoming=Array.isArray(payload[type])?payload[type].filter(x=>String(x?.shiftId||sid)===sid).map(x=>({...x,shiftId:sid})):[];
+      purchases[type]=keep.concat(incoming);
+    });
+    savePurchases();
+    refreshPurchaseUI();
+    updateAutoModals();
+    return true;
+  }
+
   function makeModalAutomatic(inputId,label,sourceText){
     const input=$(inputId);
     if(!input) return;
@@ -364,6 +378,7 @@
         return true;
       },
       refresh:refreshPurchaseUI,
+      replaceShiftPurchases,
       updateModal:updateAutoModals,
       refreshSales(){
         renderSales('aksesoris','Aksesoris','acc');
