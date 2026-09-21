@@ -149,6 +149,16 @@ async function clickByText(page, selector, wanted){
     assert(noteOptions.pkg.includes(packageNote.id),'Paket note did not arrive in Karyawan selector');
     assert(noteOptions.op.includes(opNote.id),'Operational note did not arrive in Karyawan selector');
 
+    // selected note with ZERO detail => must not be consumed.
+    await page.evaluate(noteId=>{
+      document.getElementById('pkgNoteV29').value=noteId;
+      pkgCatalog.forEach(p=>{p.purchaseQty=0;});
+    },packageNote.id);
+    await page.evaluate(()=>document.getElementById('pkgPreviewTopBtn')?.click()); await sleep(250);
+    let used=await ls(page,'ka_v29_used_notes')||{};
+    assert(!used[packageNote.id],'Paket note was consumed even though no detail purchase existed');
+    pass('Karyawan blocks selected Purchasing note when Paket detail total is zero');
+
     // mismatch first => must not mark used.
     await page.evaluate(noteId=>{
       document.getElementById('pkgNoteV29').value=noteId;
@@ -156,7 +166,7 @@ async function clickByText(page, selector, wanted){
       p.purchaseQty=1;p.activeBase=7050;p.activeSell=Math.max(Number(p.activeSell||p.sell||0),8050);
     },packageNote.id);
     await page.evaluate(()=>document.getElementById('pkgPreviewTopBtn')?.click()); await sleep(350);
-    let used=await ls(page,'ka_v29_used_notes')||{};
+    used=await ls(page,'ka_v29_used_notes')||{};
     assert(!used[packageNote.id],'mismatched Paket total incorrectly accepted');
 
     // exact total => allowed and note becomes used. Minimum margin exactly Rp1.000.
