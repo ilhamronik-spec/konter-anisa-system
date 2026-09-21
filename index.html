@@ -2679,5 +2679,126 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v75.js?build=80"></script>
 <script src="./transactions-v79.js?build=80"></script>
 <script src="./runtime-lock-v77.js?build=80"></script>
+
+<style id="ka-admin-bridge-style-v1">
+#kaAttendanceOverlay,#kaCorrectionOverlay{position:fixed;inset:0;z-index:26000;background:rgba(8,8,11,.74);backdrop-filter:blur(6px);display:none;padding:22px;overflow:auto}
+#kaAttendanceOverlay.open,#kaCorrectionOverlay.open{display:block}
+.ka-ext-shell{max-width:980px;margin:30px auto;background:#fff;border:1px solid #d8c5e8;border-radius:20px;padding:20px;box-shadow:0 30px 90px rgba(30,10,45,.35)}
+.ka-ext-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.ka-ext-head h3{margin:0}.ka-ext-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ka-ext-card{border:1px solid #ebe4f1;border-radius:14px;padding:14px;background:#fff}
+.ka-ext-card small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:800}.ka-ext-card b{display:block;margin-top:6px;font-size:16px}
+#kaAdminCorrectionBanner{display:none;margin:0 0 14px;padding:13px 15px;border:1px solid #fecaca;background:#fff2f3;border-radius:13px;color:#991b1b}
+#kaAdminCorrectionBanner.show{display:block}
+#kaAdminCorrectionBanner .ka-corr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ka-ext-table{width:100%;border-collapse:collapse}.ka-ext-table th,.ka-ext-table td{padding:10px;border-bottom:1px solid #eee7f2;text-align:left;font-size:12px}.ka-ext-table th{font-size:10px;text-transform:uppercase;color:#6d6177;background:#faf7fd}
+@media(max-width:700px){.ka-ext-grid{grid-template-columns:1fr}#kaAttendanceOverlay,#kaCorrectionOverlay{padding:8px}.ka-ext-shell{padding:14px;margin:10px auto}}
+</style>
+<script id="ka-admin-bridge-v1">
+(function(){
+'use strict';
+const ATT='ka_attendance_v1',SUM='ka_admin_shift_summaries_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81';
+const $=id=>document.getElementById(id);
+const read=(k,f)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}};
+const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));window.dispatchEvent(new StorageEvent('storage',{key:k,newValue:JSON.stringify(v)}));return true}catch(_){return false}};
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
+function currentShift(){
+  try{
+    const s=window.KARegulationsV29?.activeShift;
+    if(s?.id)return {id:String(s.id),label:String(s.label||s.id),date:String(s.date||''),shift:String(s.shift||''),holder:String(s.holder||'')};
+  }catch(_){}
+  return null;
+}
+function currentEmployee(){
+  try{
+    const ses=read(AUTH,null),id=String(ses?.accountId||'');
+    if(id&&window.KAAdminAccounts?.list){
+      const a=window.KAAdminAccounts.list().find(x=>x.id===id&&x.role==='employee');
+      if(a)return {id:a.id,name:a.name};
+    }
+  }catch(_){}
+  const name=String(document.querySelector('.topbar .user b')?.textContent||currentShift()?.holder||'Karyawan').trim();
+  return {id:'employee-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),name};
+}
+function today(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'})}
+function attendanceList(){const a=read(ATT,[]);return Array.isArray(a)?a:[]}
+function attendanceRecord(){
+  const e=currentEmployee(),d=today();
+  return attendanceList().find(x=>x.employeeId===e.id&&x.date===d)||null;
+}
+function saveAttendance(kind){
+  const e=currentEmployee(),s=currentShift(),d=today(),arr=attendanceList();
+  let rec=arr.find(x=>x.employeeId===e.id&&x.date===d);
+  if(!rec){rec={id:'att-'+d+'-'+e.id,date:d,employeeId:e.id,employeeName:e.name,shiftId:s?.id||'',shiftLabel:s?.label||'',checkIn:null,checkOut:null};arr.push(rec)}
+  const now=new Date().toISOString();
+  if(kind==='in'){
+    if(rec.checkIn)return window.uiToast?.('Absen masuk hari ini sudah tercatat.','info');
+    rec.checkIn=now;
+  }else{
+    if(!rec.checkIn)return window.uiToast?.('Absen masuk belum dilakukan.','warn');
+    if(rec.checkOut)return window.uiToast?.('Absen pulang hari ini sudah tercatat.','info');
+    rec.checkOut=now;
+  }
+  rec.updatedAt=now;write(ATT,arr);renderAttendance();window.uiToast?.(kind==='in'?'Absen masuk tercatat.':'Absen pulang tercatat.','ok');
+}
+function time(v){if(!v)return '—';try{return new Date(v).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(_){return '—'}}
+function ensureAttendanceUI(){
+  if($('kaAttendanceOverlay'))return;
+  const box=document.createElement('div');box.id='kaAttendanceOverlay';
+  box.innerHTML='<div class="ka-ext-shell"><div class="ka-ext-head"><div><h3>Jadwal & Kehadiran</h3><div style="font-size:11px;color:var(--muted);margin-top:4px">Absensi tersimpan untuk dashboard Admin.</div></div><button class="btn" id="kaAttClose" type="button">Tutup ✕</button></div><div class="ka-ext-grid"><div class="ka-ext-card"><small>Karyawan</small><b id="kaAttName">—</b></div><div class="ka-ext-card"><small>Shift Aktif</small><b id="kaAttShift">—</b></div><div class="ka-ext-card"><small>Absen Masuk</small><b id="kaAttIn">—</b></div><div class="ka-ext-card"><small>Absen Pulang</small><b id="kaAttOut">—</b></div></div><div class="actions" style="margin-top:15px"><button class="btn primary" id="kaAttInBtn" type="button">Absen Masuk</button><button class="btn" id="kaAttOutBtn" type="button">Absen Pulang</button></div></div>';
+  document.body.appendChild(box);
+  $('kaAttClose').onclick=()=>box.classList.remove('open');
+  $('kaAttInBtn').onclick=()=>saveAttendance('in');
+  $('kaAttOutBtn').onclick=()=>saveAttendance('out');
+  box.addEventListener('click',e=>{if(e.target===box)box.classList.remove('open')});
+}
+function renderAttendance(){
+  ensureAttendanceUI();const e=currentEmployee(),s=currentShift(),r=attendanceRecord();
+  $('kaAttName').textContent=e.name;$('kaAttShift').textContent=s?.label||'Tidak ada shift aktif';$('kaAttIn').textContent=time(r?.checkIn);$('kaAttOut').textContent=time(r?.checkOut);
+  $('kaAttInBtn').disabled=!!r?.checkIn;$('kaAttOutBtn').disabled=!r?.checkIn||!!r?.checkOut;
+}
+function openAttendance(){renderAttendance();$('kaAttendanceOverlay').classList.add('open')}
+function snapshot(){
+  const s=currentShift();if(!s||!window.KABalanceV44?.balanceSnapshot)return;
+  try{
+    const b=window.KABalanceV44.balanceSnapshot(false);
+    const op=window.KABalanceV44.piutangBreakdown?.()?.operasional??window.KABalanceV44.operationalTotal?.()??0;
+    const map=read(SUM,{});
+    map[s.id]={shiftId:s.id,shiftLabel:s.label,date:s.date,shift:s.shift,holder:s.holder,margin:Number(b.margin||0),balance:Number(b.balance||0),minus:Math.min(0,Number(b.balance||0)),operational:Number(op||0),complete:!!b.complete,savedAt:Date.now()};
+    write(SUM,map);
+  }catch(e){console.warn('Admin summary snapshot skipped',e)}
+}
+function corrections(){const a=read(CORR,[]);return Array.isArray(a)?a:[]}
+function activeCorrection(){
+  const s=currentShift(),e=currentEmployee();if(!s)return null;
+  return corrections().filter(x=>x.shiftId===s.id&&(!x.employeeId||x.employeeId===e.id)&&['returned','resubmitted'].includes(x.status)).sort((a,b)=>String(b.requestedAt||'').localeCompare(String(a.requestedAt||'')))[0]||null;
+}
+function ensureCorrectionBanner(){
+  if($('kaAdminCorrectionBanner'))return;
+  const content=document.querySelector('.content');if(!content)return;
+  const b=document.createElement('div');b.id='kaAdminCorrectionBanner';content.prepend(b);
+}
+function renderCorrection(){
+  ensureCorrectionBanner();const b=$('kaAdminCorrectionBanner'),r=activeCorrection();if(!b)return;
+  if(!r){b.classList.remove('show');b.innerHTML='';return}
+  const status=r.status==='resubmitted'?'Sudah dikirim ulang — menunggu Admin':'Dikembalikan Admin untuk diperbaiki';
+  b.classList.add('show');
+  b.innerHTML='<b>⚠ '+esc(status)+'</b><div style="margin-top:5px">'+esc(r.reason||'Periksa kembali inputan shift ini.')+'</div><div style="font-size:10px;margin-top:5px">Dikirim '+esc(new Date(r.requestedAt).toLocaleString('id-ID'))+'</div><div class="ka-corr-actions">'+(r.status==='returned'?'<button class="btn primary" id="kaCorrOpen" type="button">Buka Hitungan untuk Perbaikan</button><button class="btn" id="kaCorrResubmit" type="button">Kirim Ulang ke Admin</button>':'')+'</div>';
+  $('kaCorrOpen')?.addEventListener('click',()=>{try{window.showStep?.(0)}catch(_){};window.scrollTo({top:0,behavior:'smooth'});window.uiToast?.('Silakan perbaiki inputan. Data lama tidak dihapus.','info')});
+  $('kaCorrResubmit')?.addEventListener('click',()=>{const arr=corrections(),x=arr.find(a=>a.id===r.id);if(!x)return;x.status='resubmitted';x.resubmittedAt=new Date().toISOString();write(CORR,arr);snapshot();renderCorrection();window.uiToast?.('Hitungan dikirim ulang ke Admin.','ok')});
+}
+function bindSchedule(){
+  const nav=$('navSchedule');if(!nav||nav.dataset.kaAttBound==='1')return;nav.dataset.kaAttBound='1';
+  nav.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();openAttendance()},true);
+}
+function install(){
+  ensureAttendanceUI();ensureCorrectionBanner();bindSchedule();renderAttendance();renderCorrection();snapshot();
+  setInterval(()=>{snapshot();renderCorrection();},3000);
+  window.addEventListener('storage',e=>{if([ATT,CORR].includes(e.key)){renderAttendance();renderCorrection()}});
+  window.KAAdminBridgeV1={snapshot,openAttendance,renderCorrection};
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
 </body>
 </html>
