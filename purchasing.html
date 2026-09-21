@@ -352,7 +352,7 @@ body{
 <div class="side-foot"><b>SIMULASI PURCHASING V83</b><br>Workflow Karyawan BUILD V80 tidak diubah. Nota memakai penyimpanan browser yang sama.</div>
 </aside>
 <main class="main">
-<div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Purchasing / <span id="crumbView">Dashboard</span> <span class="status ok" style="margin-left:8px">V83 • V80 WORKFLOW LOCKED</span></span></div><div class="user"><div style="text-align:right"><b id="activeUserName" style="font-size:12px">—</b><div style="font-size:10px;color:var(--muted)">Purchasing • Simulasi</div></div><div class="avatar" id="activeAvatar">PU</div></div></div>
+<div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Purchasing / <span id="crumbView">Dashboard</span> <span class="status ok" style="margin-left:8px">V80 KARYAWAN • LOCKED</span></span></div><div class="user"><div style="text-align:right"><b id="activeUserName" style="font-size:12px">—</b><div style="font-size:10px;color:var(--muted)">Purchasing • Simulasi</div></div><div class="avatar" id="activeAvatar">PU</div></div></div>
 <div class="content">
 <div class="card context" id="autoContextCard"><div class="context-grid">
 <div><label style="display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#718096;font-weight:800;margin-bottom:6px">Akun Login</label><b id="autoAccount">—</b><div class="context-note">Akun pribadi dari sesi login. Tidak dapat dipilih dari halaman Purchasing.</div></div>
@@ -537,5 +537,6 @@ function init(){bind();render();try{openDb()}catch(_){}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+<script src="./purchasing-lock-v83.js?build=83"></script>
 </body>
 </html>
