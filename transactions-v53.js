@@ -207,11 +207,8 @@
           c._openingBase=Number(rec.openingBase??c.base??0);
           if(Number.isFinite(Number(rec.activeBase))) c.activeBase=Number(rec.activeBase);
           else {
-            const openingUnits=Number(c.display||0)+Number(c.warehouse||0);
-            const totalUnits=openingUnits+Number(c.purchaseQty||0);
-            c.activeBase=totalUnits>0
-              ? ((openingUnits*Number(c._openingBase||0))+Number(c.purchaseCost||0))/totalUnits
-              : Number(c._openingBase||0);
+            const q=Number(c.purchaseQty||0),cost=Number(c.purchaseCost||0);
+            c.activeBase=(q>0 && cost>0)?(cost/q):Number(c._openingBase||0);
           }
         });
       }
