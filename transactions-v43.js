@@ -182,14 +182,15 @@
         const end=raw==='' ? 0 : Math.min(avail,Math.max(0,Number(raw)||0));
         const sold=Math.max(0,avail-end);
         const warehouse=Number(String(whEl?.textContent||'').replace(/[^\d.-]/g,''))||0;
-        const hasActiveBase=Number.isFinite(Number(c.activeBase)) && Number(c.activeBase)>0;
-        const base=hasActiveBase?Number(c.activeBase):Number(c.base||0), sell=Number(c.sell||0);
+        const activeBase=Number(c.activeBase ?? c.base ?? 0);
+        const openingBase=Number(c._openingBase ?? c.base ?? activeBase);
+        const base=Number.isFinite(activeBase)?activeBase:openingBase, sell=Number(c.sell||0);
         total+=(end+warehouse)*base;
         margin+=sold*(sell-base);
-        // V80+: actual invoice cost is absorbed into the weighted activeBase.
-        // Keep legacy variance only for old snapshots that do not yet carry activeBase.
-        const q=Number(c.purchaseQty||0), cost=Number(c.purchaseCost||0);
-        if(!hasActiveBase && q>0 && cost>0) selisih+=cost-(q*base);
+        // Sama seperti Paket: jika harga dasar baru berbeda dari harga dasar awal,
+        // perubahan nilai pada stok lama dinetralkan melalui Selisih Rokok.
+        const openingUnits=Number(c.display||0)+Number(c.warehouse||0);
+        selisih+=openingUnits*(openingBase-base);
       });
       return {complete,total,margin,selisih};
     } catch(_) { return {complete:false,total:0,margin:0,selisih:0}; }
@@ -457,9 +458,12 @@
     tests.push(['1-day balanced simulation',eq(pureBalance({closing:126140299,opening:125870299,margin:445000,minyak:125000,belanjaMinyak:300000}),0)]);
     tests.push(['oil purchase Belanja Minyak neutralizes oil-stock cash outflow',eq(pureBalance({closing:90,opening:100,margin:0,minyak:0,belanjaMinyak:10}),0)]);
     tests.push(['package repricing neutralized',eq(pureBalance({closing:110,opening:100,selisihPaket:-10}),0)]);
-    tests.push(['legacy cigarette purchase variance still supported',eq(pureBalance({closing:95,opening:100,selisihRokok:5}),0)]);
-    const oldQty=70,oldBase=16500,buyQty=10,buyCost=200000,weighted=((oldQty*oldBase)+buyCost)/(oldQty+buyQty);
-    tests.push(['weighted cigarette modal absorbs actual purchase',eq((oldQty+buyQty)*weighted,(oldQty*oldBase)+buyCost)]);
+    tests.push(['cigarette repricing neutralized',eq(pureBalance({closing:110,opening:100,selisihRokok:-10}),0)]);
+    const oldQty=70,oldBase=16500,buyQty=10,newBase=20000;
+    const repricedClosing=(oldQty+buyQty)*newBase;
+    const cashOut=buyQty*newBase;
+    const selisih=oldQty*(oldBase-newBase);
+    tests.push(['cigarette purchase uses new base + repricing correction',eq(repricedClosing-cashOut+selisih,oldQty*oldBase)]);
     const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
     tests.push(['ACC/Obat shift isolation',scoped.length===2 && scoped.reduce((s,x)=>s+Number(x.amount||0),0)===300]);
     // Regression: Belanja Minyak tetap terpisah dari Operasional normal.
