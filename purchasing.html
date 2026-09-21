@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="ka-build" content="82">
+<meta name="ka-build" content="83">
 <title>Konter Anisa — Portal Purchasing</title>
 <style>
 :root{--ink:#17131d;--muted:#746d80;--line:#e9e3ef;--bg:#f8f7fb;--purple:#8b5cf6;--green:#15945f;--amber:#d97706;--red:#d9363e;--shadow:0 12px 34px rgba(67,35,92,.09)}
@@ -19,6 +19,323 @@
 .modal{position:fixed;inset:0;background:rgba(8,8,11,.72);z-index:30000;display:none;padding:24px;overflow:auto}.modal.open{display:grid;place-items:center}.modal-card{width:min(900px,100%);background:#fff;border-radius:20px;padding:18px}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal img{display:block;max-width:100%;max-height:72vh;margin:auto;border-radius:12px}.toast{position:fixed;right:18px;bottom:18px;z-index:40000;max-width:390px;padding:12px 14px;border-radius:12px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}.toast.info{background:#eff6ff;color:#1d4ed8}.toast.ok{background:#f0fdf4;color:#15803d}.toast.warn{background:#fffbeb;color:#b45309}.toast.bad{background:#fef2f2;color:#b91c1c}.mobile-menu{display:none}
 @media(max-width:1100px){.app{grid-template-columns:1fr}.side{position:fixed;left:0;top:0;bottom:0;width:268px;transform:translateX(-105%);transition:.2s;z-index:1000}.side.mobile-open{transform:translateX(0)}.mobile-menu{display:inline-flex}.kpis{grid-template-columns:repeat(2,1fr)}.category-grid{grid-template-columns:repeat(3,1fr)}.two{grid-template-columns:1fr}.context-grid{grid-template-columns:1fr 1fr}.content{padding:20px}}
 @media(max-width:650px){.kpis,.category-grid,.context-grid,.form-grid,.quick,.table-toolbar{grid-template-columns:1fr}.content{padding:15px}.hero{display:block}.hero h2{font-size:23px}.topbar{padding:0 14px}}
+
+/* V83 — PREMIUM PURCHASING UI ONLY. NO BUSINESS LOGIC CHANGES */
+:root{
+  --p83-purple:#7c3aed;
+  --p83-purple-2:#a855f7;
+  --p83-violet-soft:#f7f2ff;
+  --p83-ink:#191524;
+  --p83-muted:#776f82;
+  --p83-line:#ebe5f2;
+  --p83-green:#0f9f6e;
+  --p83-bg:#f8f7fb;
+  --p83-shadow:0 18px 55px rgba(55,34,78,.09);
+}
+body{
+  background:
+    radial-gradient(circle at 88% 0,rgba(168,85,247,.12),transparent 27%),
+    radial-gradient(circle at 18% 18%,rgba(124,58,237,.055),transparent 24%),
+    linear-gradient(180deg,#fcfbff 0%,#f7f5fa 100%) !important;
+}
+.side{
+  background:
+    radial-gradient(circle at 15% 10%,rgba(168,85,247,.24),transparent 26%),
+    linear-gradient(180deg,#08070b 0%,#110b16 54%,#08070b 100%) !important;
+  border-right:1px solid rgba(192,132,252,.18);
+  box-shadow:14px 0 40px rgba(36,17,48,.13);
+}
+.brand{
+  padding:4px 4px 18px;
+  border-bottom:1px solid rgba(255,255,255,.075);
+}
+.logo{
+  width:48px;height:48px;border-radius:15px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.38),0 10px 30px rgba(168,85,247,.22);
+}
+.brand h1{font-size:16px;letter-spacing:.08em}
+.brand small{color:#cfc0dc}
+.nav-title{margin-top:24px;color:#ac93bc}
+.nav{display:grid;gap:5px}
+.nav button{
+  min-height:46px;
+  padding:12px 13px;
+  border:1px solid transparent;
+  border-radius:13px;
+  font-weight:700;
+  transition:.18s ease;
+}
+.nav button:hover{
+  transform:translateX(2px);
+  background:rgba(168,85,247,.09);
+  border-color:rgba(192,132,252,.12);
+}
+.nav button.active{
+  background:linear-gradient(90deg,rgba(126,34,206,.34),rgba(168,85,247,.14)) !important;
+  border-color:rgba(192,132,252,.28) !important;
+  box-shadow:inset 3px 0 0 #c084fc,0 8px 22px rgba(75,34,94,.18);
+}
+.side-foot{
+  border-color:rgba(192,132,252,.18) !important;
+  background:linear-gradient(145deg,rgba(168,85,247,.09),rgba(255,255,255,.03)) !important;
+  color:#d4c6dd !important;
+  box-shadow:0 12px 30px rgba(0,0,0,.12);
+}
+.topbar{
+  height:76px !important;
+  background:rgba(255,255,255,.84) !important;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(231,224,238,.9) !important;
+  box-shadow:0 9px 30px rgba(55,35,75,.05);
+}
+.crumb{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  color:#51495a !important;
+}
+.topbar .status.ok{
+  background:linear-gradient(135deg,#eefcf5,#f0fdf4);
+  border-color:#c4efd9;
+  color:#087443;
+}
+.user{
+  padding:7px 9px 7px 12px;
+  border:1px solid #eee7f4;
+  border-radius:15px;
+  background:rgba(255,255,255,.72);
+}
+.avatar{
+  width:42px;height:42px;
+  border-radius:13px !important;
+  background:linear-gradient(135deg,#ede9fe,#f5d0fe) !important;
+  border:1px solid #ddd6fe;
+  box-shadow:0 7px 16px rgba(124,58,237,.12);
+}
+.content{padding-top:24px !important}
+.card{
+  border-color:var(--p83-line) !important;
+  box-shadow:var(--p83-shadow) !important;
+}
+.context{
+  position:relative;
+  padding:18px !important;
+  border-radius:19px !important;
+  overflow:hidden;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.96),rgba(253,250,255,.96)) !important;
+}
+.context:before{
+  content:"";
+  position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--p83-purple),var(--p83-purple-2));
+}
+.context-grid{
+  gap:12px !important;
+  align-items:stretch;
+}
+.context-grid>div{
+  padding:12px 13px;
+  border:1px solid #eee8f4;
+  border-radius:13px;
+  background:linear-gradient(180deg,#fff,#fcfaff);
+}
+.context-grid>div b{font-size:13px}
+.context-note{color:#82778c !important;line-height:1.45}
+.hero{
+  margin:5px 0 20px !important;
+  padding:18px 20px;
+  border:1px solid #eee7f4;
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 90% 10%,rgba(168,85,247,.12),transparent 34%),
+    linear-gradient(135deg,#fff 0%,#fcf9ff 100%);
+  box-shadow:0 14px 42px rgba(72,43,94,.06);
+}
+.hero h2{
+  font-size:30px !important;
+  letter-spacing:-.035em;
+  color:#17111d;
+}
+.hero p{
+  max-width:760px;
+  font-size:12px !important;
+  line-height:1.55;
+}
+.pill,.status{letter-spacing:.01em}
+.kpis{
+  gap:13px !important;
+}
+.kpi{
+  min-height:122px;
+  border-radius:18px !important;
+  overflow:hidden;
+  position:relative;
+  background:linear-gradient(180deg,#fff,#fdfbff) !important;
+}
+.kpi:after{
+  content:"";
+  position:absolute;right:-28px;top:-28px;
+  width:88px;height:88px;border-radius:50%;
+  background:rgba(168,85,247,.06);
+}
+.kpi strong{
+  font-size:24px !important;
+  letter-spacing:-.025em;
+}
+.kpi small{
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  font-weight:800;
+  color:#8a8094 !important;
+}
+.quick{gap:14px !important}
+.quick .card{
+  border-radius:18px !important;
+  padding:18px !important;
+  transition:.18s ease;
+  background:linear-gradient(180deg,#fff,#fefcff);
+}
+.quick .card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 22px 48px rgba(71,41,93,.12) !important;
+}
+.quick h4{font-size:15px}
+.quick p{min-height:51px}
+.btn{
+  border-radius:11px !important;
+  min-height:38px;
+  transition:.16s ease;
+}
+.btn:hover:not(:disabled){
+  transform:translateY(-1px);
+  box-shadow:0 8px 18px rgba(65,40,83,.08);
+}
+.btn.primary{
+  background:linear-gradient(135deg,#151018,#2a1734) !important;
+  border-color:#7c3aed !important;
+}
+.btn.purple{
+  background:linear-gradient(135deg,#6d28d9,#a855f7) !important;
+  border-color:#8b5cf6 !important;
+  box-shadow:0 10px 24px rgba(124,58,237,.23) !important;
+}
+.notice{
+  border-radius:13px !important;
+}
+.category-grid{gap:11px !important}
+.category{
+  min-height:78px;
+  border-radius:15px !important;
+  padding:15px !important;
+  position:relative;
+  overflow:hidden;
+  transition:.18s ease;
+}
+.category:hover{
+  transform:translateY(-2px);
+  border-color:#c4b5fd !important;
+  box-shadow:0 10px 24px rgba(89,54,112,.08);
+}
+.category.active{
+  background:
+    radial-gradient(circle at 90% 0,rgba(192,132,252,.25),transparent 38%),
+    linear-gradient(135deg,#151019,#31163c) !important;
+  box-shadow:0 14px 30px rgba(83,37,102,.22) !important;
+}
+.category b{font-size:14px !important}
+.form,.summary{
+  border-radius:19px !important;
+  padding:20px !important;
+}
+.form h3,.summary h4{
+  letter-spacing:-.01em;
+}
+.field label{
+  color:#776d82 !important;
+  margin-bottom:7px !important;
+}
+.input,.select{
+  min-height:45px;
+  border-radius:11px !important;
+  background:#fff;
+  border-color:#dfd8e7 !important;
+  transition:.15s ease;
+}
+.input:hover,.select:hover{border-color:#cbbdde !important}
+.input:focus,.select:focus{
+  border-color:#a855f7 !important;
+  box-shadow:0 0 0 4px rgba(168,85,247,.10) !important;
+}
+.money-wrap input{
+  min-height:52px;
+  font-size:20px !important;
+  letter-spacing:.01em;
+}
+.photo-drop{
+  min-height:122px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  border-radius:16px !important;
+  border-width:1.5px !important;
+  background:
+    linear-gradient(180deg,#fdfbff,#faf7fd) !important;
+  transition:.18s ease;
+}
+.photo-drop:hover{
+  border-color:#a855f7 !important;
+  background:#f8f1ff !important;
+  transform:translateY(-1px);
+}
+.photo-drop.has-photo{
+  border-color:#7bdcae !important;
+  background:#f2fbf6 !important;
+}
+.photo-drop b{
+  font-size:13px !important;
+  letter-spacing:.025em;
+}
+.sumrow{
+  padding:11px 0 !important;
+}
+.sumrow span{color:#746b7e}
+.sumrow b{text-align:right}
+.table-card{
+  border-radius:19px !important;
+}
+.table-toolbar{
+  background:linear-gradient(180deg,#fff,#fcfaff);
+  padding:15px !important;
+}
+.table th{
+  padding:12px 11px !important;
+  background:linear-gradient(180deg,#faf7fd,#f5eff9) !important;
+  letter-spacing:.07em !important;
+}
+.table td{padding:13px 11px !important}
+.table tbody tr{transition:.12s ease}
+.table tbody tr:hover td{background:#fcf9ff !important}
+.modal{
+  background:rgba(12,8,15,.74) !important;
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+}
+.modal-card{
+  border:1px solid #d8c5e8;
+  box-shadow:0 35px 90px rgba(25,12,34,.36);
+}
+@media(max-width:1100px){
+  .context-grid>div{min-height:84px}
+}
+@media(max-width:650px){
+  .hero{padding:15px !important;border-radius:16px}
+  .hero h2{font-size:25px !important}
+  .context,.form,.summary{padding:15px !important}
+  .topbar{height:68px !important}
+  .user{padding:5px 6px}
+}
+
 </style>
 </head>
 <body>
@@ -32,10 +349,10 @@
 <button data-view="operational"><span class="dot"></span>Nota Operasional</button>
 <button data-view="history"><span class="dot"></span>Riwayat Nota</button>
 </div>
-<div class="side-foot"><b>SIMULASI PURCHASING V82</b><br>Workflow Karyawan BUILD V80 tidak diubah. Nota memakai penyimpanan browser yang sama.</div>
+<div class="side-foot"><b>SIMULASI PURCHASING V83</b><br>Workflow Karyawan BUILD V80 tidak diubah. Nota memakai penyimpanan browser yang sama.</div>
 </aside>
 <main class="main">
-<div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Purchasing / <span id="crumbView">Dashboard</span> <span class="status ok" style="margin-left:8px">V82 • V80 WORKFLOW LOCKED</span></span></div><div class="user"><div style="text-align:right"><b id="activeUserName" style="font-size:12px">—</b><div style="font-size:10px;color:var(--muted)">Purchasing • Simulasi</div></div><div class="avatar" id="activeAvatar">PU</div></div></div>
+<div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Purchasing / <span id="crumbView">Dashboard</span> <span class="status ok" style="margin-left:8px">V83 • V80 WORKFLOW LOCKED</span></span></div><div class="user"><div style="text-align:right"><b id="activeUserName" style="font-size:12px">—</b><div style="font-size:10px;color:var(--muted)">Purchasing • Simulasi</div></div><div class="avatar" id="activeAvatar">PU</div></div></div>
 <div class="content">
 <div class="card context" id="autoContextCard"><div class="context-grid">
 <div><label style="display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#718096;font-weight:800;margin-bottom:6px">Akun Login</label><b id="autoAccount">—</b><div class="context-note">Akun pribadi dari sesi login. Tidak dapat dipilih dari halaman Purchasing.</div></div>
