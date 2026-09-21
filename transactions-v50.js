@@ -76,11 +76,9 @@
     if(!c) return 0;
     const openingBase=Number(c._openingBase ?? c.base ?? 0);
     if(c._openingBase==null) c._openingBase=openingBase;
-    const openingUnits=num(c.display)+num(c.warehouse);
     const q=num(c.purchaseQty),cost=num(c.purchaseCost);
-    const totalUnits=openingUnits+q;
-    const weighted=totalUnits>0?((openingUnits*openingBase)+cost)/totalUnits:openingBase;
-    c.activeBase=Number.isFinite(weighted)?weighted:openingBase;
+    const newBase=(q>0 && cost>0)?(cost/q):openingBase;
+    c.activeBase=Number.isFinite(newBase)?newBase:openingBase;
     return c.activeBase;
   }
 
@@ -436,7 +434,7 @@
     ok('Sheet18 after transfer warehouse=465',w===465);
     ok('Sempurna Prima base corrected to 15300',Number(canonicalFor({name:'sempurna prima'}).base)===15300);
     const testCig={base:16500,display:0,warehouse:70,purchaseQty:10,purchaseCost:200000};
-    ok('Rokok weighted modal absorbs actual purchase cost',Math.abs(recalcCigActiveBase(testCig)-16937.5)<0.0001);
+    ok('Rokok active base follows actual purchase unit cost',Math.abs(recalcCigActiveBase(testCig)-20000)<0.0001);
     installWarehouseAuditColumns();
     ok('Rokok warehouse audit columns installed',!!byId('cigWhOpen1')&&!!byId('cigBuyIn1')&&!!byId('cigWhAvailable1'));
     const pass=results.every(x=>x[1]);
