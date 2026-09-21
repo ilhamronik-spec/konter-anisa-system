@@ -2356,7 +2356,7 @@ function dispatchUiAction(action,el){
       if(cmd==='filterOpeningStock()'){ filterOpeningStock(); continue; }
       if(cmd==='updateOpeningCorrections()'){ updateOpeningCorrections(); continue; }
       if(cmd==='syncPkgBuy()'){ syncPkgBuy(); continue; }
-      if(cmd==='syncCigBuy()'){ syncCigBuy(); continue; }
+      if(cmd==='syncCigBuy()'){ if(typeof syncCigBuy==='function') syncCigBuy(); continue; }
       if(cmd==='markPackageDirty()'){ markPackageDirty(); continue; }
       if(cmd==='calcPkgBuy()'){ calcPkgBuy(); continue; }
       if(cmd==='markCigaretteDirty()'){ markCigaretteDirty(); continue; }
@@ -2471,7 +2471,7 @@ document.querySelectorAll('.preview-close').forEach(el=>{
   el.addEventListener('click',()=>closePreviewModals());
 });
 
-formatAllMoneyInputs();syncPayDebtBalance();renderDebtEntries();renderPaymentEntries();renderTxGlobalSummary();renderOperationalEntries();updateBuyNextState();renderSteps();syncPkgBuy();syncCigBuy();calcDisplayTotal();calcPkgTotals();calcCigTotals();calcModalInput();refreshGlobalNextButton();
+formatAllMoneyInputs();syncPayDebtBalance();renderDebtEntries();renderPaymentEntries();renderTxGlobalSummary();renderOperationalEntries();updateBuyNextState();renderSteps();syncPkgBuy();if(typeof syncCigBuy==='function')syncCigBuy();calcDisplayTotal();calcPkgTotals();calcCigTotals();calcModalInput();refreshGlobalNextButton();
 updateOpeningCorrections();calcDana();calcQrisDana();calcQrisBank();calcMitra();calcSvplus();calcTarikBca();calcTransferBca();calcOp();
 
 document.querySelectorAll('td.money').forEach(td=>{
