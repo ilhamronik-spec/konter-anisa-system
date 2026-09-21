@@ -92,6 +92,8 @@
     packageModal:8155250,
     packageUnits:531,
     cigaretteMargin:110172.22222222222,
+    mitraMargin:32400,
+    electricityMargin:18000,
     txMargin:454337,
     baseMargin:398927,
     adminIn:62910,
@@ -390,6 +392,8 @@
     const pkg=packageClosing();
     const cig=cigaretteClosing();
     const txMargin=transactionMargin();
+    const mitraMargin=txArray('mitra').reduce((sum,x)=>sum+Number(x?.margin||0),0);
+    const electricityMargin=txArray('electricity').reduce((sum,x)=>sum+Number(x?.margin||0),0);
     const baseMargin=Number(s.margin||0)-adminNet;
     const voucher=money44(byId('modalInput20'));
     const rows=[
@@ -399,6 +403,8 @@
       {key:'packageMargin',label:'Margin Paket',actual:Number(pkg.margin||0),target:LIVE_EXCEL_18.packageMargin},
       {key:'voucher',label:'Modal Voucher',actual:voucher,target:LIVE_EXCEL_18.voucher},
       {key:'cigaretteMargin',label:'Margin Rokok',actual:Number(cig.margin||0),target:LIVE_EXCEL_18.cigaretteMargin},
+      {key:'mitraMargin',label:'Margin Mitra',actual:mitraMargin,target:LIVE_EXCEL_18.mitraMargin},
+      {key:'electricityMargin',label:'Margin Bayaran Listrik',actual:electricityMargin,target:LIVE_EXCEL_18.electricityMargin},
       {key:'txMargin',label:'Margin transaksi (termasuk Admin net)',actual:txMargin,target:LIVE_EXCEL_18.txMargin},
       {key:'baseMargin',label:'Margin sebelum Admin net',actual:baseMargin,target:LIVE_EXCEL_18.baseMargin},
       {key:'adminNet',label:'Admin net (Masuk − Keluar)',actual:adminNet,target:LIVE_EXCEL_18.adminNet},
