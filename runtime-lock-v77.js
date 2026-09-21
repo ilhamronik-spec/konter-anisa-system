@@ -1,8 +1,8 @@
-/* Konter Anisa BUILD 77 — runtime integrity lock */
+/* Konter Anisa BUILD 79 — runtime integrity lock */
 (function(){
   'use strict';
 
-  const BUILD='77';
+  const BUILD='79';
   const EXPECTED=[
     'account-master-v59.js',
     'rules-v29.js',
@@ -21,9 +21,9 @@
     'transactions-v53.js',
     'transactions-v55.js',
     'transactions-v61.js',
-    'transactions-v72.js',
     'ui-clean-v74.js',
     'transactions-v75.js',
+    'transactions-v79.js',
     'runtime-lock-v77.js'
   ];
 
@@ -53,7 +53,7 @@
       crumb.appendChild(badge);
     }
     badge.className='status '+(pass?'ok':'bad');
-    badge.textContent=pass?'BUILD V77 • LOCKED':'BUILD V77 • LOCK FAILED';
+    badge.textContent=pass?'BUILD V79 • LOCKED':'BUILD V79 • LOCK FAILED';
     badge.title=detail;
     badge.dataset.runtimeLock='1';
   }
@@ -85,7 +85,7 @@
     window.KA_RUNTIME_BUILD=BUILD;
     setBadge(pass,JSON.stringify(result));
     if(!pass) console.error('KONTER ANISA RUNTIME LOCK FAIL',result);
-    else console.info('KONTER ANISA BUILD V77 LOCKED',result);
+    else console.info('KONTER ANISA BUILD V79 LOCKED',result);
     return result;
   }
 
