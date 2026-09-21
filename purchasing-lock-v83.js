@@ -38,10 +38,13 @@
       badge.style.marginLeft='8px';
       crumb.appendChild(badge);
     }
-    badge.className='status '+(pass?'ok':'bad');
-    badge.textContent=pass?'PURCHASING V83 • LOCKED':'PURCHASING V83 • LOCK FAILED';
-    badge.title=detail||'';
-    badge.dataset.purchasingLock='1';
+    const nextClass='status '+(pass?'ok':'bad');
+    const nextText=pass?'PURCHASING V83 • LOCKED':'PURCHASING V83 • LOCK FAILED';
+    const nextTitle=detail||'';
+    if(badge.className!==nextClass) badge.className=nextClass;
+    if(badge.textContent!==nextText) badge.textContent=nextText;
+    if(badge.title!==nextTitle) badge.title=nextTitle;
+    if(badge.dataset.purchasingLock!=='1') badge.dataset.purchasingLock='1';
   }
 
   function gate(pass){
@@ -143,12 +146,12 @@
   const observer=new MutationObserver(mutations=>{
     if(mutations.some(m=>{
       const t=m.target;
-      return t instanceof Element && (
-        t.id==='salesCategories' ||
+      if(!(t instanceof Element)) return false;
+      if(t.id==='kaPurchasingLockBadge' || t.closest?.('#kaPurchasingLockBadge')) return false;
+      return t.id==='salesCategories' ||
         REQUIRED_IDS.includes(t.id) ||
         FORBIDDEN_IDS.includes(t.id) ||
-        t.closest?.('#salesCategories,.topbar,.content')
-      );
+        !!t.closest?.('#salesCategories');
     })) scheduleAudit();
   });
   const start=()=>{ if(document.body) observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['id','data-type']}); };
