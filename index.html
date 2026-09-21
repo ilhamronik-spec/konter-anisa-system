@@ -1029,7 +1029,7 @@ function calcDisplayTotal(){
 function calcCigEnd(i){
   const c=cigCatalog[i-1],mv=Number(document.getElementById('move'+i).value||0),avail=c.display+mv,wh=c.warehouse+(c.purchaseQty||0)-mv,el=document.getElementById('cigEnd'+i);
   document.getElementById('cigWh'+i).textContent=wh;
-  document.getElementById('cigWhModal'+i).textContent=fmt(wh*c.base);
+  document.getElementById('cigWhModal'+i).textContent=fmt(wh*Number(c.activeBase??c.base??0));
   const raw=String(el?.value??'').trim();
   if(raw===''){
     document.getElementById('cigSold'+i).textContent='—';
@@ -1043,22 +1043,22 @@ function calcCigEnd(i){
   const sold=avail-e;
   document.getElementById('cigSold'+i).textContent=sold;
   document.getElementById('cigSales'+i).textContent=fmt(sold*c.sell);
-  document.getElementById('cigMargin'+i).textContent=fmt(sold*(c.sell-c.base));
-  document.getElementById('cigDispModal'+i).textContent=fmt(e*c.base);
+  document.getElementById('cigMargin'+i).textContent=fmt(sold*(c.sell-Number(c.activeBase??c.base??0)));
+  document.getElementById('cigDispModal'+i).textContent=fmt(e*Number(c.activeBase??c.base??0));
   calcCigTotals();
 }
 function calcCigTotals(){
   let sales=0,margin=0,dm=0,wm=0,filled=0,required=0;
   cigCatalog.forEach((c,ix)=>{
     const i=ix+1,mv=Number(document.getElementById('move'+i).value||0),avail=c.display+mv,wh=c.warehouse+(c.purchaseQty||0)-mv;
-    wm+=wh*c.base;
+    wm+=wh*Number(c.activeBase??c.base??0);
     if(avail<=0)return;
     required++;
     const el=document.getElementById('cigEnd'+i),raw=String(el?.value??'').trim();
     if(raw==='')return;
     filled++;
     const e=Number(raw)||0,sold=avail-e;
-    sales+=sold*c.sell;margin+=sold*(c.sell-c.base);dm+=e*c.base;
+    sales+=sold*c.sell;margin+=sold*(c.sell-Number(c.activeBase??c.base??0));dm+=e*Number(c.activeBase??c.base??0);
   });
   cigWarehouseModal.textContent=fmt(wm);
   if(filled===0){cigSalesTotal.textContent='Belum diisi';cigMarginTotal.textContent='Belum diisi';cigDisplayModal.textContent='Belum diisi';return;}
@@ -2599,7 +2599,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     const wh=Number(c.warehouse||0)+Number(c.purchaseQty||0)-mv;
     el.max=avail;
     setText('cigWh'+i,String(wh));
-    setText('cigWhModal'+i,fmt(wh*c.base));
+    setText('cigWhModal'+i,fmt(wh*Number(c.activeBase??c.base??0)));
     const raw=String(el.value??'').trim();
 
     if(raw===''){
@@ -2616,8 +2616,8 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     const sold=avail-e;
     setText('cigSold'+i,String(sold));
     setText('cigSales'+i,fmt(sold*c.sell));
-    setText('cigMargin'+i,fmt(sold*(c.sell-c.base)));
-    setText('cigDispModal'+i,fmt(e*c.base));
+    setText('cigMargin'+i,fmt(sold*(c.sell-Number(c.activeBase??c.base??0))));
+    setText('cigDispModal'+i,fmt(e*Number(c.activeBase??c.base??0)));
     calcCigTotals();
   };
 
@@ -2628,7 +2628,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       const mv=Number(document.getElementById('move'+i)?.value||0);
       const avail=Number(c.display||0)+mv;
       const wh=Number(c.warehouse||0)+Number(c.purchaseQty||0)-mv;
-      wm+=wh*c.base;
+      wm+=wh*Number(c.activeBase??c.base??0);
       if(avail>0) required++;
       const el=document.getElementById('cigEnd'+i);
       if(!el) return;
@@ -2638,8 +2638,8 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       const e=Math.min(avail,Math.max(0,Number(raw)||0));
       const sold=avail-e;
       sales+=sold*c.sell;
-      margin+=sold*(c.sell-c.base);
-      dm+=e*c.base;
+      margin+=sold*(c.sell-Number(c.activeBase??c.base??0));
+      dm+=e*Number(c.activeBase??c.base??0);
     });
     setText('cigWarehouseModal',fmt(wm));
     if(filled===0){
@@ -2674,7 +2674,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v41.js?build=80"></script>
 <script src="./transactions-v42.js?build=80"></script>
 <script src="./transactions-v43.js?build=80"></script>
-<script src="./transactions-v50.js?build=80&fix=cigsell1"></script>
+<script src="./transactions-v50.js?build=80&fix=cigmodal2"></script>
 <script src="./transactions-v51.js?build=80"></script>
 <script src="./transactions-v53.js?build=80"></script>
 <script src="./transactions-v55.js?build=80"></script>
@@ -2801,7 +2801,7 @@ function stockMovementSnapshot(){
     if(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog)){
       let opening=0,incoming=0,outgoing=0,closing=0,value=0,sales=0,cogs=0;
       cigCatalog.forEach((r,i)=>{
-        const ix=i+1,base=Number(r.base||0),sell=Number(r.sell||0),op=Number(r.display||0)+Number(r.warehouse||0),inc=Number(r.purchaseQty||0);
+        const ix=i+1,base=Number(r.activeBase??r.base??0),sell=Number(r.sell||0),op=Number(r.display||0)+Number(r.warehouse||0),inc=Number(r.purchaseQty||0);
         const sold=numberText('cigSold'+ix),endDisp=numberText('cigEnd'+ix),endWh=numberText('cigWh'+ix),end=(endDisp+endWh)||Math.max(0,op+inc-sold);
         opening+=op;incoming+=inc;outgoing+=sold;closing+=end;value+=end*base;sales+=sold*sell;cogs+=sold*base;
       });
