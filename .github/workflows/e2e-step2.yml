@@ -1,16 +1,6 @@
 name: Konter Anisa Step 2 E2E
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "index.html"
-      - "purchasing.html"
-      - "admin.html"
-      - "*.js"
-      - "*.css"
-      - "tests/e2e-step2.js"
-      - ".github/workflows/e2e-step2.yml"
   workflow_dispatch:
 
 permissions:
