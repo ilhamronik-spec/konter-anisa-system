@@ -78,6 +78,8 @@
           purchaseQty:Number(c.purchaseQty||0),
           purchaseCost:Number(c.purchaseCost||0),
           base:Number(c.base||0),
+          openingBase:Number(c._openingBase??c.base??0),
+          activeBase:Number(c.activeBase??c.base??0),
           sell:Number(c.sell||0)
         }));
       }
@@ -202,6 +204,15 @@
           }
           c.purchaseQty=Number(rec.purchaseQty||0);
           c.purchaseCost=Number(rec.purchaseCost||0);
+          c._openingBase=Number(rec.openingBase??c.base??0);
+          if(Number.isFinite(Number(rec.activeBase))) c.activeBase=Number(rec.activeBase);
+          else {
+            const openingUnits=Number(c.display||0)+Number(c.warehouse||0);
+            const totalUnits=openingUnits+Number(c.purchaseQty||0);
+            c.activeBase=totalUnits>0
+              ? ((openingUnits*Number(c._openingBase||0))+Number(c.purchaseCost||0))/totalUnits
+              : Number(c._openingBase||0);
+          }
         });
       }
     }catch(_){}
