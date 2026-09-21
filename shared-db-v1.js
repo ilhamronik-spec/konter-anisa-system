@@ -9,6 +9,7 @@ const MEDIA_DONE_KEY='ka_sync_media_done_v1';
 const SHIFT_INDEX='ka_shift_autosave_v53_index';
 const SHIFT_PREFIX='ka_shift_autosave_v53_';
 const OIL_PREFIX='ka_oil_purchase_v75_';
+const ACC_OBAT_KEY='ka_v41_acc_obat_purchases';
 const SEED_NOTES=new Set(['NBJ-0913-01','NBJ-0913-02','NBO-0913-01','NBO-0918-01']);
 let started=false,busy=false,timer=null,cloudNoteIds=new Set(),lastError='';
 
@@ -56,6 +57,21 @@ function recordsLocal(){
     if(payload&&sid)out.push(record('shift',sid,{...payload,_syncIndexTs:Number(x.ts||payload.savedAt||0)}));
   });
 
+  const accObat=read(ACC_OBAT_KEY,{accessory:[],medicine:[]})||{accessory:[],medicine:[]};
+  const purchaseShiftIds=new Set(
+    idx.map(x=>String(x?.key||'')).filter(k=>k.startsWith(SHIFT_PREFIX)).map(k=>k.slice(SHIFT_PREFIX.length))
+  );
+  ['accessory','medicine'].forEach(type=>{
+    (Array.isArray(accObat[type])?accObat[type]:[]).forEach(x=>{if(x?.shiftId)purchaseShiftIds.add(String(x.shiftId))});
+  });
+  purchaseShiftIds.forEach(sid=>{
+    if(!sid)return;
+    out.push(record('acc_obat_purchase',sid,{
+      accessory:(Array.isArray(accObat.accessory)?accObat.accessory:[]).filter(x=>String(x?.shiftId||'')===sid),
+      medicine:(Array.isArray(accObat.medicine)?accObat.medicine:[]).filter(x=>String(x?.shiftId||'')===sid)
+    }));
+  });
+
   const sums=read('ka_admin_shift_summaries_v1',{});
   if(sums&&typeof sums==='object')Object.entries(sums).forEach(([id,p])=>p&&out.push(record('summary',id,p)));
 
@@ -87,10 +103,26 @@ function storageSignal(key,value){
 function setJson(key,value){
   write(key,value);storageSignal(key,value);
 }
+function mergeAccObatShift(id,payload){
+  const sid=String(id||'');
+  let store=read(ACC_OBAT_KEY,{accessory:[],medicine:[]})||{accessory:[],medicine:[]};
+  store.accessory=Array.isArray(store.accessory)?store.accessory:[];
+  store.medicine=Array.isArray(store.medicine)?store.medicine:[];
+  ['accessory','medicine'].forEach(type=>{
+    const keep=store[type].filter(x=>String(x?.shiftId||'')!==sid);
+    const incoming=Array.isArray(payload?.[type])?payload[type].map(x=>({...x,shiftId:sid})):[];
+    store[type]=keep.concat(incoming);
+  });
+  setJson(ACC_OBAT_KEY,store);
+  try{window.KAAccObatV41?.replaceShiftPurchases?.(sid,payload||{accessory:[],medicine:[]})}catch(_){}
+}
 function applyOne(r){
   if(!r)return;
   const p=r.payload,id=String(r.record_id||'');
   if(r.is_deleted){
+    if(r.kind==='acc_obat_purchase'){
+      mergeAccObatShift(id,{accessory:[],medicine:[]});
+    }
     if(r.kind==='note_usage'){
       const m=read('ka_v29_used_notes',{})||{};
       if(Object.prototype.hasOwnProperty.call(m,id)) delete m[id];
@@ -138,6 +170,8 @@ function applyOne(r){
     setJson('ka_v29_margin_exceptions',p);
   }else if(r.kind==='price_approval'){
     setJson('ka_v29_price_approvals',p);
+  }else if(r.kind==='acc_obat_purchase'){
+    mergeAccObatShift(id,p);
   }else if(r.kind==='oil_purchase'){
     setJson(OIL_PREFIX+id,p);
   }
