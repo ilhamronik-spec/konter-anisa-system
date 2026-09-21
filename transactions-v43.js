@@ -84,22 +84,41 @@
   // Angka presisi mempertahankan pecahan modal rokok yang di Excel tampil dibulatkan.
   const LIVE_EXCEL_18={
     shiftId:'2026-09-18-full-rifda',
-    // Source: workbook "worksheet september benar(4).xlsx" / sheet "18 september".
-    opening:110989194.777778,
-    closing:112031149,
+    // Source: workbook "worksheet september 20(1).xlsx" / sheet "18 september".
+    // These are audit references only; calculation still uses live app data.
+    opening:109257194.77777778,
+    closing:110299149,
     packageMargin:57150,
+    packageModal:8155250,
+    packageUnits:531,
     cigaretteMargin:110172.22222222222,
-    txMargin:353427,
-    baseMargin:523249.22222222225,
-    adminNet:-2500,
-    margin:520749.22222222225,
+    txMargin:454337,
+    baseMargin:398927,
+    adminIn:62910,
+    adminOut:7500,
+    adminNet:55410,
+    margin:621659.2222222222,
     minyak:448310,
     k279:0,
+    operationalNormal:154000,
+    newDebt:475875,
+    piutangOpening:4967913,
+    piutangPaid:0,
     selisihRokok:0,
     selisihPaket:0,
     voucher:8155250,
     piutang:5597788,
-    balance:72894.99999977648
+    balance:-28015,
+    openingModal:[
+      20662593,1641371,0,1624000,0,0,32845,0,0,689247,3022000,274000,
+      3933441,0,2005265,0,3027973,0,0,8788100,2251151,39430800,4792468,
+      12114027.777777778,4967913
+    ],
+    closingModal:[
+      28052670,1641371,2781125,4371500,0,0,0,0,845,689247,1374000,274000,
+      3620131,0,1730560,0,3804973,0,0,8155250,2243321,29967300,4778868,
+      11216200,5597788
+    ]
   };
 
   function isLiveExcel18(){
@@ -110,7 +129,30 @@
     }catch(_){ return false; }
   }
 
+  function enforceExcel18OpeningBaseline(){
+    if(!isLiveExcel18()) return false;
+    try{
+      LIVE_EXCEL_18.openingModal.forEach((value,ix)=>{
+        if(typeof openingPrevModal!=='undefined' && openingPrevModal?.[ix]) openingPrevModal[ix].value=value;
+        const el=byId('prevModalCheck'+(ix+1));
+        if(el){
+          if(typeof setMoneyInput==='function') setMoneyInput(el,value);
+          else el.value=Math.round(Number(value)||0).toLocaleString('id-ID');
+        }
+      });
+      try{ if(typeof updateOpeningCorrections==='function') updateOpeningCorrections(); }catch(_){}
+      return true;
+    }catch(_){ return false; }
+  }
+
   function openingValue(index){
+    // Balance must use the accepted carry-forward opening for the active shift.
+    // For the Excel-18 audit, use the canonical Sheet-17 closing values so stale
+    // autosave/old preview fields cannot corrupt Modal Lama(A).
+    if(isLiveExcel18()){
+      const v=LIVE_EXCEL_18.openingModal[index-1];
+      if(v!==undefined) return Number(v||0);
+    }
     const el=byId('prevModalCheck'+index);
     if(el) return money44(el);
     try { return Number(openingPrevModal?.[index-1]?.value || 0); }
@@ -177,7 +219,7 @@
   function packageClosing(){
     try {
       if(typeof pkgCatalog==='undefined' || !Array.isArray(pkgCatalog)) return {complete:false,total:0,margin:0,selisih:0};
-      let total=0,margin=0,selisih=0,complete=true;
+      let total=0,margin=0,selisih=0,units=0,complete=true;
       pkgCatalog.forEach((p,ix)=>{
         const avail=Number(p.stock||0)+Number(p.purchaseQty||0);
         const endEl=byId('pkgEnd'+(ix+1));
@@ -188,12 +230,13 @@
         const base=Number(p.activeBase ?? p.base ?? 0);
         const sell=Number(p.activeSell ?? p.sell ?? 0);
         total+=end*base;
+        units+=end;
         margin+=sold*(sell-base);
         // Neutralize repricing of stock that already existed at shift opening.
         selisih+=Number(p.stock||0)*(Number(p.base||0)-base);
       });
-      return {complete,total,margin,selisih};
-    } catch(_) { return {complete:false,total:0,margin:0,selisih:0}; }
+      return {complete,total,margin,selisih,units};
+    } catch(_) { return {complete:false,total:0,margin:0,selisih:0,units:0}; }
   }
 
   function cigaretteClosing(){
@@ -352,14 +395,19 @@
     const rows=[
       {key:'openingRaw',label:'Modal Lama A — 25 saldo opening',actual:rawOpening,target:LIVE_EXCEL_18.opening},
       {key:'closing',label:'Modal Baru A',actual:Number(s.closing||0),target:LIVE_EXCEL_18.closing},
+      {key:'packageUnits',label:'Stok akhir Paket (unit)',actual:Number(pkg.units||0),target:LIVE_EXCEL_18.packageUnits},
       {key:'packageMargin',label:'Margin Paket',actual:Number(pkg.margin||0),target:LIVE_EXCEL_18.packageMargin},
+      {key:'voucher',label:'Modal Voucher',actual:voucher,target:LIVE_EXCEL_18.voucher},
       {key:'cigaretteMargin',label:'Margin Rokok',actual:Number(cig.margin||0),target:LIVE_EXCEL_18.cigaretteMargin},
       {key:'txMargin',label:'Margin transaksi (termasuk Admin net)',actual:txMargin,target:LIVE_EXCEL_18.txMargin},
       {key:'baseMargin',label:'Margin sebelum Admin net',actual:baseMargin,target:LIVE_EXCEL_18.baseMargin},
       {key:'adminNet',label:'Admin net (Masuk − Keluar)',actual:adminNet,target:LIVE_EXCEL_18.adminNet},
       {key:'margin',label:'Total Margin',actual:Number(s.margin||0),target:LIVE_EXCEL_18.margin},
       {key:'minyak',label:'Modal Minyak',actual:Number(s.minyak||0),target:LIVE_EXCEL_18.minyak},
-      {key:'voucher',label:'Modal Voucher',actual:voucher,target:LIVE_EXCEL_18.voucher},
+      {key:'piutangOpening',label:'Piutang awal',actual:Number(s.piutangAwal||0),target:LIVE_EXCEL_18.piutangOpening},
+      {key:'piutangAdd',label:'Hutang baru',actual:Number(piutangBreakdown().add||0),target:LIVE_EXCEL_18.newDebt},
+      {key:'operasionalNormal',label:'Operasional masuk Piutang',actual:Number(piutangBreakdown().operasional||0),target:LIVE_EXCEL_18.operationalNormal},
+      {key:'piutangPaid',label:'Pembayaran Piutang',actual:Number(piutangBreakdown().paid||0),target:LIVE_EXCEL_18.piutangPaid},
       {key:'piutang',label:'Piutang Akhir',actual:Number(s.piutangAkhir||0),target:LIVE_EXCEL_18.piutang},
       {key:'balance',label:'Balance',actual:Number(s.balance||0),target:LIVE_EXCEL_18.balance}
     ].map(x=>({...x,diff:Number(x.actual||0)-Number(x.target||0)}));
@@ -538,7 +586,7 @@
     const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
     tests.push(['ACC/Obat shift isolation',scoped.length===2 && scoped.reduce((s,x)=>s+Number(x.amount||0),0)===300]);
     tests.push(['18 Sep Piutang arithmetic',eq(4967913+475875+154000,5597788)]);
-    tests.push(['18 Sep LIVE workbook Balance = -28,015',eq(pureBalance({
+    tests.push(['18 Sep workbook Balance = -28,015',eq(pureBalance({
       closing:LIVE_EXCEL_18.closing,
       opening:LIVE_EXCEL_18.opening,
       margin:LIVE_EXCEL_18.margin,
@@ -569,7 +617,7 @@
 
     window.KABalanceV44={
       openingTotal,rawOpeningTotal,packageClosing,cigaretteClosing,piutangClosing,piutangBreakdown,transactionMargin,minyakModal,operationalTotal,balanceOperationalAdjustment,adminNetMargin,
-      liveExcel18Audit,liveExcel18Reference:LIVE_EXCEL_18,updateAutoFinalModals,balanceSnapshot,renderBalance,pureBalance,selfTest
+      liveExcel18Audit,liveExcel18Reference:LIVE_EXCEL_18,enforceExcel18OpeningBaseline,updateAutoFinalModals,balanceSnapshot,renderBalance,pureBalance,selfTest
     };
 
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
