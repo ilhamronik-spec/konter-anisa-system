@@ -311,6 +311,9 @@
     restoring=true;
     restoreCatalogs(saved);
     restoreForms(saved);
+    // For the controlled 18 September Excel audit, restore of an old browser
+    // snapshot must not overwrite the canonical Modal Lama carried from Sheet 17.
+    try{ window.KABalanceV44?.enforceExcel18OpeningBaseline?.(); }catch(_){}
     restoreCore(saved);
     renderRecovered();
     restoreFlags(saved);
