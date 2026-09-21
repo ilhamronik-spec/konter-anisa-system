@@ -205,11 +205,10 @@
           c.purchaseQty=Number(rec.purchaseQty||0);
           c.purchaseCost=Number(rec.purchaseCost||0);
           c._openingBase=Number(rec.openingBase??c.base??0);
-          if(Number.isFinite(Number(rec.activeBase))) c.activeBase=Number(rec.activeBase);
-          else {
-            const q=Number(c.purchaseQty||0),cost=Number(c.purchaseCost||0);
-            c.activeBase=(q>0 && cost>0)?(cost/q):Number(c._openingBase||0);
-          }
+          const q=Number(c.purchaseQty||0),cost=Number(c.purchaseCost||0);
+          if(q>0 && cost>0) c.activeBase=cost/q;
+          else if(Number.isFinite(Number(rec.activeBase))) c.activeBase=Number(rec.activeBase);
+          else c.activeBase=Number(c._openingBase||0);
         });
       }
     }catch(_){}
