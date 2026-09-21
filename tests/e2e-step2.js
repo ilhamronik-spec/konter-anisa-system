@@ -257,6 +257,9 @@ async function clickByText(page, selector, wanted){
     pass('Returned correction appears in Karyawan and can be resubmitted');
 
     // 11. DEBT AUTO REDUCTION + AUTO HIDE WHEN PAID OFF
+    // Employee bridge autosaves the active shift every few seconds, so restore
+    // the deterministic E2E ledger before testing Admin debt reconciliation.
+    await setLs(page,'ka_admin_shift_summaries_v1',summaries);
     await goto(page,'/admin.html');
     await clickByText(page,'.nav [data-view]','Modal & Hutang');
     await clickByText(page,'.group-tabs [data-go]','Hutang Aktif');
