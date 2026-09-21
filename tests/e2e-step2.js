@@ -65,6 +65,25 @@ async function clickByText(page, selector, wanted){
     assert(employeeHealth.shift?.id===SID,'unexpected active test shift '+JSON.stringify(employeeHealth.shift));
     pass('Karyawan V80 lock + balance/stock/workflow self-tests');
 
+    // Rokok purchase UI must expose editable selling price so margin can be corrected.
+    const cigSellUi=await page.evaluate(()=>{
+      const sell=document.getElementById('cigSell'),qty=document.getElementById('cigQty'),total=document.getElementById('cigTotal');
+      if(!sell||!qty||!total||typeof cigCatalog==='undefined') return {exists:false};
+      document.getElementById('cigType').value='0';
+      qty.value='10'; total.value='150000'; sell.value='17000';
+      window.calcCigBuy?.();
+      const rec=cigCatalog[0];
+      const out={exists:true,sell:Number(rec.sell||0),margin:String(document.getElementById('cigMarginUnit')?.value||''),notice:String(document.getElementById('cigMarginNotice')?.textContent||'')};
+      rec.purchaseQty=0;rec.purchaseCost=0;
+      window.syncCigBuy?.();
+      return out;
+    });
+    assert(cigSellUi.exists,'Harga Jual Berjalan Rokok field missing');
+    assert(cigSellUi.sell===17000,'editing Rokok selling price did not update catalog sell');
+    assert(cigSellUi.margin.replace(/\D/g,'')==='2000','Rokok live margin did not calculate to Rp2.000');
+    assert(cigSellUi.notice.includes('AMAN'),'Rokok margin notice did not show safe status');
+    pass('Rokok selling price is editable and live margin recalculates');
+
     // Create active-shift heartbeat for Purchasing and personal Purchasing session.
     const now=Date.now();
     await page.evaluate(({sid,now})=>{
