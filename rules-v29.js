@@ -239,9 +239,15 @@
 
   function validatePackageRules() {
     const purchaseCount = typeof pkgCatalog === 'undefined' ? 0 : pkgCatalog.filter(p => Number(p.purchaseQty || 0) > 0).length;
-    if (purchaseCount === 0) return true;
     const note = selectedNote('pkgNoteV29', 'package');
     const total = packagePurchaseTotal();
+    if (purchaseCount === 0) {
+      if (note) {
+        toast(`ATURAN MATI: nota ${note.id} sebesar ${fmtMoney(note.amount)} dipilih, tetapi belum ada detail belanja Paket. Nota tidak boleh dikonfirmasi/dipakai.`, 'bad');
+        return false;
+      }
+      return true;
+    }
     if (!validateNoteExact('belanja Paket', note, total)) return false;
 
     const bad = [];
@@ -274,9 +280,15 @@
 
   function validateCigaretteRules() {
     const purchaseCount = typeof cigCatalog === 'undefined' ? 0 : cigCatalog.filter(c => Number(c.purchaseQty || 0) > 0).length;
-    if (purchaseCount === 0) return true;
     const note = selectedNote('cigNoteV29', 'cigarette');
     const total = cigarettePurchaseTotal();
+    if (purchaseCount === 0) {
+      if (note) {
+        toast(`ATURAN MATI: nota ${note.id} sebesar ${fmtMoney(note.amount)} dipilih, tetapi belum ada detail belanja Rokok. Nota tidak boleh dikonfirmasi/dipakai.`, 'bad');
+        return false;
+      }
+      return true;
+    }
     if (!validateNoteExact('belanja Rokok', note, total)) return false;
 
     const bad = [];
@@ -583,11 +595,19 @@
       }
       if (el.id === 'pkgConfirmPreviewBtn') {
         if (!validatePackageRules()) { e.preventDefault(); e.stopImmediatePropagation(); return; }
-        const note = selectedNote('pkgNoteV29', 'package'); if (note) setTimeout(() => markNoteUsed(note.id, 'package'), 0);
+        const note = selectedNote('pkgNoteV29', 'package');
+        const total = packagePurchaseTotal();
+        if (note && total > 0 && Math.round(total) === Math.round(Number(note.amount || 0))) {
+          setTimeout(() => markNoteUsed(note.id, 'package'), 0);
+        }
       }
       if (el.id === 'cigConfirmPreviewBtn') {
         if (!validateCigaretteRules()) { e.preventDefault(); e.stopImmediatePropagation(); return; }
-        const note = selectedNote('cigNoteV29', 'cigarette'); if (note) setTimeout(() => markNoteUsed(note.id, 'cigarette'), 0);
+        const note = selectedNote('cigNoteV29', 'cigarette');
+        const total = cigarettePurchaseTotal();
+        if (note && total > 0 && Math.round(total) === Math.round(Number(note.amount || 0))) {
+          setTimeout(() => markNoteUsed(note.id, 'cigarette'), 0);
+        }
       }
       if (action.includes('addOperationalEntry')) {
         if (!validateOperational()) { e.preventDefault(); e.stopImmediatePropagation(); return; }
