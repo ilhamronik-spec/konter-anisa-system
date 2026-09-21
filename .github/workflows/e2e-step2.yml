@@ -1,0 +1,77 @@
+name: Konter Anisa Step 2 E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "purchasing.html"
+      - "admin.html"
+      - "*.js"
+      - "*.css"
+      - "tests/e2e-step2.js"
+      - ".github/workflows/e2e-step2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install browser driver library
+        run: npm install --no-save puppeteer-core@24
+
+      - name: Locate Chrome
+        id: chrome
+        shell: bash
+        run: |
+          set -e
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "path=$(command -v google-chrome)" >> "$GITHUB_OUTPUT"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "path=$(command -v chromium)" >> "$GITHUB_OUTPUT"
+          elif command -v chromium-browser >/dev/null 2>&1; then
+            echo "path=$(command -v chromium-browser)" >> "$GITHUB_OUTPUT"
+          else
+            echo "Chrome/Chromium not found" >&2
+            exit 1
+          fi
+
+      - name: Start local app server
+        shell: bash
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/ka-http.log 2>&1 &
+          echo $! > /tmp/ka-http.pid
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/index.html >/dev/null; then exit 0; fi
+            sleep 0.5
+          done
+          cat /tmp/ka-http.log
+          exit 1
+
+      - name: Run Step 2 end-to-end regression
+        env:
+          KA_BASE_URL: http://127.0.0.1:4173
+          CHROME_PATH: ${{ steps.chrome.outputs.path }}
+        run: node tests/e2e-step2.js
+
+      - name: Upload E2E result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: konter-anisa-step2-e2e
+          if-no-files-found: ignore
+          path: |
+            e2e-step2-result.json
+            e2e-step2-failure.png
