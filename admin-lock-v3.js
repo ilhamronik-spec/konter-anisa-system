@@ -9,18 +9,18 @@
     'kpiMargin','kpiMinus','kpiOperational','kpiAttendance',
     'marginBody','minusBody','opBody',
     'capitalBody','capitalChart','debtBody',
-    'reviewBody','attBody','accountBody',
+    'purchaseBody','reviewBody','attBody','accountBody',
     'reportPaper','reportBody','auditList',
     'returnConfirm','accAdd'
   ];
   const REQUIRED_VIEWS=[
     'dashboard','margin','minus','operational','capital','debt',
-    'review','attendance','accounts','reports','audit'
+    'purchases','review','attendance','accounts','reports','audit'
   ];
-  const REQUIRED_GROUPS=['dashboard','finance','capitaldebt','review','people','reports'];
+  const REQUIRED_GROUPS=['dashboard','finance','capitaldebt','purchases','review','people','reports'];
   const REQUIRED_TOKENS=[
     'renderDashboard','renderMargin','renderMinus','renderOp',
-    'renderCapital','renderCapitalChart','renderDebt','renderReview',
+    'renderCapital','renderCapitalChart','renderDebt','renderPurchases','renderReview',
     'renderAttendance','renderAccounts','renderReport','renderAudit',
     'submitReturn','resolveCorrection','addAccount','changeRole','toggleAccount',
     'exportReportCsv','printReport'
