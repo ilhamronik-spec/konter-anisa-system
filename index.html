@@ -2758,13 +2758,38 @@ function renderAttendance(){
   $('kaAttInBtn').disabled=!!r?.checkIn;$('kaAttOutBtn').disabled=!r?.checkIn||!!r?.checkOut;
 }
 function openAttendance(){renderAttendance();$('kaAttendanceOverlay').classList.add('open')}
+function modalBreakdown(){
+  const rows=[];
+  for(let i=1;i<=25;i++){
+    const input=$('modalInput'+i),row=input?.closest('tr');
+    const name=String(row?.querySelector('td:first-child')?.textContent||('Modal '+i)).trim();
+    const raw=String(input?.value??'').replace(/[^0-9]/g,'');
+    rows.push({index:i,name,value:raw?Number(raw):0,filled:String(input?.value??'').trim()!==''});
+  }
+  return rows;
+}
+function coreDebtSnapshot(){
+  let debts=[],payments=[];
+  try{if(typeof debtEntries!=='undefined'&&Array.isArray(debtEntries))debts=JSON.parse(JSON.stringify(debtEntries))}catch(_){}
+  try{if(typeof paymentEntries!=='undefined'&&Array.isArray(paymentEntries))payments=JSON.parse(JSON.stringify(paymentEntries))}catch(_){}
+  return {debts,payments};
+}
 function snapshot(){
   const s=currentShift();if(!s||!window.KABalanceV44?.balanceSnapshot)return;
   try{
     const b=window.KABalanceV44.balanceSnapshot(false);
     const op=window.KABalanceV44.piutangBreakdown?.()?.operasional??window.KABalanceV44.operationalTotal?.()??0;
+    const debt=coreDebtSnapshot(),modal=modalBreakdown();
     const map=read(SUM,{});
-    map[s.id]={shiftId:s.id,shiftLabel:s.label,date:s.date,shift:s.shift,holder:s.holder,margin:Number(b.margin||0),balance:Number(b.balance||0),minus:Math.min(0,Number(b.balance||0)),operational:Number(op||0),complete:!!b.complete,savedAt:Date.now()};
+    map[s.id]={
+      shiftId:s.id,shiftLabel:s.label,date:s.date,shift:s.shift,holder:s.holder,
+      margin:Number(b.margin||0),balance:Number(b.balance||0),minus:Math.min(0,Number(b.balance||0)),
+      operational:Number(op||0),complete:!!b.complete,savedAt:Date.now(),
+      modalOpening:Number(b.opening||0),modalClosing:Number(b.closing||0),
+      modalChange:Number(b.closing||0)-Number(b.opening||0),
+      piutangOpening:Number(b.piutangAwal||0),piutangClosing:Number(b.piutangAkhir||0),
+      modalBreakdown:modal,debtEntries:debt.debts,paymentEntries:debt.payments
+    };
     write(SUM,map);
   }catch(e){console.warn('Admin summary snapshot skipped',e)}
 }
