@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT=process.cwd();
-const BUILD='78';
+const BUILD='80';
 const EXPECTED=[
   'account-master-v59.js',
   'rules-v29.js',
@@ -23,6 +23,7 @@ const EXPECTED=[
   'transactions-v61.js',
   'ui-clean-v74.js',
   'transactions-v75.js',
+  'transactions-v79.js',
   'runtime-lock-v77.js'
 ];
 
@@ -109,6 +110,6 @@ for(const file of EXPECTED){
 }
 
 if(!process.exitCode){
-  console.log('RUNTIME INTEGRITY PASS — Konter Anisa BUILD V78');
+  console.log('RUNTIME INTEGRITY PASS — Konter Anisa BUILD V80');
   console.log('Scripts:',names.join(' -> '));
 }
