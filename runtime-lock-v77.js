@@ -1,8 +1,8 @@
-/* Konter Anisa BUILD 79 — runtime integrity lock */
+/* Konter Anisa BUILD 80 — runtime integrity + workflow lock */
 (function(){
   'use strict';
 
-  const BUILD='79';
+  const BUILD='80';
   const EXPECTED=[
     'account-master-v59.js',
     'rules-v29.js',
@@ -53,7 +53,7 @@
       crumb.appendChild(badge);
     }
     badge.className='status '+(pass?'ok':'bad');
-    badge.textContent=pass?'BUILD V79 • LOCKED':'BUILD V79 • LOCK FAILED';
+    badge.textContent=pass?'BUILD V80 • WORKFLOW LOCKED':'BUILD V80 • LOCK FAILED';
     badge.title=detail;
     badge.dataset.runtimeLock='1';
   }
@@ -74,7 +74,8 @@
       stock:!!window.KAStockV50,
       autosave:!!window.KAAutosaveV53,
       features:!!window.KAFeaturesV61,
-      oilPurchase:!!window.KAOilPurchaseV76
+      oilPurchase:!!window.KAOilPurchaseV76,
+      workflow:!!window.KAFeaturesV61?.workflowOk?.() && document.documentElement.dataset.kaWorkflowAuthority==='v61'
     };
     const globalsOk=!strictGlobals||Object.values(globals).every(Boolean);
     const pass=!missing.length&&!duplicates.length&&!unexpected.length&&!wrongBuild.length&&orderOk&&globalsOk;
@@ -85,7 +86,7 @@
     window.KA_RUNTIME_BUILD=BUILD;
     setBadge(pass,JSON.stringify(result));
     if(!pass) console.error('KONTER ANISA RUNTIME LOCK FAIL',result);
-    else console.info('KONTER ANISA BUILD V79 LOCKED',result);
+    else console.info('KONTER ANISA BUILD V80 WORKFLOW LOCKED',result);
     return result;
   }
 
