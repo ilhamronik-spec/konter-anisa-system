@@ -181,6 +181,8 @@ async function clickByText(page, selector, wanted){
     await page.evaluate(()=>document.getElementById('pkgConfirmPreviewBtn')?.click()); await sleep(300);
     used=await ls(page,'ka_v29_used_notes')||{};
     assert(!!used[packageNote.id],'exact Paket total was not marked used after confirmation');
+    assert(Number(used[packageNote.id].validatedTotal)===500000,'validated Paket total was not preserved when note was consumed');
+    assert(Number(used[packageNote.id].noteAmount)===500000,'Purchasing note amount was not attached to note usage');
     pass('Karyawan hard validation: total detail must equal Purchasing note exactly');
 
     // 7. SHIFT/DAY ISOLATION
