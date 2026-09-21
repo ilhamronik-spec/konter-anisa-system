@@ -328,9 +328,37 @@ function remapSteps(){
   ];
   map.forEach(([i,s,title])=>{if(s){s.dataset.i=String(i);setTitle(s,i+1,title);}});
   try{if(typeof labels!=='undefined'&&Array.isArray(labels))labels.splice(0,labels.length,...STEP_LABELS);}catch(_){}
+  document.documentElement.dataset.kaWorkflowAuthority='v61';
+  document.documentElement.dataset.kaWorkflowOrder=STEP_LABELS.join('|');
   try{if(typeof renderSteps==='function')renderSteps();}catch(_){}
   try{if(typeof refreshGlobalNextButton==='function')refreshGlobalNextButton();}catch(_){}
 }
+
+function workflowOk(){
+  const checks=[
+    [0,findSection(/Cek Data Awal/i)],
+    [1,findSection(/^\s*\d*\.?\s*Belanja\b/i)],
+    [2,findSection(/Pemasukan Display Rokok/i)],
+    [3,findSection(/Operasional/i)],
+    [4,findSection(/Hutang\s*(?:&|\/|dan)\s*Piutang/i)],
+    [5,findSection(/Input Transaksi|^\s*\d*\.?\s*Transaksi/i)],
+    [6,$('v61-minyak-section')],
+    [7,$('v61-admin-section')],
+    [8,$('v42-accobat-section')||findSection(/Aksesoris\s*(?:&|\/)\s*Obat/i)],
+    [9,findSection(/Stok Akhir Paket/i)],
+    [10,findSection(/Stok Akhir Rokok/i)],
+    [11,findSection(/Modal Inputan Shift Berjalan|Modal Inputan/i)],
+    [12,$('v44-balance-section')||findSection(/Balance Akhir Shift/i)]
+  ];
+  let labelsOk=false;
+  try{labelsOk=Array.isArray(labels)&&labels.length===STEP_LABELS.length&&labels.every((x,i)=>String(x)===STEP_LABELS[i]);}catch(_){}
+  return labelsOk && checks.every(([i,s])=>s&&Number(s.dataset.i)===i);
+}
+function lockWorkflow(){
+  if(!workflowOk()) remapSteps();
+  return workflowOk();
+}
+
 function stockCompletion(kind){
   const missing=[],required=[];
   if(kind==='pkg' && typeof pkgCatalog!=='undefined'){
@@ -494,7 +522,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V73 — MINYAK + LISTRIK + ADMIN FINAL';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V80 — WORKFLOW LOCKED';});
   setTimeout(refreshStockNextVisual,0);
 }
 function selfTest(){
@@ -510,7 +538,7 @@ function selfTest(){
   ok('Rokok checkpoint step 11',Number(findSection(/Stok Akhir Rokok/i)?.dataset.i)===10);
   ok('Stock Enter navigation installed',document.documentElement.dataset.v64StockEnter==='1');
   const pass=t.every(x=>x[1]);document.documentElement.dataset.v61Selftest=pass?'PASS':'FAIL';
-  window.KAFeaturesV61={pass,tests:t,refresh,renderListrik,renderAdmin,listrikMargin};
+  window.KAFeaturesV61={pass,tests:t,refresh,renderListrik,renderAdmin,listrikMargin,remapSteps,workflowOk,lockWorkflow,stepLabels:STEP_LABELS.slice()};
   if(!pass)console.error('V61 SELFTEST FAIL',t);
 }
 function install(){
@@ -518,8 +546,10 @@ function install(){
   installNavigation();
   installStockEnterNavigation();
   setTimeout(()=>{refresh();selfTest();},0);
-  setTimeout(()=>{refresh();enforceStockCheckpoint();},1100);
-  window.addEventListener('load',()=>setTimeout(enforceStockCheckpoint,350),{once:true});
+  setTimeout(()=>{refresh();enforceStockCheckpoint();lockWorkflow();},1100);
+  window.addEventListener('load',()=>setTimeout(()=>{enforceStockCheckpoint();lockWorkflow();},350),{once:true});
+  window.addEventListener('pageshow',()=>setTimeout(lockWorkflow,0));
+  setInterval(lockWorkflow,1500);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
