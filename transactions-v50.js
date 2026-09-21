@@ -144,7 +144,7 @@
       if(!di||!wi) return;
       const row=di.closest('tr');
       const activeBase=recalcCigActiveBase(c);
-    if(row?.cells?.[1]) row.cells[1].textContent=money(activeBase);
+      if(row?.cells?.[1]) row.cells[1].textContent=money(activeBase);
       if(row?.cells?.[2]) row.cells[2].innerHTML='<b>'+num(c.display)+'</b>';
       if(row?.cells?.[4]) row.cells[4].innerHTML='<b>'+num(c.warehouse)+'</b>';
       if(resetInputs){ di.value=String(num(c.display)); wi.value=String(num(c.warehouse)); }
@@ -185,6 +185,7 @@
   function refreshDisplayRow(i,{resetMove=false}={}){
     const c=cigCatalog[i-1], move=byId('move'+i);
     if(!c||!move) return;
+    const activeBase=recalcCigActiveBase(c);
     const purchase=num(c.purchaseQty), whBefore=num(c.warehouse)+purchase;
     if(resetMove) move.value='0';
     let mv=num(move.value);
@@ -192,7 +193,7 @@
     move.max=String(whBefore);
 
     const row=move.closest('tr');
-    if(row?.cells?.[1]) row.cells[1].textContent=money(c.base);
+    if(row?.cells?.[1]) row.cells[1].textContent=money(activeBase);
     if(row?.cells?.[2]) row.cells[2].textContent=String(whBefore);
     if(row?.cells?.[3]) row.cells[3].textContent=String(num(c.display));
 
@@ -208,6 +209,7 @@
     if(avail) avail.textContent=String(run);
     if(end) end.max=String(run);
     if(cigWh) cigWh.textContent=String(rem);
+    refreshWarehouseAuditRow(i);
 
     if(end){
       const endRow=end.closest('tr');
@@ -219,8 +221,63 @@
     if(whModal) whModal.textContent=money(rem*activeBase);
   }
 
+  function installWarehouseAuditColumns(){
+    const end=byId('cigEnd1');
+    const table=end?.closest('table');
+    if(!table || table.dataset.kaWarehouseAudit==='1') return;
+    const head=table.tHead?.rows?.[0];
+    if(!head) return;
+
+    const addHead=(index,label)=>{
+      const th=document.createElement('th');
+      th.textContent=label;
+      th.className='ka-wh-audit-head';
+      head.insertBefore(th,head.cells[index]||null);
+    };
+    // Setelah Display Sebelumnya: Gudang Awal + Belanja + Gudang Tersedia.
+    addHead(4,'Gudang Awal');
+    addHead(5,'Belanja Masuk');
+    addHead(6,'Gudang Tersedia');
+
+    // Rename "Sisa Gudang" menjadi istilah yang lebih jelas.
+    [...head.cells].forEach(th=>{
+      if(String(th.textContent||'').trim().toLowerCase()==='sisa gudang') th.textContent='Gudang Akhir';
+    });
+
+    cigCatalog.forEach((_,ix)=>{
+      const i=ix+1,row=byId('cigEnd'+i)?.closest('tr');
+      if(!row) return;
+      const make=(id,cls='')=>{
+        const td=document.createElement('td');
+        td.id=id;
+        if(cls) td.className=cls;
+        return td;
+      };
+      const before=row.cells[4]||null;
+      row.insertBefore(make('cigWhOpen'+i),before);
+      row.insertBefore(make('cigBuyIn'+i,'ka-wh-incoming'),row.cells[5]||null);
+      row.insertBefore(make('cigWhAvailable'+i),row.cells[6]||null);
+    });
+    table.dataset.kaWarehouseAudit='1';
+  }
+
+  function refreshWarehouseAuditRow(i){
+    const c=cigCatalog[i-1];
+    if(!c) return;
+    const opening=num(c.warehouse),incoming=num(c.purchaseQty),available=opening+incoming;
+    const a=byId('cigWhOpen'+i),b=byId('cigBuyIn'+i),d=byId('cigWhAvailable'+i);
+    if(a) a.textContent=String(opening);
+    if(b){
+      b.textContent=incoming?('+'+incoming):'0';
+      b.style.fontWeight=incoming?'800':'';
+      b.style.color=incoming?'var(--green)':'';
+    }
+    if(d) d.textContent=String(available);
+  }
+
   function refreshAllDisplay({resetMoves=false}={}){
     if(typeof cigCatalog==='undefined') return;
+    installWarehouseAuditColumns();
     cigCatalog.forEach((_,ix)=>refreshDisplayRow(ix+1,{resetMove:resetMoves}));
     calcDisplayTotalV50();
     try{ if(typeof calcCigTotals==='function') calcCigTotals(); }catch(_){}
@@ -380,6 +437,8 @@
     ok('Sempurna Prima base corrected to 15300',Number(canonicalFor({name:'sempurna prima'}).base)===15300);
     const testCig={base:16500,display:0,warehouse:70,purchaseQty:10,purchaseCost:200000};
     ok('Rokok weighted modal absorbs actual purchase cost',Math.abs(recalcCigActiveBase(testCig)-16937.5)<0.0001);
+    installWarehouseAuditColumns();
+    ok('Rokok warehouse audit columns installed',!!byId('cigWhOpen1')&&!!byId('cigBuyIn1')&&!!byId('cigWhAvailable1'));
     const pass=results.every(x=>x[1]);
     document.documentElement.dataset.v50Selftest=pass?'PASS':'FAIL';
     window.KAStockV50={source17,results,pass,sync:syncBeforeOperationalStep};
