@@ -187,6 +187,19 @@ async function pullAll(){
   try{window.dispatchEvent(new CustomEvent('ka:shared-sync',{detail:{direction:'pull',count:(data.records||[]).length}}))}catch(_){}
   return data.records||[];
 }
+async function pullUsageTombstones(){
+  const data=await api({action:'pull',kinds:['note_usage']});
+  const hashes=loadHashes();
+  let count=0;
+  (data.records||[]).forEach(r=>{
+    if(r.kind!=='note_usage'||!r.is_deleted)return;
+    applyOne(r);
+    hashes[recKey(r)]='__deleted__';
+    count++;
+  });
+  saveHashes(hashes);
+  return count;
+}
 async function pushChanged(){
   const hashes=loadHashes(),local=recordsLocal(),changed=[],localMap=new Map();
   local.forEach(r=>{
@@ -267,10 +280,11 @@ async function syncNow(manual=false){
   try{
     if(!localStorage.getItem(BOOT_KEY))await bootstrap();
     else{
+      const released=await pullUsageTombstones();
       const pushed=await pushChanged();
       const pulled=await pullAll();
       const media=await uploadPendingMedia();
-      setStatus('ok','Sinkron selesai • kirim '+pushed+' • tarik '+pulled.length+' • foto '+media);
+      setStatus('ok','Sinkron selesai • release '+released+' • kirim '+pushed+' • tarik '+pulled.length+' • foto '+media);
     }
     lastError='';return true;
   }catch(e){
