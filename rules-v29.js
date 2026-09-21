@@ -106,12 +106,27 @@
   function noteUsable(note, type) {
     return !!note && note.type === type && note.shiftId === ACTIVE_SHIFT.id && note.status !== 'void';
   }
+  function syncUsedNotesFromStorage() {
+    const fresh=load(STORE.usedNotes,{});
+    state.usedNotes=(fresh&&typeof fresh==='object')?fresh:{};
+    return state.usedNotes;
+  }
   function noteUsed(id) {
-    const rec=state.usedNotes[id];
+    const rec=syncUsedNotesFromStorage()[id];
     return !!rec && (!rec.shiftId || rec.shiftId===ACTIVE_SHIFT.id);
   }
   function markNoteUsed(id, area) {
-    state.usedNotes[id] = { area, at: new Date().toISOString(), shiftId: ACTIVE_SHIFT.id };
+    const note=noteById(id);
+    let validatedTotal=null;
+    if(area==='package') validatedTotal=packagePurchaseTotal();
+    else if(area==='cigarette') validatedTotal=cigarettePurchaseTotal();
+    state.usedNotes[id] = {
+      area,
+      at: new Date().toISOString(),
+      shiftId: ACTIVE_SHIFT.id,
+      validatedTotal: validatedTotal==null?undefined:Number(validatedTotal),
+      noteAmount: note?Number(note.amount||0):undefined
+    };
     save(STORE.usedNotes, state.usedNotes);
     refreshNoteSelectors();
   }
@@ -187,6 +202,7 @@
   }
 
   function refreshNoteSelectors() {
+    syncUsedNotesFromStorage();
     ensureNoteSelects();
     populateNoteSelect(document.getElementById('pkgNoteV29'), 'package');
     populateNoteSelect(document.getElementById('cigNoteV29'), 'cigarette');
