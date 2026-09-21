@@ -88,8 +88,15 @@ function setJson(key,value){
   write(key,value);storageSignal(key,value);
 }
 function applyOne(r){
-  if(!r||r.is_deleted)return;
+  if(!r)return;
   const p=r.payload,id=String(r.record_id||'');
+  if(r.is_deleted){
+    if(r.kind==='note_usage'){
+      const m=read('ka_v29_used_notes',{})||{};
+      if(Object.prototype.hasOwnProperty.call(m,id)){delete m[id];setJson('ka_v29_used_notes',m);}
+    }
+    return;
+  }
   if(r.kind==='note'){
     let a=read('ka_v29_purchasing_notes',[]);if(!Array.isArray(a))a=[];
     const ix=a.findIndex(x=>String(x?.id||'')===id);
@@ -171,8 +178,8 @@ async function pullAll(){
   const hashes=loadHashes();
   (data.records||[]).forEach(r=>{
     applyOne(r);
-    hashes[recKey(r)]=hash(r.payload);
-    if(r.kind==='note')cloudNoteIds.add(String(r.record_id));
+    hashes[recKey(r)]=r.is_deleted?'__deleted__':hash(r.payload);
+    if(r.kind==='note'&&!r.is_deleted)cloudNoteIds.add(String(r.record_id));
   });
   saveHashes(hashes);
   try{window.KAPurchasingV56?.refreshNotes?.()}catch(_){}
@@ -181,13 +188,28 @@ async function pullAll(){
   return data.records||[];
 }
 async function pushChanged(){
-  const hashes=loadHashes(),local=recordsLocal(),changed=[];
-  local.forEach(r=>{const k=recKey(r),h=hash(r.payload);if(hashes[k]!==h)changed.push(r)});
+  const hashes=loadHashes(),local=recordsLocal(),changed=[],localMap=new Map();
+  local.forEach(r=>{
+    const k=recKey(r),h=hash(r.payload);
+    localMap.set(k,r);
+    if(hashes[k]!==h)changed.push(r);
+  });
+
+  Object.keys(hashes).forEach(k=>{
+    if(!k.startsWith('note_usage::'))return;
+    if(hashes[k]==='__deleted__'||localMap.has(k))return;
+    const id=k.slice('note_usage::'.length);
+    if(id)changed.push({kind:'note_usage',record_id:id,payload:{},updated_by:actor(),is_deleted:true});
+  });
+
   if(!changed.length)return 0;
   for(let i=0;i<changed.length;i+=100){
     const batch=changed.slice(i,i+100);
     await api({action:'push',actor:actor(),records:batch});
-    batch.forEach(r=>{hashes[recKey(r)]=hash(r.payload);if(r.kind==='note')cloudNoteIds.add(String(r.record_id))});
+    batch.forEach(r=>{
+      hashes[recKey(r)]=r.is_deleted?'__deleted__':hash(r.payload);
+      if(r.kind==='note'&&!r.is_deleted)cloudNoteIds.add(String(r.record_id));
+    });
   }
   saveHashes(hashes);
   return changed.length;
