@@ -84,18 +84,22 @@
   // Angka presisi mempertahankan pecahan modal rokok yang di Excel tampil dibulatkan.
   const LIVE_EXCEL_18={
     shiftId:'2026-09-18-full-rifda',
-    opening:109257194.777778,
-    closing:110299149,
-    baseMargin:566249.2222222222,
-    adminNet:55410,
-    margin:621659.2222222222,
+    // Source: workbook "worksheet september benar(4).xlsx" / sheet "18 september".
+    opening:110989194.777778,
+    closing:112031149,
+    packageMargin:57150,
+    cigaretteMargin:110172.22222222222,
+    txMargin:353427,
+    baseMargin:523249.22222222225,
+    adminNet:-2500,
+    margin:520749.22222222225,
     minyak:448310,
     k279:0,
     selisihRokok:0,
     selisihPaket:0,
     voucher:8155250,
     piutang:5597788,
-    balance:-28015
+    balance:72894.99999977648
   };
 
   function isLiveExcel18(){
@@ -120,13 +124,10 @@
   }
 
   function openingTotal(){
-    const raw=rawOpeningTotal();
-    // Untuk pengujian 18/09, Excel live menunjukkan Modal Lama(A)
-    // Rp109.257.194,777778. Seed lama yang sempat dipakai aplikasi berasal
-    // dari workbook unduhan lama dan lebih tinggi tepat Rp1.732.000.
-    // Gunakan total live sebagai sumber Balance; audit tetap menampilkan raw
-    // agar breakdown per akun dapat diperbaiki tanpa menyembunyikan selisih.
-    return isLiveExcel18()?LIVE_EXCEL_18.opening:raw;
+    // Modal Lama(A) harus SELALU berasal dari 25 saldo opening yang benar-benar
+    // dibawa dari shift sebelumnya. Jangan pernah memaksa angka target Excel.
+    // Target Excel hanya dipakai untuk audit/perbandingan, bukan untuk menghitung.
+    return rawOpeningTotal();
   }
 
   function openingPiutang(){ return openingValue(25); }
@@ -343,12 +344,18 @@
     const s=snapshot||balanceSnapshot(true);
     const rawOpening=rawOpeningTotal();
     const adminNet=adminNetMargin();
+    const pkg=packageClosing();
+    const cig=cigaretteClosing();
+    const txMargin=transactionMargin();
     const baseMargin=Number(s.margin||0)-adminNet;
     const voucher=money44(byId('modalInput20'));
     const rows=[
-      {key:'openingRaw',label:'Modal Lama A — data Cek Awal',actual:rawOpening,target:LIVE_EXCEL_18.opening},
+      {key:'openingRaw',label:'Modal Lama A — 25 saldo opening',actual:rawOpening,target:LIVE_EXCEL_18.opening},
       {key:'closing',label:'Modal Baru A',actual:Number(s.closing||0),target:LIVE_EXCEL_18.closing},
-      {key:'baseMargin',label:'Margin transaksi/stok sebelum Admin',actual:baseMargin,target:LIVE_EXCEL_18.baseMargin},
+      {key:'packageMargin',label:'Margin Paket',actual:Number(pkg.margin||0),target:LIVE_EXCEL_18.packageMargin},
+      {key:'cigaretteMargin',label:'Margin Rokok',actual:Number(cig.margin||0),target:LIVE_EXCEL_18.cigaretteMargin},
+      {key:'txMargin',label:'Margin transaksi (termasuk Admin net)',actual:txMargin,target:LIVE_EXCEL_18.txMargin},
+      {key:'baseMargin',label:'Margin sebelum Admin net',actual:baseMargin,target:LIVE_EXCEL_18.baseMargin},
       {key:'adminNet',label:'Admin net (Masuk − Keluar)',actual:adminNet,target:LIVE_EXCEL_18.adminNet},
       {key:'margin',label:'Total Margin',actual:Number(s.margin||0),target:LIVE_EXCEL_18.margin},
       {key:'minyak',label:'Modal Minyak',actual:Number(s.minyak||0),target:LIVE_EXCEL_18.minyak},
@@ -356,7 +363,7 @@
       {key:'piutang',label:'Piutang Akhir',actual:Number(s.piutangAkhir||0),target:LIVE_EXCEL_18.piutang},
       {key:'balance',label:'Balance',actual:Number(s.balance||0),target:LIVE_EXCEL_18.balance}
     ].map(x=>({...x,diff:Number(x.actual||0)-Number(x.target||0)}));
-    return {reference:LIVE_EXCEL_18,rawOpening,effectiveOpening:Number(s.opening||0),adminNet,baseMargin,rows};
+    return {reference:LIVE_EXCEL_18,rawOpening,effectiveOpening:Number(s.opening||0),adminNet,baseMargin,txMargin,packageMargin:pkg.margin,cigaretteMargin:cig.margin,rows};
   }
 
   function balanceSnapshot(skipAuto=false){
