@@ -679,6 +679,27 @@
     releaseNote(id){
       freeNote(String(id||''));
       return true;
+    },
+    createNote({id,type,amount,description='',label=''}) {
+      const noteId=String(id||'').trim().toUpperCase();
+      const noteType=String(type||'').trim();
+      const noteAmount=Math.max(0,Number(amount)||0);
+      if(!noteId || !['package','cigarette','oil','operational'].includes(noteType) || noteAmount<=0) return {ok:false,error:'invalid'};
+      if(state.notes.some(n=>n.id===noteId)) return {ok:false,error:'duplicate'};
+      const note={
+        id:noteId,type:noteType,amount:noteAmount,
+        description:String(description||'').trim(),
+        label:String(label||'').trim(),
+        shiftId:ACTIVE_SHIFT.id,
+        shiftLabel:ACTIVE_SHIFT.label,
+        uploadedAt:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
+        status:'ready'
+      };
+      state.notes.push(note);
+      save(STORE.notes,state.notes);
+      refreshNoteSelectors();
+      renderAdminPanel();
+      return {ok:true,note:{...note}};
     }
   };
 })();
