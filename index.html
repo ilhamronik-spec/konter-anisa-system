@@ -2774,6 +2774,57 @@ function coreDebtSnapshot(){
   try{if(typeof paymentEntries!=='undefined'&&Array.isArray(paymentEntries))payments=JSON.parse(JSON.stringify(paymentEntries))}catch(_){}
   return {debts,payments};
 }
+
+function numberText(id){
+  const el=$(id);if(!el)return 0;
+  const raw=('value' in el?el.value:el.textContent)||'';
+  return Number(String(raw).replace(/[^0-9.-]/g,''))||0;
+}
+function stockMovementSnapshot(){
+  const rows=[];
+  try{
+    if(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog)){
+      let opening=0,incoming=0,outgoing=0,closing=0,value=0,sales=0,cogs=0;
+      pkgCatalog.forEach((p,i)=>{
+        const ix=i+1,base=Number(p.activeBase??p.base??0),sell=Number(p.activeSell??p.sell??0),op=Number(p.stock||0),inc=Number(p.purchaseQty||0);
+        const sold=numberText('pkgSold'+ix),endEl=$('pkgEnd'+ix),end=String(endEl?.value||'').trim()!==''?Number(endEl.value||0):Math.max(0,op+inc-sold);
+        opening+=op;incoming+=inc;outgoing+=sold;closing+=end;value+=end*base;sales+=sold*sell;cogs+=sold*base;
+      });
+      rows.push({category:'Paket',unit:'unit',opening,incoming,outgoing,closing,closingValue:value,sales,cogs,margin:sales-cogs});
+    }
+  }catch(_){}
+  try{
+    if(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog)){
+      let opening=0,incoming=0,outgoing=0,closing=0,value=0,sales=0,cogs=0;
+      cigCatalog.forEach((r,i)=>{
+        const ix=i+1,base=Number(r.base||0),sell=Number(r.sell||0),op=Number(r.display||0)+Number(r.warehouse||0),inc=Number(r.purchaseQty||0);
+        const sold=numberText('cigSold'+ix),endDisp=numberText('cigEnd'+ix),endWh=numberText('cigWh'+ix),end=(endDisp+endWh)||Math.max(0,op+inc-sold);
+        opening+=op;incoming+=inc;outgoing+=sold;closing+=end;value+=end*base;sales+=sold*sell;cogs+=sold*base;
+      });
+      rows.push({category:'Rokok',unit:'unit',opening,incoming,outgoing,closing,closingValue:value,sales,cogs,margin:sales-cogs});
+    }
+  }catch(_){}
+  try{
+    const prev=numberText('prevModalCheck23'),inc=numberText('accBuyTotal'),used=numberText('accBuyUsed'),close=numberText('modalInput23');
+    if(prev||inc||used||close)rows.push({category:'Aksesoris',unit:'nilai modal',opening:prev,incoming:inc,outgoing:used,closing:close,closingValue:close});
+  }catch(_){}
+  try{
+    const prev=numberText('prevModalCheck21'),inc=numberText('medBuyTotal'),used=numberText('medBuyUsed'),close=numberText('modalInput21');
+    if(prev||inc||used||close)rows.push({category:'Obat',unit:'nilai modal',opening:prev,incoming:inc,outgoing:used,closing:close,closingValue:close});
+  }catch(_){}
+  try{
+    const arr=(typeof txEntries!=='undefined'&&Array.isArray(txEntries?.minyak))?txEntries.minyak:[];
+    const liters=arr.reduce((s,x)=>s+Number(String(x.liters||0).replace(',','.'))||s,0);
+    const modalUsed=arr.reduce((s,x)=>s+Number(x.modal||0),0);
+    const sales=arr.reduce((s,x)=>s+Number(x.amount||0),0);
+    const purchases=Number(window.KABalanceV44?.oilPurchaseTotal?.()||0);
+    if(liters||modalUsed||sales||purchases)rows.push({category:'Minyak',unit:'liter/nilai',opening:0,incoming:purchases,outgoing:modalUsed,closing:0,closingValue:0,sales,margin:sales-modalUsed,litersSold:liters});
+  }catch(_){}
+  return rows;
+}
+function operationalSnapshot(){
+  try{return (typeof opEntries!=='undefined'&&Array.isArray(opEntries))?JSON.parse(JSON.stringify(opEntries)):[]}catch(_){return []}
+}
 function snapshot(){
   const s=currentShift();if(!s||!window.KABalanceV44?.balanceSnapshot)return;
   try{
@@ -2788,7 +2839,7 @@ function snapshot(){
       modalOpening:Number(b.opening||0),modalClosing:Number(b.closing||0),
       modalChange:Number(b.closing||0)-Number(b.opening||0),
       piutangOpening:Number(b.piutangAwal||0),piutangClosing:Number(b.piutangAkhir||0),
-      modalBreakdown:modal,debtEntries:debt.debts,paymentEntries:debt.payments
+      modalBreakdown:modal,debtEntries:debt.debts,paymentEntries:debt.payments,stockMovement:stockMovementSnapshot(),operationalEntries:operationalSnapshot()
     };
     write(SUM,map);
   }catch(e){console.warn('Admin summary snapshot skipped',e)}
