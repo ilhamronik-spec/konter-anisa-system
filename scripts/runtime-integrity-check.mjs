@@ -71,6 +71,7 @@ for(const href of [...html.matchAll(/<link\b[^>]*\bhref=["']([^"']+\.css[^"']*)[
 if((html.match(/transactions-v43\.js/g)||[]).length!==1) fail('transactions-v43.js must be loaded exactly once');
 if(/transactions-v35\.js/.test(html)) fail('obsolete missing transactions-v35.js reference reintroduced');
 
+const balance=fs.readFileSync(path.join(ROOT,'transactions-v43.js'),'utf8');
 if(/transactions-v72\.js/.test(html)) fail('obsolete Excel audit script V72 reintroduced');
 for(const [file,txt] of [
   ['index.html',html],
@@ -83,7 +84,6 @@ for(const [file,txt] of [
   }
 }
 
-const balance=fs.readFileSync(path.join(ROOT,'transactions-v43.js'),'utf8');
 if(!balance.includes('function oilPurchaseTotal()')) fail('Balance missing oilPurchaseTotal()');
 if(!balance.includes('window.KAOilPurchaseV76?.total?.()')) fail('Balance not reading Belanja Minyak V76 total');
 if(!balance.includes('Belanja Minyak')) fail('Balance UI no longer labels Belanja Minyak');
