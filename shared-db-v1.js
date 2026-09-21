@@ -93,7 +93,14 @@ function applyOne(r){
   if(r.is_deleted){
     if(r.kind==='note_usage'){
       const m=read('ka_v29_used_notes',{})||{};
-      if(Object.prototype.hasOwnProperty.call(m,id)){delete m[id];setJson('ka_v29_used_notes',m);}
+      if(Object.prototype.hasOwnProperty.call(m,id)) delete m[id];
+      setJson('ka_v29_used_notes',m);
+      try{
+        if(window.KARegulationsV29?.usedNotes && typeof window.KARegulationsV29.usedNotes==='object'){
+          delete window.KARegulationsV29.usedNotes[id];
+        }
+        window.KAPurchasingV56?.refreshNotes?.();
+      }catch(_){}
     }
     return;
   }
@@ -104,6 +111,12 @@ function applyOne(r){
     setJson('ka_v29_purchasing_notes',a);cloudNoteIds.add(id);
   }else if(r.kind==='note_usage'){
     const m=read('ka_v29_used_notes',{})||{};m[id]=p;setJson('ka_v29_used_notes',m);
+    try{
+      if(window.KARegulationsV29?.usedNotes && typeof window.KARegulationsV29.usedNotes==='object'){
+        window.KARegulationsV29.usedNotes[id]=p;
+      }
+      window.KAPurchasingV56?.refreshNotes?.();
+    }catch(_){}
   }else if(r.kind==='shift'){
     const key=SHIFT_PREFIX+id;setJson(key,p);
     let idx=read(SHIFT_INDEX,[]);if(!Array.isArray(idx))idx=[];
