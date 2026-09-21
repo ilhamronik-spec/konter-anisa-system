@@ -72,6 +72,18 @@
   const num=v=>Math.max(0,Number(v)||0);
   const money=n=>typeof fmt==='function'?fmt(Number(n)||0):'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 
+  function recalcCigActiveBase(c){
+    if(!c) return 0;
+    const openingBase=Number(c._openingBase ?? c.base ?? 0);
+    if(c._openingBase==null) c._openingBase=openingBase;
+    const openingUnits=num(c.display)+num(c.warehouse);
+    const q=num(c.purchaseQty),cost=num(c.purchaseCost);
+    const totalUnits=openingUnits+q;
+    const weighted=totalUnits>0?((openingUnits*openingBase)+cost)/totalUnits:openingBase;
+    c.activeBase=Number.isFinite(weighted)?weighted:openingBase;
+    return c.activeBase;
+  }
+
   function canonicalFor(c){
     return sourceMap.get(norm(c?.name)) || null;
   }
@@ -92,6 +104,8 @@
         const s=canonicalFor(c);
         if(!s) return;
         c.base=s.base;
+        c._openingBase=s.base;
+        c.activeBase=s.base;
         c.sell=s.sell;
         c.display=s.display;
         c.warehouse=s.warehouse;
@@ -129,7 +143,8 @@
       const i=ix+1, di=byId('cigDispCheck'+i), wi=byId('cigWhCheck'+i);
       if(!di||!wi) return;
       const row=di.closest('tr');
-      if(row?.cells?.[1]) row.cells[1].textContent=money(c.base);
+      const activeBase=recalcCigActiveBase(c);
+    if(row?.cells?.[1]) row.cells[1].textContent=money(activeBase);
       if(row?.cells?.[2]) row.cells[2].innerHTML='<b>'+num(c.display)+'</b>';
       if(row?.cells?.[4]) row.cells[4].innerHTML='<b>'+num(c.warehouse)+'</b>';
       if(resetInputs){ di.value=String(num(c.display)); wi.value=String(num(c.warehouse)); }
@@ -158,6 +173,7 @@
         const s=openingSnapshot(ix);
         c.display=s.display;
         c.warehouse=s.warehouse;
+        recalcCigActiveBase(c);
         if(typeof openingCig!=='undefined' && openingCig[ix]){
           openingCig[ix].display=s.display;
           openingCig[ix].warehouse=s.warehouse;
@@ -195,12 +211,12 @@
 
     if(end){
       const endRow=end.closest('tr');
-      if(endRow?.cells?.[1]) endRow.cells[1].textContent=money(c.base);
+      if(endRow?.cells?.[1]) endRow.cells[1].textContent=money(activeBase);
       if(endRow?.cells?.[2]) endRow.cells[2].textContent=money(c.sell);
       if(endRow?.cells?.[3]) endRow.cells[3].textContent=String(num(c.display));
     }
     const whModal=byId('cigWhModal'+i);
-    if(whModal) whModal.textContent=money(rem*Number(c.base||0));
+    if(whModal) whModal.textContent=money(rem*activeBase);
   }
 
   function refreshAllDisplay({resetMoves=false}={}){
@@ -244,6 +260,7 @@
       else total.value=num(c.purchaseCost)?Math.round(num(c.purchaseCost)).toLocaleString('id-ID'):'';
     }
     const unitBase=num(c.purchaseQty)?num(c.purchaseCost)/num(c.purchaseQty):num(c.base);
+    recalcCigActiveBase(c);
     if(unit) unit.value=num(c.purchaseQty)?Math.round(unitBase).toLocaleString('id-ID'):'0';
     if(sell){
       if(typeof setMoneyInput==='function') setMoneyInput(sell,num(c.sell));
@@ -281,6 +298,7 @@
     c.purchaseQty=q;
     c.purchaseCost=total;
     if(newSell>0) c.sell=newSell;
+    recalcCigActiveBase(c);
     const unit=q>0?total/q:0;
     const unitMargin=q>0?num(c.sell)-unit:0;
     if(byId('cigUnit')) byId('cigUnit').value=q?Math.round(unit).toLocaleString('id-ID'):'0';
@@ -304,7 +322,7 @@
 
   function resetDaySpecificDefaults(){
     if(typeof cigCatalog!=='undefined'){
-      cigCatalog.forEach(c=>{c.purchaseQty=0;c.purchaseCost=0;});
+      cigCatalog.forEach(c=>{c.purchaseQty=0;c.purchaseCost=0;c._openingBase=Number(c.base||0);c.activeBase=Number(c.base||0);});
     }
     document.querySelectorAll('input[id^="move"]').forEach(el=>{el.value='0';});
     const cq=byId('cigQty'),ct=byId('cigTotal');
@@ -360,6 +378,8 @@
     ok('Sheet18 after transfer display=195',d===195);
     ok('Sheet18 after transfer warehouse=465',w===465);
     ok('Sempurna Prima base corrected to 15300',Number(canonicalFor({name:'sempurna prima'}).base)===15300);
+    const testCig={base:16500,display:0,warehouse:70,purchaseQty:10,purchaseCost:200000};
+    ok('Rokok weighted modal absorbs actual purchase cost',Math.abs(recalcCigActiveBase(testCig)-16937.5)<0.0001);
     const pass=results.every(x=>x[1]);
     document.documentElement.dataset.v50Selftest=pass?'PASS':'FAIL';
     window.KAStockV50={source17,results,pass,sync:syncBeforeOperationalStep};
