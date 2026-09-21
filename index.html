@@ -2876,5 +2876,10 @@ function install(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
+<script>
+setTimeout(function(){
+  import('./shared-db-v1.js?build=1').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+},0);
+</script>
 </body>
 </html>
