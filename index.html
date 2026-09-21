@@ -2771,7 +2771,7 @@ function snapshot(){
 function corrections(){const a=read(CORR,[]);return Array.isArray(a)?a:[]}
 function activeCorrection(){
   const s=currentShift(),e=currentEmployee();if(!s)return null;
-  return corrections().filter(x=>x.shiftId===s.id&&(!x.employeeId||x.employeeId===e.id)&&['returned','resubmitted'].includes(x.status)).sort((a,b)=>String(b.requestedAt||'').localeCompare(String(a.requestedAt||'')))[0]||null;
+  return corrections().filter(x=>x.shiftId===s.id&&(!x.employeeId||x.employeeId===e.id||String(x.employeeName||'')===String(e.name||''))&&['returned','resubmitted'].includes(x.status)).sort((a,b)=>String(b.requestedAt||'').localeCompare(String(a.requestedAt||'')))[0]||null;
 }
 function ensureCorrectionBanner(){
   if($('kaAdminCorrectionBanner'))return;
