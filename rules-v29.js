@@ -115,17 +115,17 @@
     const rec=syncUsedNotesFromStorage()[id];
     return !!rec && (!rec.shiftId || rec.shiftId===ACTIVE_SHIFT.id);
   }
-  function markNoteUsed(id, area) {
+  function markNoteUsed(id, area, validatedTotal=null, noteAmount=null) {
     const note=noteById(id);
-    let validatedTotal=null;
-    if(area==='package') validatedTotal=packagePurchaseTotal();
-    else if(area==='cigarette') validatedTotal=cigarettePurchaseTotal();
+    const finalValidated=validatedTotal==null
+      ? (area==='package'?packagePurchaseTotal():(area==='cigarette'?cigarettePurchaseTotal():null))
+      : validatedTotal;
     state.usedNotes[id] = {
       area,
       at: new Date().toISOString(),
       shiftId: ACTIVE_SHIFT.id,
-      validatedTotal: validatedTotal==null?undefined:Number(validatedTotal),
-      noteAmount: note?Number(note.amount||0):undefined
+      validatedTotal: finalValidated==null?undefined:Number(finalValidated),
+      noteAmount: noteAmount==null?(note?Number(note.amount||0):undefined):Number(noteAmount)
     };
     save(STORE.usedNotes, state.usedNotes);
     refreshNoteSelectors();
@@ -614,7 +614,8 @@
         const note = selectedNote('pkgNoteV29', 'package');
         const total = packagePurchaseTotal();
         if (note && total > 0 && Math.round(total) === Math.round(Number(note.amount || 0))) {
-          setTimeout(() => markNoteUsed(note.id, 'package'), 0);
+          const noteAmount=Number(note.amount||0);
+          setTimeout(() => markNoteUsed(note.id, 'package', total, noteAmount), 0);
         }
       }
       if (el.id === 'cigConfirmPreviewBtn') {
@@ -622,7 +623,8 @@
         const note = selectedNote('cigNoteV29', 'cigarette');
         const total = cigarettePurchaseTotal();
         if (note && total > 0 && Math.round(total) === Math.round(Number(note.amount || 0))) {
-          setTimeout(() => markNoteUsed(note.id, 'cigarette'), 0);
+          const noteAmount=Number(note.amount||0);
+          setTimeout(() => markNoteUsed(note.id, 'cigarette', total, noteAmount), 0);
         }
       }
       if (action.includes('addOperationalEntry')) {
