@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT=process.cwd();
-const BUILD='77';
+const BUILD='78';
 const EXPECTED=[
   'account-master-v59.js',
   'rules-v29.js',
@@ -21,7 +21,6 @@ const EXPECTED=[
   'transactions-v53.js',
   'transactions-v55.js',
   'transactions-v61.js',
-  'transactions-v72.js',
   'ui-clean-v74.js',
   'transactions-v75.js',
   'runtime-lock-v77.js'
@@ -72,10 +71,22 @@ for(const href of [...html.matchAll(/<link\b[^>]*\bhref=["']([^"']+\.css[^"']*)[
 if((html.match(/transactions-v43\.js/g)||[]).length!==1) fail('transactions-v43.js must be loaded exactly once');
 if(/transactions-v35\.js/.test(html)) fail('obsolete missing transactions-v35.js reference reintroduced');
 
+if(/transactions-v72\.js/.test(html)) fail('obsolete Excel audit script V72 reintroduced');
+for(const [file,txt] of [
+  ['index.html',html],
+  ['transactions-v43.js',balance],
+  ['transactions-v50.js',fs.readFileSync(path.join(ROOT,'transactions-v50.js'),'utf8')],
+  ['transactions-v53.js',fs.readFileSync(path.join(ROOT,'transactions-v53.js'),'utf8')]
+]){
+  if(/Audit Excel Live|OneDrive live|Referensi Excel 18\/09|enforceExcel18OpeningBaseline|modalExcel/i.test(txt)){
+    fail('Excel audit dependency reintroduced',file);
+  }
+}
+
 const balance=fs.readFileSync(path.join(ROOT,'transactions-v43.js'),'utf8');
 if(!balance.includes('function oilPurchaseTotal()')) fail('Balance missing oilPurchaseTotal()');
 if(!balance.includes('window.KAOilPurchaseV76?.total?.()')) fail('Balance not reading Belanja Minyak V76 total');
-if(!balance.includes('Belanja Minyak (K279)')) fail('Balance UI no longer labels K279 as Belanja Minyak');
+if(!balance.includes('Belanja Minyak')) fail('Balance UI no longer labels Belanja Minyak');
 
 const oil=fs.readFileSync(path.join(ROOT,'transactions-v75.js'),'utf8');
 if(!oil.includes('window.KABalanceV44?.renderBalance?.()')) fail('Oil purchase changes do not trigger Balance recalculation');
@@ -98,6 +109,6 @@ for(const file of EXPECTED){
 }
 
 if(!process.exitCode){
-  console.log('RUNTIME INTEGRITY PASS — Konter Anisa BUILD V77');
+  console.log('RUNTIME INTEGRITY PASS — Konter Anisa BUILD V78');
   console.log('Scripts:',names.join(' -> '));
 }
