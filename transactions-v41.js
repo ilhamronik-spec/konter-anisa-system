@@ -18,6 +18,7 @@
   purchases.medicine ||= [];
 
   function moveOperationalToStep4(){
+    if(document.querySelector('script[src*="transactions-v61.js"]')) return;
     try {
       if(typeof labels !== 'undefined' && Array.isArray(labels) && labels.length >= 6){
         labels.splice(3,3,'Operasional','Hutang/Piutang','Transaksi');
