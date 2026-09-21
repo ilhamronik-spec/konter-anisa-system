@@ -97,7 +97,7 @@
     const mitra=migrateMitra();
     addAuditHint();
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
-      if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V72 — EXCEL 18 BCA + MITRA FIX';
+      if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V73 — MINYAK + LISTRIK + ADMIN FINAL';
     });
     if(bca||mitra)refreshAll();
 
