@@ -15,6 +15,13 @@
 .btn{border:1px solid var(--line);background:#fff;padding:9px 12px;border-radius:11px;font-size:12px;font-weight:800;cursor:pointer}.btn.primary{background:linear-gradient(135deg,#151018,#2a1734);color:#fff;border-color:#7c3aed}.btn.purple{background:linear-gradient(135deg,#6d28d9,#a855f7);color:#fff;border-color:#8b5cf6}.btn.danger{background:#fff2f3;color:#b91c1c;border-color:#fecaca}.btn:disabled{opacity:.45;cursor:not-allowed}.status,.pill{display:inline-flex;align-items:center;border-radius:999px;font-size:11px;font-weight:800;padding:6px 9px;border:1px solid}.status.ok,.pill.green{color:#087443;background:#edfcf5;border-color:#c7f1da}.status.warn{color:#b45309;background:#fff8eb;border-color:#fed7aa}.status.bad{color:#b42318;background:#fef3f2;border-color:#fecdca}.status.info,.pill.purple{color:#6d28d9;background:#f5f0ff;border-color:#ddd6fe}
 .notice{padding:12px 14px;border:1px solid;border-radius:13px;font-size:12px;line-height:1.55;margin-bottom:14px}.notice.blue{background:#f6f1ff;border-color:#ddd6fe;color:#5b21b6}.notice.amber{background:#fff8eb;border-color:#fed7aa;color:#9a3412}.notice.red{background:#fff2f3;border-color:#fecaca;color:#991b1b}.notice.green{background:#effbf5;border-color:#ccebdc;color:#087443}
 .two{grid-template-columns:1.1fr .9fr}.section-card{padding:18px}.section-card h3,.section-card h4{margin:0 0 12px}.table-card{overflow:hidden}.table-toolbar{display:grid;grid-template-columns:1fr .8fr auto;gap:10px;padding:14px;border-bottom:1px solid var(--line);background:#fcfaff}.input,.select,.textarea{width:100%;min-height:42px;border:1px solid #dfd8e7;border-radius:11px;background:#fff;padding:10px;font-size:12px}.textarea{min-height:100px;resize:vertical}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:900px}.table th{padding:12px 11px;background:linear-gradient(180deg,#faf7fd,#f5eff9);font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#6d6177;text-align:left}.table td{padding:12px 11px;border-top:1px solid #edf1f5;font-size:12px;vertical-align:middle}.money{font-variant-numeric:tabular-nums}.empty{text-align:center;color:var(--muted);padding:26px!important}.red{color:#b91c1c}.green{color:#087443}.amber{color:#b45309}.summary-list{display:grid;gap:9px}.summary-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px dashed #eee7f2;font-size:12px}.summary-row:last-child{border-bottom:0}
+.group-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding:8px;background:rgba(255,255,255,.78);border:1px solid #ebe4f1;border-radius:14px;box-shadow:0 8px 24px rgba(61,36,82,.05)}
+.group-tabs button{border:1px solid transparent;background:transparent;color:#6f647b;border-radius:10px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer}
+.group-tabs button:hover{background:#f7f2ff;color:#5b21b6}
+.group-tabs button.active{background:linear-gradient(135deg,#171019,#2d1837);color:#fff;border-color:#8b5cf6;box-shadow:0 6px 16px rgba(124,58,237,.15)}
+.side-foot{font-size:9.5px!important}
+.nav button{transition:.16s ease}.nav button:hover{background:rgba(168,85,247,.08);transform:translateX(2px)}
+
 .modal{position:fixed;inset:0;background:rgba(8,8,11,.74);backdrop-filter:blur(6px);z-index:30000;display:none;padding:22px;overflow:auto}.modal.open{display:grid;place-items:center}.modal-card{width:min(720px,100%);background:#fff;border:1px solid #d8c5e8;border-radius:20px;padding:18px;box-shadow:0 30px 90px rgba(30,10,45,.35)}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.modal-head h3{margin:0}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#776d82;font-weight:800;margin-bottom:6px}.mobile-menu{display:none}
 @media(max-width:1100px){.app{grid-template-columns:1fr}.side{position:fixed;left:0;top:0;bottom:0;width:270px;transform:translateX(-105%);transition:.2s;z-index:1000}.side.mobile-open{transform:translateX(0)}.mobile-menu{display:inline-flex}.kpis{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.content{padding:20px}}
 @media(max-width:650px){.kpis,.form-grid,.table-toolbar{grid-template-columns:1fr}.hero{display:block;padding:15px}.content{padding:15px}.topbar{height:68px;padding:0 14px}.hero h2{font-size:24px}}
@@ -26,23 +33,19 @@
 <div class="brand"><div class="logo">KA</div><div><h1>KONTER ANISA</h1><small>Business Management System</small></div></div>
 <div class="nav-title">Portal Admin</div>
 <div class="nav">
-<button class="active" data-view="dashboard"><span class="dot"></span>Dashboard</button>
-<button data-view="margin"><span class="dot"></span>Margin</button>
-<button data-view="minus"><span class="dot"></span>Minus</button>
-<button data-view="operational"><span class="dot"></span>Operasional</button>
-<button data-view="capital"><span class="dot"></span>Perkembangan Modal</button>
-<button data-view="debt"><span class="dot"></span>Hutang</button>
-<button data-view="review"><span class="dot"></span>Cek Inputan</button>
-<button data-view="attendance"><span class="dot"></span>Kehadiran</button>
-<button data-view="accounts"><span class="dot"></span>Akun & Role</button>
+<button class="active" data-view="dashboard" data-group="dashboard"><span class="dot"></span>Dashboard</button>
+<button data-view="margin" data-group="finance"><span class="dot"></span>Keuangan</button>
+<button data-view="capital" data-group="capitaldebt"><span class="dot"></span>Modal & Hutang</button>
+<button data-view="review" data-group="review"><span class="dot"></span>Cek Inputan</button>
+<button data-view="attendance" data-group="people"><span class="dot"></span>Karyawan & Akses</button>
 </div>
-<div class="side-foot"><b>ADMIN SIMULATION V1</b><br>Karyawan V80 dan Purchasing V83 tetap memakai logika yang sudah dikunci. Admin membaca ringkasan dan mengirim permintaan perbaikan tanpa mengubah rumus.</div>
+<div class="side-foot"><b>ADMIN SIMULATION V2</b><br>Menu diringkas berdasarkan fungsi. Karyawan V80 dan Purchasing V83 tetap memakai logika yang sudah dikunci.</div>
 </aside>
 <main class="main">
 <div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Admin / <span id="crumbView">Dashboard</span></span></div><div class="user"><div style="text-align:right"><b id="adminName" style="font-size:12px">Admin</b><div style="font-size:10px;color:var(--muted)">Administrator</div></div><div class="avatar" id="adminAvatar">AD</div></div></div>
 <div class="content">
 <section class="view active" id="view-dashboard">
-<div class="hero"><div><h2>Dashboard Admin</h2><p>Ringkasan keseluruhan Margin, Minus, Operasional, dan kehadiran. Detail per hari tersedia di menu masing-masing.</p></div><div class="actions"><span class="pill purple">Monitoring</span><span class="pill green">Tidak Mengubah Rumus V80</span></div></div>
+<div class="hero"><div><h2>Dashboard Admin</h2><p>Pusat monitoring usaha: keuangan, modal, hutang, selisih, kehadiran, dan tindak lanjut input Karyawan.</p></div><div class="actions"><span class="pill purple">Monitoring</span><span class="pill green">Tidak Mengubah Rumus V80</span></div></div>
 <div id="noAdmin" class="notice red" style="display:none"><b>Sesi Admin tidak ditemukan.</b> Portal ini nanti akan menggunakan akun Admin dari Login sungguhan.</div>
 <div class="grid kpis">
 <div class="card kpi good"><small>Total Margin Keseluruhan</small><strong id="kpiMargin">Rp0</strong><div id="kpiMarginSub">0 shift terekam</div></div>
@@ -50,6 +53,7 @@
 <div class="card kpi warn"><small>Total Operasional</small><strong id="kpiOperational">Rp0</strong><div id="kpiOperationalSub">Seluruh shift terekam</div></div>
 <div class="card kpi purple"><small>Absen Hari Ini</small><strong id="kpiAttendance">0</strong><div id="kpiAttendanceSub">Karyawan sudah absen masuk</div></div>
 </div>
+<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button></div>
 <div class="grid two">
 <div class="card section-card"><h3>Kehadiran Hari Ini</h3><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>Karyawan</th><th>Shift</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th></tr></thead><tbody id="dashAttendance"></tbody></table></div></div>
 <div class="card section-card"><h3>Minus Perlu Perhatian</h3><div class="notice amber">Semua minus ditampilkan. Nilai ≥ Rp50.000 diberi status <b>MINUS BESAR</b> untuk dikaji pada menu Cek Inputan.</div><div id="dashMinusList" class="summary-list"></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-go="review">Buka Cek Inputan</button></div></div>
@@ -57,21 +61,25 @@
 </section>
 
 <section class="view" id="view-margin">
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="minus">Selisih / Minus</button><button data-go="operational">Operasional</button></div>
 <div class="hero"><div><h2>Margin</h2><p>Rincian Margin per hari dan shift. Dashboard hanya menampilkan total keseluruhan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="marginSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="marginDate"><option value="">Semua tanggal</option></select><button class="btn" id="marginRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Margin</th><th>Balance</th><th>Update</th></tr></thead><tbody id="marginBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-minus">
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="minus">Selisih / Minus</button><button data-go="operational">Operasional</button></div>
 <div class="hero"><div><h2>Minus</h2><p>Rincian Balance minus per hari. Data positif dan Balance pas tidak dimasukkan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="minusSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="minusDate"><option value="">Semua tanggal</option></select><button class="btn" id="minusRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Balance</th><th>Kategori</th><th>Status Review</th></tr></thead><tbody id="minusBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-operational">
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="minus">Selisih / Minus</button><button data-go="operational">Operasional</button></div>
 <div class="hero"><div><h2>Operasional</h2><p>Rincian total operasional per hari/shift. Dashboard menampilkan akumulasi keseluruhan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="opSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="opDate"><option value="">Semua tanggal</option></select><button class="btn" id="opRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Operasional</th><th>Margin</th><th>Balance</th></tr></thead><tbody id="opBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-capital">
+<div class="group-tabs" data-tabgroup="capitaldebt"><button data-go="capital">Perkembangan Modal</button><button data-go="debt">Hutang Aktif</button></div>
 <div class="hero"><div><h2>Perkembangan Modal</h2><p>Pantau perkembangan total modal dari shift ke shift. Klik Detail untuk melihat komposisi 25 kategori modal pada shift tersebut.</p></div><div class="actions"><span class="pill purple">Read Only</span></div></div>
 <div class="grid kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
 <div class="card kpi purple"><small>Modal Terbaru</small><strong id="capitalLatest">Rp0</strong><div id="capitalLatestSub">Belum ada data</div></div>
@@ -93,6 +101,7 @@
 </section>
 
 <section class="view" id="view-debt">
+<div class="group-tabs" data-tabgroup="capitaldebt"><button data-go="capital">Perkembangan Modal</button><button data-go="debt">Hutang Aktif</button></div>
 <div class="hero"><div><h2>Rekap Hutang</h2><p>Hanya menampilkan hutang yang masih berjalan. Pembayaran dilakukan dari workflow Karyawan; Admin tidak memiliki menu Bayar Hutang.</p></div><div class="actions"><span class="pill green">Otomatis Berkurang Saat Dibayar</span></div></div>
 <div class="notice blue"><b>Aturan:</b> pembayaran yang dicatat Karyawan otomatis mengurangi saldo debitur yang sama. Jika sisa hutang sudah Rp0, nama tersebut otomatis hilang dari rekap hutang aktif. Riwayat transaksi tetap tersimpan untuk audit.</div>
 <div class="grid kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
@@ -110,11 +119,13 @@
 </section>
 
 <section class="view" id="view-attendance">
+<div class="group-tabs" data-tabgroup="people"><button data-go="attendance">Kehadiran</button><button data-go="accounts">Akun & Role</button></div>
 <div class="hero"><div><h2>Kehadiran</h2><p>Riwayat absensi masuk dan pulang per karyawan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="attSearch" placeholder="Cari nama karyawan"><select class="select" id="attDate"><option value="">Semua tanggal</option></select><button class="btn" id="attRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Karyawan</th><th>Shift</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody id="attBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-accounts">
+<div class="group-tabs" data-tabgroup="people"><button data-go="attendance">Kehadiran</button><button data-go="accounts">Akun & Role</button></div>
 <div class="hero"><div><h2>Akun & Role</h2><p>Role tidak melekat pada nama orang. Admin dapat menambah akun, mengubah role, atau menonaktifkan akun.</p></div></div>
 <div class="grid two">
 <div class="card section-card"><h3>Tambah / Ubah Akun</h3><div class="form-grid"><div class="field"><label>Nama</label><input class="input" id="accName" placeholder="Nama pengguna"></div><div class="field"><label>Role</label><select class="select" id="accRole"><option value="employee">Karyawan</option><option value="purchasing">Purchasing</option><option value="admin">Admin</option><option value="owner">Owner</option></select></div></div><div class="actions" style="margin-top:12px"><button class="btn purple" id="accAdd">Tambah Akun</button></div></div>
@@ -308,7 +319,15 @@ function openReturn(id){const x=summaries().find(s=>s.shiftId===id);if(!x)return
 function submitReturn(){const reason=String($('returnReason').value||'').trim();if(!reason)return alert('Alasan/temuan Admin wajib diisi.');const x=summaries().find(s=>s.shiftId===returnShiftId);if(!x)return;const arr=corrections(),id='corr-'+Date.now();arr.push({id,shiftId:x.shiftId,shiftLabel:x.shiftLabel,date:x.date,shift:x.shift,employeeName:x.holder,employeeId:(window.KAAdminAccounts?.activeByRole?.('employee')||[]).find(a=>a.name===x.holder)?.id||'',reason,status:'returned',snapshot:{margin:x.margin,balance:x.balance,operational:x.operational},requestedAt:new Date().toISOString(),requestedBy:adminUser()?.name||'Admin'});write(CORR,arr);$('returnModal').classList.remove('open');renderReview();renderMinus()}
 function resolveCorrection(id){const arr=corrections(),x=arr.find(a=>a.id===id);if(!x)return;x.status='resolved';x.resolvedAt=new Date().toISOString();x.resolvedBy=adminUser()?.name||'Admin';write(CORR,arr);renderReview();renderMinus()}
 function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderReview();renderAttendance();renderAccounts()}
-function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('crumbView').textContent={dashboard:'Dashboard',margin:'Margin',minus:'Minus',operational:'Operasional',capital:'Perkembangan Modal',debt:'Hutang',review:'Cek Inputan',attendance:'Kehadiran',accounts:'Akun & Role'}[v]||v;$('side').classList.remove('mobile-open')}
+function show(v){
+  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',review:'review',attendance:'people',accounts:'people'};
+  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Keuangan / Selisih & Minus',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',review:'Cek Inputan',attendance:'Karyawan & Akses / Kehadiran',accounts:'Karyawan & Akses / Akun & Role'};
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
+  document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.group===groups[v]));
+  document.querySelectorAll('.group-tabs [data-go]').forEach(x=>x.classList.toggle('active',x.dataset.go===v));
+  $('crumbView').textContent=crumbs[v]||v;
+  $('side').classList.remove('mobile-open');
+}
 function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh'].forEach(id=>$(id).onclick=renderAll);$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};window.addEventListener('storage',e=>{if([SUM,ATT,CORR,'ka_admin_accounts_v59'].includes(e.key))renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){bind();renderAll()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
