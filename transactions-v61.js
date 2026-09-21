@@ -494,7 +494,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V70 — EXCEL 18 AUDIT • TARGET BALANCE Rp72.895';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V71 — EXCEL 18 AUDIT • TARGET BALANCE -Rp28.015';});
   setTimeout(refreshStockNextVisual,0);
 }
 function selfTest(){
