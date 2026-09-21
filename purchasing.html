@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="ka-build" content="81">
+<meta name="ka-build" content="82">
 <title>Konter Anisa — Portal Purchasing</title>
 <style>
 :root{--ink:#17131d;--muted:#746d80;--line:#e9e3ef;--bg:#f8f7fb;--purple:#8b5cf6;--green:#15945f;--amber:#d97706;--red:#d9363e;--shadow:0 12px 34px rgba(67,35,92,.09)}
@@ -32,17 +32,17 @@
 <button data-view="operational"><span class="dot"></span>Nota Operasional</button>
 <button data-view="history"><span class="dot"></span>Riwayat Nota</button>
 </div>
-<div class="side-foot"><b>SIMULASI PURCHASING V81</b><br>Workflow Karyawan BUILD V80 tidak diubah. Nota memakai penyimpanan browser yang sama.</div>
+<div class="side-foot"><b>SIMULASI PURCHASING V82</b><br>Workflow Karyawan BUILD V80 tidak diubah. Nota memakai penyimpanan browser yang sama.</div>
 </aside>
 <main class="main">
-<div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Purchasing / <span id="crumbView">Dashboard</span> <span class="status ok" style="margin-left:8px">V81 • V80 WORKFLOW LOCKED</span></span></div><div class="user"><div style="text-align:right"><b id="activeUserName" style="font-size:12px">—</b><div style="font-size:10px;color:var(--muted)">Purchasing • Simulasi</div></div><div class="avatar" id="activeAvatar">PU</div></div></div>
+<div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Purchasing / <span id="crumbView">Dashboard</span> <span class="status ok" style="margin-left:8px">V82 • V80 WORKFLOW LOCKED</span></span></div><div class="user"><div style="text-align:right"><b id="activeUserName" style="font-size:12px">—</b><div style="font-size:10px;color:var(--muted)">Purchasing • Simulasi</div></div><div class="avatar" id="activeAvatar">PU</div></div></div>
 <div class="content">
-<div class="card context"><div class="context-grid">
-<div class="field"><label>Akun Purchasing Aktif</label><select class="select" id="accountSelect"></select></div>
-<div class="field"><label>Tanggal / Sheet Tujuan</label><input class="input" id="ctxDate" type="date" value="2026-09-18"></div>
-<div class="field"><label>Pemegang Shift Karyawan</label><select class="select" id="ctxHolder"></select></div>
-<div class="field"><label>Shift</label><select class="select" id="ctxShift"><option>Full</option><option>Pagi</option><option>Malam</option></select></div>
-</div><div class="context-note">Konteks di atas menentukan nota masuk ke shift mana. Per nota barang jualan, Purchasing hanya memilih jenis, foto nota, dan total nominal.</div></div>
+<div class="card context" id="autoContextCard"><div class="context-grid">
+<div><label style="display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#718096;font-weight:800;margin-bottom:6px">Akun Login</label><b id="autoAccount">—</b><div class="context-note">Akun pribadi dari sesi login. Tidak dapat dipilih dari halaman Purchasing.</div></div>
+<div><label style="display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#718096;font-weight:800;margin-bottom:6px">Shift Aktif Otomatis</label><b id="autoShift">Mencari shift aktif…</b><div class="context-note" id="autoShiftTime">—</div></div>
+<div><label style="display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#718096;font-weight:800;margin-bottom:6px">Pemegang Shift</label><b id="autoHolder">—</b><div class="context-note">Ditentukan otomatis dari shift Karyawan yang sedang aktif saat nota disimpan.</div></div>
+<div><label style="display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#718096;font-weight:800;margin-bottom:6px">Status</label><span class="status warn" id="autoShiftStatus">Mencari…</span></div>
+</div><div class="context-note"><b>Tidak ada pilihan akun atau shift.</b> Sistem memakai akun yang sedang login dan mengarahkan nota otomatis ke pemegang shift yang aktif pada saat input.</div></div>
 
 <section class="view active" id="view-dashboard">
 <div class="hero"><div><h2>Dashboard Purchasing</h2><p>Input bukti pembelian tanpa menyentuh detail barang, harga jual, margin, stok, atau Balance.</p></div><div class="actions"><span class="pill purple">Role dinamis</span><span class="pill green">Foto + Total</span></div></div>
@@ -65,16 +65,16 @@
 
 <section class="view" id="view-operational">
 <div class="hero"><div><h2>Nota Operasional</h2><p>Bukti operasional dibuat Purchasing lalu dipilih Karyawan.</p></div></div>
-<div class="grid two"><div class="card form"><h3>Input Nota Operasional</h3><div class="form-grid" style="margin-bottom:13px"><div class="field"><label>Kategori</label><select class="select" id="opCategory"><option value="transport">Transportasi</option><option value="sedekah">Sedekah</option><option value="alat">Perkakas & Peralatan</option><option value="repair">Perbaikan</option><option value="routine">Operasional Rutin</option></select></div><div class="field"><label>Total Nota</label><div class="money-wrap"><span>Rp</span><input class="input" id="opAmount" inputmode="numeric" placeholder="0"></div></div></div>
+<div class="grid two"><div class="card form"><h3>Input Nota Operasional</h3><div class="form-grid" style="margin-bottom:13px"><div class="field"><label>Kategori</label><select class="select" id="opCategory"><option value="transport">Transportasi</option><option value="sedekah">Sedekah</option><option value="alat">Perkakas & Peralatan</option><option value="repair">Perbaikan</option><option value="routine">Operasional Rutin</option></select></div><div class="field"><label>Total Nota</label><div class="money-wrap"><span>Rp</span><input class="input" id="opAmount" inputmode="numeric" placeholder="0"></div></div><div class="field" style="grid-column:1/-1"><label>Detail Barang / Keperluan — Wajib</label><input class="input" id="opDetail" type="text" placeholder="Contoh: Kabel roll 10 meter / Galon air / Ongkos kirim"></div></div>
 <div class="field"><label>Foto Nota — Wajib</label><label class="photo-drop" id="opPhotoDrop"><input id="opPhoto" type="file" accept="image/*" capture="environment"><b>📷 Ambil / Pilih Foto Nota</b><small id="opPhotoText">Belum ada foto.</small><img class="photo-preview" id="opPhotoPreview"></label></div>
 <div class="actions" style="margin-top:15px"><button class="btn primary" id="saveOpNote">Simpan Nota Operasional</button></div></div>
-<div class="card summary"><h4>Aturan</h4><div class="sumrow"><span>Nominal</span><b>Terkunci dari Purchasing</b></div><div class="sumrow"><span>Kategori</span><b>Diteruskan ke Karyawan</b></div><div class="sumrow"><span>Satu nota</span><b>Hanya dipakai 1×</b></div><div class="sumrow"><span>Sudah dipakai</span><b>Tidak dapat diubah</b></div></div></div>
+<div class="card summary"><h4>Aturan</h4><div class="sumrow"><span>Kategori</span><b>Wajib</b></div><div class="sumrow"><span>Detail barang / keperluan</span><b>Wajib</b></div><div class="sumrow"><span>Nominal</span><b>Terkunci dari Purchasing</b></div><div class="sumrow"><span>Tujuan shift</span><b>Otomatis saat input</b></div><div class="sumrow"><span>Satu nota</span><b>Hanya dipakai 1×</b></div><div class="sumrow"><span>Sudah dipakai</span><b>Tidak dapat diubah</b></div></div></div>
 </section>
 
 <section class="view" id="view-history">
 <div class="hero"><div><h2>Riwayat Nota</h2><p>Audit seluruh nota Purchasing di browser ini.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="filterSearch" placeholder="Cari nota / pembuat / jenis"><select class="select" id="filterType"><option value="">Semua jenis</option><option value="package">Paket</option><option value="cigarette">Rokok</option><option value="accessory">Aksesoris</option><option value="medicine">Obat</option><option value="oil">Minyak</option><option value="operational">Operasional</option></select><select class="select" id="filterStatus"><option value="">Semua status</option><option value="ready">Siap</option><option value="used">Dipakai</option><option value="void">Dibatalkan</option></select><button class="btn" id="refreshHistory">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>No. Nota</th><th>Jenis</th><th>Total</th><th>Foto</th><th>Target Shift</th><th>Pembuat</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="historyBody"></tbody></table></div></div>
-<div class="notice amber" style="margin-top:14px"><b>Simulasi:</b> belum memakai database bersama. Nota terhubung ke Portal Karyawan pada browser/perangkat yang sama. Login sungguhan + database akan menjadi tahap setelah role ini final.</div>
+<div class="notice amber" style="margin-top:14px"><b>Simulasi:</b> identitas Purchasing diperlakukan sebagai akun pribadi dari sesi login. Tujuan nota dibaca otomatis dari shift Karyawan aktif pada browser ini. Backend bersama akan dipasang setelah alur role dinyatakan final.</div>
 </section>
 </div></main></div>
 
@@ -85,38 +85,138 @@
 <script>
 (function(){
 'use strict';
-var NOTE_KEY='ka_v29_purchasing_notes',USED_KEY='ka_v29_used_notes',CONTEXT_KEY='ka_purchasing_context_v81',SESSION_KEY='ka_purchasing_session_v81',DB_NAME='ka_purchasing_media_v81',DB_STORE='photos';
+var NOTE_KEY='ka_v29_purchasing_notes',USED_KEY='ka_v29_used_notes',SESSION_KEY='ka_purchasing_session_v81',AUTH_KEY='ka_auth_session_v81',SHIFT_INDEX='ka_shift_autosave_v53_index',SHIFT_PREFIX='ka_shift_autosave_v53_',DB_NAME='ka_purchasing_media_v81',DB_STORE='photos',SHIFT_FRESH_MS=15*60*1000;
 var saleType='package',salesPhotoData=null,opPhotoData=null,dbPromise=null;
 var TYPES={package:'Paket',cigarette:'Rokok',accessory:'Aksesoris',medicine:'Obat',oil:'Minyak',operational:'Operasional'};
 var OPS={transport:'Transportasi',sedekah:'Sedekah',alat:'Perkakas & Peralatan',repair:'Perbaikan',routine:'Operasional Rutin'};
-function $(id){return document.getElementById(id)}function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function num(v){return Math.max(0,Number(String(v==null?'':v).replace(/[^0-9]/g,''))||0)}function fmt(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID')}function slug(v){return String(v||'unknown').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'unknown'}
-function read(k,f){try{var x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}}function write(k,v){localStorage.setItem(k,JSON.stringify(v))}function notes(){var a=read(NOTE_KEY,[]);return Array.isArray(a)?a:[]}function used(){var x=read(USED_KEY,{});return x&&typeof x==='object'?x:{}}
-function accounts(role){try{return window.KAAdminAccounts&&window.KAAdminAccounts.activeByRole?window.KAAdminAccounts.activeByRole(role):[]}catch(_){return []}}function user(){var id=$('accountSelect').value;return accounts('purchasing').find(function(a){return a.id===id})||null}
-function initials(n){var p=String(n||'PU').trim().split(/\s+/);return ((p[0]||'P')[0]+((p[1]||'')[0]||'')).toUpperCase()}function toast(m,t){var e=$('toast');e.className='toast '+(t||'info')+' show';e.textContent=m;clearTimeout(window.__pt);window.__pt=setTimeout(function(){e.classList.remove('show')},2800)}
-function isUsed(n){var r=used()[n.id];return !!r&&(!r.shiftId||!n.shiftId||String(r.shiftId)===String(n.shiftId))}function status(n){return n.status==='void'?'void':(isUsed(n)?'used':'ready')}function badge(s){return s==='used'?'<span class="status warn">Dipakai</span>':s==='void'?'<span class="status bad">Dibatalkan</span>':'<span class="status ok">Siap</span>'}
-function month(m){return ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][m]||''}function dlabel(x){var m=String(x||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?Number(m[3])+' '+month(Number(m[2]))+' '+m[1]:(x||'—')}
-function ctx(){var d=$('ctxDate').value||'2026-09-18',s=$('ctxShift').value||'Full',h=$('ctxHolder').value||'Rifda';return {date:d,shift:s,holder:h,id:d+'-'+slug(s)+'-'+slug(h),label:dlabel(d)+' • Shift '+s+' • '+h}}
-function initAccounts(){var a=accounts('purchasing'),sv=read(SESSION_KEY,{accountId:''});$('accountSelect').innerHTML=a.length?a.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join(''):'<option value="">— Tidak ada akun Purchasing —</option>';if(a.some(function(x){return x.id===sv.accountId}))$('accountSelect').value=sv.accountId;var u=user();$('activeUserName').textContent=u?u.name:'Tidak ada akun';$('activeAvatar').textContent=u?initials(u.name):'!';$('noPurchasingWarning').style.display=u?'none':'block'}
-function loadCtx(){var c=read(CONTEXT_KEY,{date:'2026-09-18',shift:'Full',holder:'Rifda'});$('ctxDate').value=c.date||'2026-09-18';$('ctxShift').value=c.shift||'Full';var e=accounts('employee');$('ctxHolder').innerHTML=e.length?e.map(function(a){return '<option value="'+esc(a.name)+'">'+esc(a.name)+'</option>'}).join(''):'<option>Rifda</option>';if([].some.call($('ctxHolder').options,function(o){return o.value===c.holder}))$('ctxHolder').value=c.holder}
-function saveCtx(){var c=ctx();write(CONTEXT_KEY,{date:c.date,shift:c.shift,holder:c.holder});summary()}
+function $(id){return document.getElementById(id)}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function num(v){return Math.max(0,Number(String(v==null?'':v).replace(/[^0-9]/g,''))||0)}
+function fmt(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID')}
+function slug(v){return String(v||'unknown').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'unknown'}
+function read(k,f){try{var x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}}
+function write(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function notes(){var a=read(NOTE_KEY,[]);return Array.isArray(a)?a:[]}
+function used(){var x=read(USED_KEY,{});return x&&typeof x==='object'?x:{}}
+function accounts(role){try{return window.KAAdminAccounts&&window.KAAdminAccounts.activeByRole?window.KAAdminAccounts.activeByRole(role):[]}catch(_){return []}}
+function sessionRecord(){return read(AUTH_KEY,null)||read(SESSION_KEY,null)||null}
+function currentUser(){
+  var list=accounts('purchasing'),s=sessionRecord(),id=String((s&&s.accountId)||'');
+  var found=list.find(function(a){return a.id===id});
+  if(found)return found;
+  if(list.length===1)return list[0];
+  return null;
+}
+function initials(n){var p=String(n||'PU').trim().split(/\s+/);return ((p[0]||'P')[0]+((p[1]||'')[0]||'')).toUpperCase()}
+function toast(m,t){var e=$('toast');e.className='toast '+(t||'info')+' show';e.textContent=m;clearTimeout(window.__pt);window.__pt=setTimeout(function(){e.classList.remove('show')},2800)}
+function isUsed(n){var r=used()[n.id];return !!r&&(!r.shiftId||!n.shiftId||String(r.shiftId)===String(n.shiftId))}
+function status(n){return n.status==='void'?'void':(isUsed(n)?'used':'ready')}
+function badge(s){return s==='used'?'<span class="status warn">Dipakai</span>':s==='void'?'<span class="status bad">Dibatalkan</span>':'<span class="status ok">Siap</span>'}
+function month(m){return ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][m]||''}
+function dlabel(x){var m=String(x||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?Number(m[3])+' '+month(Number(m[2]))+' '+m[1]:(x||'—')}
+function titleCase(v){return String(v||'').replace(/(^|[-\s])([a-z])/g,function(_,a,b){return a+b.toUpperCase()})}
+function parseShiftId(id){
+  var m=String(id||'').match(/^(\d{4}-\d{2}-\d{2})-([^-]+)-(.+)$/);
+  if(!m)return null;
+  var holderSlug=m[3],emps=accounts('employee'),emp=emps.find(function(a){return slug(a.name)===holderSlug});
+  return {id:String(id),date:m[1],shift:titleCase(m[2]),holder:emp?emp.name:titleCase(holderSlug.replace(/-/g,' '))}
+}
+function activeShift(){
+  var idx=read(SHIFT_INDEX,[]);
+  if(!Array.isArray(idx))idx=[];
+  idx=idx.slice().filter(function(x){return x&&x.key&&String(x.key).indexOf(SHIFT_PREFIX)===0}).sort(function(a,b){return Number(b.ts||0)-Number(a.ts||0)});
+  for(var i=0;i<idx.length;i++){
+    var rec=idx[i],data=read(rec.key,null),sid=String((data&&data.shiftId)||String(rec.key).slice(SHIFT_PREFIX.length)),p=parseShiftId(sid);
+    if(!p)continue;
+    p.savedAt=Number((data&&data.savedAt)||rec.ts||0);
+    p.live=!!p.savedAt&&(Date.now()-p.savedAt)<=SHIFT_FRESH_MS;
+    p.label=dlabel(p.date)+' • Shift '+p.shift+' • '+p.holder;
+    return p;
+  }
+  return null;
+}
+function renderIdentity(){
+  var u=currentUser(),s=activeShift();
+  $('activeUserName').textContent=u?u.name:'Sesi login tidak ditemukan';
+  $('activeAvatar').textContent=u?initials(u.name):'!';
+  $('autoAccount').textContent=u?u.name:'Tidak ada sesi Purchasing';
+  $('noPurchasingWarning').style.display=u?'none':'block';
+  $('noPurchasingWarning').innerHTML='<b>Sesi akun Purchasing tidak ditemukan.</b> Halaman ini tidak menyediakan pilihan akun. Masuk melalui menu Login menggunakan akun yang memiliki role Purchasing.';
+  if(s){
+    $('autoShift').textContent=dlabel(s.date)+' • '+s.shift;
+    $('autoHolder').textContent=s.holder;
+    $('autoShiftTime').textContent='Heartbeat terakhir '+new Date(s.savedAt).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    $('autoShiftStatus').className='status '+(s.live?'ok':'bad');
+    $('autoShiftStatus').textContent=s.live?'Shift aktif':'Shift tidak aktif';
+  }else{
+    $('autoShift').textContent='Tidak ada shift aktif';
+    $('autoHolder').textContent='—';
+    $('autoShiftTime').textContent='Buka shift Karyawan terlebih dahulu.';
+    $('autoShiftStatus').className='status bad';
+    $('autoShiftStatus').textContent='Tidak ada shift';
+  }
+}
 function openDb(){if(dbPromise)return dbPromise;dbPromise=new Promise(function(res,rej){var q=indexedDB.open(DB_NAME,1);q.onupgradeneeded=function(){if(!q.result.objectStoreNames.contains(DB_STORE))q.result.createObjectStore(DB_STORE,{keyPath:'id'})};q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}});return dbPromise}
 async function savePhoto(id,data){var db=await openDb();return new Promise(function(res,rej){var tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put({id:id,dataUrl:data});tx.oncomplete=function(){res(true)};tx.onerror=function(){rej(tx.error)}})}
 async function getPhoto(id){var db=await openDb();return new Promise(function(res,rej){var q=db.transaction(DB_STORE,'readonly').objectStore(DB_STORE).get(id);q.onsuccess=function(){res(q.result?q.result.dataUrl:null)};q.onerror=function(){rej(q.error)}})}
 async function compress(file){if(!file||!String(file.type||'').startsWith('image/'))throw new Error('File harus berupa gambar.');if(file.size>12*1024*1024)throw new Error('Foto maksimal 12 MB.');var url=URL.createObjectURL(file);try{var img=await new Promise(function(res,rej){var i=new Image();i.onload=function(){res(i)};i.onerror=function(){rej(new Error('Foto tidak dapat dibaca.'))};i.src=url});var sc=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.max(1,Math.round(img.naturalWidth*sc)),h=Math.max(1,Math.round(img.naturalHeight*sc)),cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);return cv.toDataURL('image/jpeg',.68)}finally{URL.revokeObjectURL(url)}}
 function photoBind(input,drop,prev,txt,set){$(input).addEventListener('change',async function(){var f=this.files&&this.files[0];if(!f)return;try{$(txt).textContent='Memproses foto…';var d=await compress(f);set(d);$(prev).src=d;$(prev).classList.add('show');$(drop).classList.add('has-photo');$(txt).textContent='Foto siap disimpan • '+Math.round(d.length/1024)+' KB';summary()}catch(e){set(null);this.value='';$(prev).classList.remove('show');$(drop).classList.remove('has-photo');$(txt).textContent='Belum ada foto.';toast(e.message,'bad')}})}
 function nextId(kind,date){var p=kind==='operational'?'NBO':'NBJ',d=String(date).replace(/-/g,'').slice(4),base=p+'-'+d+'-',mx=0;notes().forEach(function(n){if(String(n.id||'').indexOf(base)===0){var z=Number(String(n.id).slice(base.length));if(Number.isFinite(z))mx=Math.max(mx,z)}});return base+String(mx+1).padStart(2,'0')}
-async function create(kind,type,amount,photo,extra){var u=user(),c=ctx();if(!u){toast('Tidak ada akun Purchasing aktif.','bad');return false}if(amount<=0){toast('Total nota harus lebih dari Rp0.','warn');return false}if(!photo){toast('Foto nota wajib.','warn');return false}var id=nextId(kind,c.date);try{await savePhoto(id,photo)}catch(_){toast('Foto gagal disimpan.','bad');return false}var a=notes(),n={id:id,type:type,amount:amount,shiftId:c.id,shiftLabel:c.label,uploadedAt:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),createdAt:new Date().toISOString(),createdById:u.id,createdByName:u.name,source:'purchasing-v81',status:'ready',hasPhoto:true,photoRef:id};if(extra&&extra.category){n.category=extra.category;n.label=OPS[extra.category]||extra.category}a.push(n);try{write(NOTE_KEY,a)}catch(_){toast('Nota gagal disimpan.','bad');return false}toast('Nota '+id+' siap dipilih Karyawan.','ok');render();return true}
+async function create(kind,type,amount,photo,extra){
+  var u=currentUser(),s=activeShift();
+  if(!u){toast('Sesi login Purchasing tidak ditemukan. Masuk melalui menu Login.','bad');return false}
+  if(!s||!s.live){toast('Tidak ada shift Karyawan aktif. Nota tidak dapat diarahkan.','bad');return false}
+  if(amount<=0){toast('Total nota harus lebih dari Rp0.','warn');return false}
+  if(!photo){toast('Foto nota wajib.','warn');return false}
+  if(kind==='operational'&&(!extra||!String(extra.detail||'').trim())){toast('Detail barang / keperluan operasional wajib diisi.','warn');$('opDetail').focus();return false}
+  var id=nextId(kind,s.date);
+  try{await savePhoto(id,photo)}catch(_){toast('Foto gagal disimpan.','bad');return false}
+  var a=notes(),n={id:id,type:type,amount:amount,shiftId:s.id,shiftLabel:s.label,uploadedAt:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),createdAt:new Date().toISOString(),createdById:u.id,createdByName:u.name,source:'purchasing-v82',status:'ready',hasPhoto:true,photoRef:id,assignedAutomatically:true,shiftHeartbeatAt:s.savedAt};
+  if(extra&&extra.category){n.category=extra.category;n.categoryLabel=OPS[extra.category]||extra.category}
+  if(extra&&extra.detail){n.description=String(extra.detail).trim();n.label=n.description}
+  a.push(n);
+  try{write(NOTE_KEY,a)}catch(_){toast('Nota gagal disimpan.','bad');return false}
+  toast('Nota '+id+' otomatis masuk ke shift '+s.holder+' ('+s.shift+').','ok');
+  render();
+  return true
+}
 function money(el){var v=num(el.value);el.value=v?v.toLocaleString('id-ID'):'';summary()}
-function summary(){var c=ctx(),u=user();$('salesFormTitle').textContent='Nota Belanja '+TYPES[saleType];$('salesSelectedBadge').textContent=TYPES[saleType];$('salesSummaryType').textContent=TYPES[saleType];$('salesSummaryPhoto').textContent=salesPhotoData?'Siap':'Belum ada';$('salesSummaryPhoto').style.color=salesPhotoData?'var(--green)':'var(--red)';$('salesSummaryAmount').textContent=fmt(num($('salesAmount').value));$('salesSummaryShift').textContent=c.label;$('salesSummaryUser').textContent=u?u.name:'—'}
+function summary(){
+  var s=activeShift(),u=currentUser();
+  $('salesFormTitle').textContent='Nota Belanja '+TYPES[saleType];
+  $('salesSelectedBadge').textContent=TYPES[saleType];
+  $('salesSummaryType').textContent=TYPES[saleType];
+  $('salesSummaryPhoto').textContent=salesPhotoData?'Siap':'Belum ada';
+  $('salesSummaryPhoto').style.color=salesPhotoData?'var(--green)':'var(--red)';
+  $('salesSummaryAmount').textContent=fmt(num($('salesAmount').value));
+  $('salesSummaryShift').textContent=s&&s.live?s.label:'Tidak ada shift aktif';
+  $('salesSummaryUser').textContent=u?u.name:'—'
+}
 function dash(){var a=notes(),r=0,u=0,v=0,t=0;a.forEach(function(n){var s=status(n);if(s==='ready')r++;else if(s==='used')u++;else v++;if(s!=='void')t+=Number(n.amount||0)});$('kpiReady').textContent=r;$('kpiUsed').textContent=u;$('kpiVoid').textContent=v;$('kpiAmount').textContent=fmt(t);var x=a.slice().sort(function(a,b){return String(b.createdAt||'').localeCompare(String(a.createdAt||''))}).slice(0,6);$('recentBody').innerHTML=x.length?x.map(function(n){return '<tr><td><b>'+esc(n.id)+'</b></td><td>'+esc(TYPES[n.type]||n.type)+'</td><td class="money"><b>'+fmt(n.amount)+'</b></td><td>'+esc(n.shiftLabel||'—')+'</td><td>'+esc(n.createdByName||'Purchasing')+'</td><td>'+badge(status(n))+'</td></tr>'}).join(''):'<tr><td colspan="6" class="empty">Belum ada nota.</td></tr>'}
-function history(){var q=String($('filterSearch').value||'').toLowerCase(),ty=$('filterType').value,st=$('filterStatus').value,a=notes().filter(function(n){var s=status(n),hay=[n.id,TYPES[n.type],n.createdByName,n.shiftLabel,n.label].join(' ').toLowerCase();return (!ty||n.type===ty)&&(!st||s===st)&&(!q||hay.indexOf(q)>=0)}).sort(function(a,b){return String(b.createdAt||'').localeCompare(String(a.createdAt||''))});$('historyBody').innerHTML=a.length?a.map(function(n){var s=status(n),act=s==='ready'?'<button class="btn danger" data-void="'+esc(n.id)+'">Batalkan</button>':s==='void'?'<button class="btn" data-restore="'+esc(n.id)+'">Aktifkan</button>':'<span class="audit">Terkunci</span>',when=n.createdAt?new Date(n.createdAt).toLocaleString('id-ID'):(n.uploadedAt||'—');return '<tr><td><b>'+esc(n.id)+'</b></td><td>'+esc(TYPES[n.type]||n.type)+(n.label?'<div class="audit">'+esc(n.label)+'</div>':'')+'</td><td class="money"><b>'+fmt(n.amount)+'</b></td><td>'+(n.hasPhoto?'<button class="btn" data-photo="'+esc(n.photoRef||n.id)+'" data-title="'+esc(n.id)+'">Lihat</button>':'—')+'</td><td>'+esc(n.shiftLabel||'—')+'</td><td>'+esc(n.createdByName||'Purchasing')+'</td><td>'+esc(when)+'</td><td>'+badge(s)+'</td><td>'+act+'</td></tr>'}).join(''):'<tr><td colspan="9" class="empty">Tidak ada nota sesuai filter.</td></tr>';document.querySelectorAll('[data-photo]').forEach(function(b){b.onclick=function(){showPhoto(b.dataset.photo,b.dataset.title)}});document.querySelectorAll('[data-void]').forEach(function(b){b.onclick=function(){voidNote(b.dataset.void,true)}});document.querySelectorAll('[data-restore]').forEach(function(b){b.onclick=function(){voidNote(b.dataset.restore,false)}})}
-function voidNote(id,on){var a=notes(),n=a.find(function(x){return x.id===id});if(!n)return;if(isUsed(n)){toast('Nota sudah dipakai dan terkunci.','bad');return}n.status=on?'void':'ready';n.statusChangedAt=new Date().toISOString();n.statusChangedBy=(user()||{}).name||'Purchasing';write(NOTE_KEY,a);toast(on?'Nota dibatalkan.':'Nota diaktifkan.','ok');render()}
+function history(){var q=String($('filterSearch').value||'').toLowerCase(),ty=$('filterType').value,st=$('filterStatus').value,a=notes().filter(function(n){var s=status(n),hay=[n.id,TYPES[n.type],n.createdByName,n.shiftLabel,n.label,n.description].join(' ').toLowerCase();return (!ty||n.type===ty)&&(!st||s===st)&&(!q||hay.indexOf(q)>=0)}).sort(function(a,b){return String(b.createdAt||'').localeCompare(String(a.createdAt||''))});$('historyBody').innerHTML=a.length?a.map(function(n){var s=status(n),act=s==='ready'?'<button class="btn danger" data-void="'+esc(n.id)+'">Batalkan</button>':s==='void'?'<button class="btn" data-restore="'+esc(n.id)+'">Aktifkan</button>':'<span class="audit">Terkunci</span>',when=n.createdAt?new Date(n.createdAt).toLocaleString('id-ID'):(n.uploadedAt||'—'),detail=n.description?'<div class="audit">'+esc(n.description)+'</div>':'';return '<tr><td><b>'+esc(n.id)+'</b></td><td>'+esc(TYPES[n.type]||n.type)+detail+'</td><td class="money"><b>'+fmt(n.amount)+'</b></td><td>'+(n.hasPhoto?'<button class="btn" data-photo="'+esc(n.photoRef||n.id)+'" data-title="'+esc(n.id)+'">Lihat</button>':'—')+'</td><td>'+esc(n.shiftLabel||'—')+'</td><td>'+esc(n.createdByName||'Purchasing')+'</td><td>'+esc(when)+'</td><td>'+badge(s)+'</td><td>'+act+'</td></tr>'}).join(''):'<tr><td colspan="9" class="empty">Tidak ada nota sesuai filter.</td></tr>';document.querySelectorAll('[data-photo]').forEach(function(b){b.onclick=function(){showPhoto(b.dataset.photo,b.dataset.title)}});document.querySelectorAll('[data-void]').forEach(function(b){b.onclick=function(){voidNote(b.dataset.void,true)}});document.querySelectorAll('[data-restore]').forEach(function(b){b.onclick=function(){voidNote(b.dataset.restore,false)}})}
+function voidNote(id,on){var a=notes(),n=a.find(function(x){return x.id===id});if(!n)return;if(isUsed(n)){toast('Nota sudah dipakai dan terkunci.','bad');return}n.status=on?'void':'ready';n.statusChangedAt=new Date().toISOString();n.statusChangedBy=(currentUser()||{}).name||'Purchasing';write(NOTE_KEY,a);toast(on?'Nota dibatalkan.':'Nota diaktifkan.','ok');render()}
 async function showPhoto(id,title){$('photoModal').classList.add('open');$('photoModalTitle').textContent='Foto Nota • '+title;$('photoModalState').style.display='block';$('photoModalImg').style.display='none';try{var d=await getPhoto(id);if(!d){$('photoModalState').textContent='Foto tidak ditemukan pada browser ini.';return}$('photoModalImg').src=d;$('photoModalImg').style.display='block';$('photoModalState').style.display='none'}catch(_){$('photoModalState').textContent='Foto gagal dibuka.'}}
-function render(){initAccounts();dash();history();summary()}function show(v){document.querySelectorAll('.view').forEach(function(x){x.classList.toggle('active',x.id==='view-'+v)});document.querySelectorAll('.nav [data-view]').forEach(function(x){x.classList.toggle('active',x.dataset.view===v)});$('crumbView').textContent={dashboard:'Dashboard',sales:'Nota Barang Jualan',operational:'Nota Operasional',history:'Riwayat Nota'}[v];$('side').classList.remove('mobile-open')}
-function resetSales(){salesPhotoData=null;$('salesPhoto').value='';$('salesPhotoPreview').classList.remove('show');$('salesPhotoDrop').classList.remove('has-photo');$('salesPhotoText').textContent='Belum ada foto.';$('salesAmount').value='';summary()}function resetOp(){opPhotoData=null;$('opPhoto').value='';$('opPhotoPreview').classList.remove('show');$('opPhotoDrop').classList.remove('has-photo');$('opPhotoText').textContent='Belum ada foto.';$('opAmount').value=''}
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(function(b){b.onclick=function(){show(b.dataset.view)}});document.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){show(b.dataset.go)}});$('mobileMenuBtn').onclick=function(){$('side').classList.toggle('mobile-open')};$('accountSelect').onchange=function(){write(SESSION_KEY,{accountId:this.value});render()};['ctxDate','ctxHolder','ctxShift'].forEach(function(id){$(id).onchange=saveCtx});document.querySelectorAll('#salesCategories .category').forEach(function(b){b.onclick=function(){saleType=b.dataset.type;document.querySelectorAll('#salesCategories .category').forEach(function(x){x.classList.toggle('active',x===b)});summary()}});photoBind('salesPhoto','salesPhotoDrop','salesPhotoPreview','salesPhotoText',function(v){salesPhotoData=v});photoBind('opPhoto','opPhotoDrop','opPhotoPreview','opPhotoText',function(v){opPhotoData=v});$('salesAmount').oninput=function(){money(this)};$('opAmount').oninput=function(){money(this)};$('saveSalesNote').onclick=async function(){this.disabled=true;try{if(await create('sales',saleType,num($('salesAmount').value),salesPhotoData,{}))resetSales()}finally{this.disabled=false}};$('saveOpNote').onclick=async function(){this.disabled=true;try{if(await create('operational','operational',num($('opAmount').value),opPhotoData,{category:$('opCategory').value}))resetOp()}finally{this.disabled=false}};['filterSearch','filterType','filterStatus'].forEach(function(id){$(id).addEventListener(id==='filterSearch'?'input':'change',history)});$('refreshHistory').onclick=render;$('closePhotoModal').onclick=function(){$('photoModal').classList.remove('open')};$('photoModal').onclick=function(e){if(e.target===$('photoModal'))$('photoModal').classList.remove('open')};window.addEventListener('storage',render)}
-function init(){initAccounts();loadCtx();bind();render();try{openDb()}catch(_){}}
+function render(){renderIdentity();dash();history();summary()}
+function show(v){document.querySelectorAll('.view').forEach(function(x){x.classList.toggle('active',x.id==='view-'+v)});document.querySelectorAll('.nav [data-view]').forEach(function(x){x.classList.toggle('active',x.dataset.view===v)});$('crumbView').textContent={dashboard:'Dashboard',sales:'Nota Barang Jualan',operational:'Nota Operasional',history:'Riwayat Nota'}[v];$('side').classList.remove('mobile-open')}
+function resetSales(){salesPhotoData=null;$('salesPhoto').value='';$('salesPhotoPreview').classList.remove('show');$('salesPhotoDrop').classList.remove('has-photo');$('salesPhotoText').textContent='Belum ada foto.';$('salesAmount').value='';summary()}
+function resetOp(){opPhotoData=null;$('opPhoto').value='';$('opPhotoPreview').classList.remove('show');$('opPhotoDrop').classList.remove('has-photo');$('opPhotoText').textContent='Belum ada foto.';$('opAmount').value='';$('opDetail').value=''}
+function bind(){
+  document.querySelectorAll('.nav [data-view]').forEach(function(b){b.onclick=function(){show(b.dataset.view)}});
+  document.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){show(b.dataset.go)}});
+  $('mobileMenuBtn').onclick=function(){$('side').classList.toggle('mobile-open')};
+  document.querySelectorAll('#salesCategories .category').forEach(function(b){b.onclick=function(){saleType=b.dataset.type;document.querySelectorAll('#salesCategories .category').forEach(function(x){x.classList.toggle('active',x===b)});summary()}});
+  photoBind('salesPhoto','salesPhotoDrop','salesPhotoPreview','salesPhotoText',function(v){salesPhotoData=v});
+  photoBind('opPhoto','opPhotoDrop','opPhotoPreview','opPhotoText',function(v){opPhotoData=v});
+  $('salesAmount').oninput=function(){money(this)};$('opAmount').oninput=function(){money(this)};
+  $('saveSalesNote').onclick=async function(){this.disabled=true;try{if(await create('sales',saleType,num($('salesAmount').value),salesPhotoData,{}))resetSales()}finally{this.disabled=false}};
+  $('saveOpNote').onclick=async function(){this.disabled=true;try{var extra={category:$('opCategory').value,detail:String($('opDetail').value||'').trim()};if(await create('operational','operational',num($('opAmount').value),opPhotoData,extra))resetOp()}finally{this.disabled=false}};
+  ['filterSearch','filterType','filterStatus'].forEach(function(id){$(id).addEventListener(id==='filterSearch'?'input':'change',history)});
+  $('refreshHistory').onclick=render;$('closePhotoModal').onclick=function(){$('photoModal').classList.remove('open')};$('photoModal').onclick=function(e){if(e.target===$('photoModal'))$('photoModal').classList.remove('open')};
+  window.addEventListener('storage',render);
+  window.addEventListener('ka:admin-accounts-updated',render);
+  setInterval(function(){renderIdentity();summary()},5000)
+}
+function init(){bind();render();try{openDb()}catch(_){}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
