@@ -1,4 +1,4 @@
-/* Konter Anisa V76 — Belanja Minyak via Nota Purchasing */
+/* Konter Anisa V77 — Belanja Minyak via Nota Purchasing + Balance K279 */
 (function(){
   'use strict';
 
@@ -34,9 +34,14 @@
     }catch(_){entries=[];}
   }
 
+  function refreshBalance(){
+    setTimeout(()=>{try{window.KABalanceV44?.renderBalance?.();}catch(_){}},0);
+  }
+
   function save(){
     try{localStorage.setItem(key(),JSON.stringify(entries));}catch(_){}
     try{window.KAAutosaveV53?.save?.();}catch(_){}
+    refreshBalance();
   }
 
   function purchasing(){
@@ -221,7 +226,7 @@
     refreshNotes();
 
     document.querySelectorAll('.topbar .status.info').forEach(el=>{
-      if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V76 — BELANJA MINYAK VIA NOTA PURCHASING';
+      if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V77 — OIL K279 + RUNTIME LOCK';
     });
 
     window.KAOilPurchaseV76={
@@ -229,7 +234,8 @@
       render,
       refreshNotes,
       useSelected,
-      total:()=>entries.reduce((s,x)=>s+Number(x.amount||0),0)
+      total:()=>entries.reduce((s,x)=>s+Number(x.amount||0),0),
+      refreshBalance
     };
   }
 

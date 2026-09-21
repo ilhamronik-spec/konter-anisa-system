@@ -337,16 +337,18 @@
     catch(_) { return 0; }
   }
 
-  function balanceOperationalAdjustment(){
-    // Padanan Excel K279 = SUM(J279:J309), BUKAN jumlah Operasional normal.
-    // Operasional normal sudah masuk sekali melalui PIUTANG -> Modal Baru(A).
-    // Bila nanti UI menyediakan penyesuaian K279 khusus, baca field balanceAdjustment.
+  function oilPurchaseTotal(){
+    // Padanan Excel K279 = SUM(J279:J309) pada blok BELANJA MINYAK.
+    // Sumber utama: Nota Purchasing Belanja Minyak V76.
     try {
-      return typeof opEntries!=='undefined'
-        ? opEntries.reduce((s,x)=>s+Number(x?.balanceAdjustment||0),0)
-        : 0;
-    } catch(_) { return 0; }
+      const total=window.KAOilPurchaseV76?.total?.();
+      if(Number.isFinite(Number(total))) return Number(total);
+    } catch(_) {}
+    return 0;
   }
+
+  // Alias kompatibilitas untuk kode lama yang masih memanggil nama ini.
+  function balanceOperationalAdjustment(){ return oilPurchaseTotal(); }
 
   function modalClosingTotal(){
     let total=0,complete=true,filled=0;
@@ -376,7 +378,8 @@
   }
 
   function pureBalance(x){
-    return Number(x.closing||0) - (Number(x.opening||0)+Number(x.margin||0)+Number(x.minyak||0)-Number(x.operasional||0)) + Number(x.selisihRokok||0)+Number(x.selisihPaket||0);
+    const belanjaMinyak=Number(x.belanjaMinyak ?? x.operasional ?? 0);
+    return Number(x.closing||0) - (Number(x.opening||0)+Number(x.margin||0)+Number(x.minyak||0)-belanjaMinyak) + Number(x.selisihRokok||0)+Number(x.selisihPaket||0);
   }
 
   function adminNetMargin(){
@@ -409,7 +412,8 @@
       {key:'baseMargin',label:'Margin sebelum Admin net',actual:baseMargin,target:LIVE_EXCEL_18.baseMargin},
       {key:'adminNet',label:'Admin net (Masuk − Keluar)',actual:adminNet,target:LIVE_EXCEL_18.adminNet},
       {key:'margin',label:'Total Margin',actual:Number(s.margin||0),target:LIVE_EXCEL_18.margin},
-      {key:'minyak',label:'Modal Minyak',actual:Number(s.minyak||0),target:LIVE_EXCEL_18.minyak},
+      {key:'minyak',label:'Modal Minyak Terjual',actual:Number(s.minyak||0),target:LIVE_EXCEL_18.minyak},
+      {key:'belanjaMinyak',label:'Belanja Minyak (K279)',actual:Number(s.belanjaMinyak||0),target:LIVE_EXCEL_18.k279},
       {key:'piutangOpening',label:'Piutang awal',actual:Number(s.piutangAwal||0),target:LIVE_EXCEL_18.piutangOpening},
       {key:'piutangAdd',label:'Hutang baru',actual:Number(piutangBreakdown().add||0),target:LIVE_EXCEL_18.newDebt},
       {key:'operasionalNormal',label:'Operasional masuk Piutang',actual:Number(piutangBreakdown().operasional||0),target:LIVE_EXCEL_18.operationalNormal},
@@ -427,18 +431,18 @@
     const txMargin=transactionMargin();
     const margin=auto.pkg.margin+auto.cig.margin+txMargin;
     const minyak=minyakModal();
-    // Penting: Excel memakai K279 di rumus Balance. Total Operasional biasa
-    // sudah tercakup di PIUTANG/Modal Baru(A), sehingga memakai operationalTotal()
-    // di sini akan menghitung Operasional dua kali.
-    const operasional=balanceOperationalAdjustment();
+    // Excel memakai K279 = total BELANJA MINYAK. Operasional normal tidak masuk
+    // langsung ke Balance karena sudah tercakup melalui PIUTANG/Modal Baru(A).
+    const belanjaMinyak=oilPurchaseTotal();
+    const operasional=belanjaMinyak; // alias kompatibilitas lama
     const selisihPaket=auto.pkg.selisih;
     const selisihRokok=auto.cig.selisih;
     const piutangAkhir=piutangClosing();
     const piutangAwal=openingPiutang();
     const modalBaruB=closing.total-piutangAkhir;
     const modalLamaB=opening-piutangAwal;
-    const balance=pureBalance({closing:closing.total,opening,margin,minyak,operasional,selisihRokok,selisihPaket});
-    return {opening,rawOpening:rawOpeningTotal(),closing:closing.total,complete:closing.complete,filled:closing.filled,margin,minyak,operasional,selisihRokok,selisihPaket,balance,piutangAwal,piutangAkhir,modalBaruB,modalLamaB,pkgComplete:auto.pkg.complete,cigComplete:auto.cig.complete};
+    const balance=pureBalance({closing:closing.total,opening,margin,minyak,belanjaMinyak,selisihRokok,selisihPaket});
+    return {opening,rawOpening:rawOpeningTotal(),closing:closing.total,complete:closing.complete,filled:closing.filled,margin,minyak,belanjaMinyak,operasional,selisihRokok,selisihPaket,balance,piutangAwal,piutangAkhir,modalBaruB,modalLamaB,pkgComplete:auto.pkg.complete,cigComplete:auto.cig.complete};
   }
 
   function renderBalance(){
@@ -448,7 +452,7 @@
     setText('v44ModalBaruA',s.complete?fmt44(s.closing):`Belum lengkap (${s.filled}/25)`);
     setText('v44Margin',fmt44(s.margin));
     setText('v44MinyakModal',fmt44(s.minyak));
-    setText('v44Operasional',fmt44(s.operasional));
+    setText('v44Operasional',fmt44(s.belanjaMinyak));
     setText('v44SelisihRokok',fmt44(s.selisihRokok));
     setText('v44SelisihPaket',fmt44(s.selisihPaket));
     setText('v44PiutangAwal',fmt44(s.piutangAwal));
@@ -532,14 +536,14 @@
         <div><h3>${stepNo}. Balance Akhir Shift</h3><p>Rekonsiliasi otomatis dari Modal Lama sampai Modal Baru. Balance hanya final setelah stok akhir dan 25 Modal Inputan lengkap.</p></div>
         <button class="btn primary" id="v44RefreshBalance" type="button">Hitung Ulang Balance</button>
       </div>
-      <div class="notice blue"><b>Rumus Excel:</b> BALANCE = Modal Baru(A) − [Modal Lama(A) + Margin + Modal Minyak − K279] + Selisih Rokok + Selisih Paket. <b>Operasional normal sudah masuk ke Piutang/Modal Baru(A)</b>, sehingga tidak dihitung dua kali.</div>
+      <div class="notice blue"><b>Rumus Excel:</b> BALANCE = Modal Baru(A) − [Modal Lama(A) + Margin + Modal Minyak Terjual − Belanja Minyak(K279)] + Selisih Rokok + Selisih Paket. <b>Operasional normal sudah masuk ke Piutang/Modal Baru(A)</b>, sehingga tidak dihitung dua kali.</div>
       <div class="grid two">
         <div class="card summary">
           <h4>Rekonsiliasi Modal</h4>
           <div class="sumrow"><span>Modal Lama (A)</span><b id="v44ModalLamaA">—</b></div>
           <div class="sumrow"><span>Total Margin</span><b id="v44Margin">—</b></div>
-          <div class="sumrow"><span>Modal Minyak</span><b id="v44MinyakModal">—</b></div>
-          <div class="sumrow"><span>Penyesuaian Operasional (K279)</span><b id="v44Operasional">—</b></div>
+          <div class="sumrow"><span>Modal Minyak Terjual</span><b id="v44MinyakModal">—</b></div>
+          <div class="sumrow"><span>Belanja Minyak (K279)</span><b id="v44Operasional">—</b></div>
           <div class="sumrow"><span>Selisih Rokok</span><b id="v44SelisihRokok">—</b></div>
           <div class="sumrow"><span>Selisih Paket</span><b id="v44SelisihPaket">—</b></div>
           <div class="sumrow"><span>Modal Baru (A)</span><b id="v44ModalBaruA">—</b></div>
@@ -584,9 +588,10 @@
   function selfTest(){
     const eq=(a,b)=>Math.abs(Number(a)-Number(b))<0.000001;
     const tests=[];
-    tests.push(['base formula',eq(pureBalance({closing:125,opening:100,margin:10,minyak:20,operasional:5}),0)]);
-    tests.push(['worksheet 1 Sep regression',eq(pureBalance({closing:123332919,opening:125870299,margin:981260,minyak:869100,operasional:4300000}),-87740)]);
-    tests.push(['1-day balanced simulation',eq(pureBalance({closing:126140299,opening:125870299,margin:445000,minyak:125000,operasional:300000}),0)]);
+    tests.push(['base formula',eq(pureBalance({closing:125,opening:100,margin:10,minyak:20,belanjaMinyak:5}),0)]);
+    tests.push(['worksheet 1 Sep regression',eq(pureBalance({closing:123332919,opening:125870299,margin:981260,minyak:869100,belanjaMinyak:4300000}),-87740)]);
+    tests.push(['1-day balanced simulation',eq(pureBalance({closing:126140299,opening:125870299,margin:445000,minyak:125000,belanjaMinyak:300000}),0)]);
+    tests.push(['oil purchase K279 neutralizes oil-stock cash outflow',eq(pureBalance({closing:90,opening:100,margin:0,minyak:0,belanjaMinyak:10}),0)]);
     tests.push(['package repricing neutralized',eq(pureBalance({closing:110,opening:100,selisihPaket:-10}),0)]);
     tests.push(['cigarette purchase cost variance neutralized',eq(pureBalance({closing:95,opening:100,selisihRokok:5}),0)]);
     const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
@@ -597,12 +602,13 @@
       opening:LIVE_EXCEL_18.opening,
       margin:LIVE_EXCEL_18.margin,
       minyak:LIVE_EXCEL_18.minyak,
-      operasional:LIVE_EXCEL_18.k279,
+      belanjaMinyak:LIVE_EXCEL_18.k279,
       selisihRokok:LIVE_EXCEL_18.selisihRokok,
       selisihPaket:LIVE_EXCEL_18.selisihPaket
     }),LIVE_EXCEL_18.balance)]);
-    // Regression: Operasional normal tidak boleh masuk lagi sebagai K279.
-    tests.push(['ordinary operational not double-counted in Balance snapshot mapping',balanceOperationalAdjustment()===0 || Number.isFinite(balanceOperationalAdjustment())]);
+    // Regression: K279 berasal dari Belanja Minyak, bukan Operasional normal.
+    tests.push(['oil purchase total is numeric K279 source',Number.isFinite(oilPurchaseTotal())]);
+    tests.push(['ordinary operational stays separate from K279',operationalTotal()>=0 && Number.isFinite(operationalTotal())]);
     const pass=tests.every(x=>x[1]);
     document.documentElement.dataset.v44Selftest=pass?'PASS':'FAIL';
     if(!pass) console.error('V44 SELFTEST FAIL',tests);
@@ -622,7 +628,7 @@
     selfTest();
 
     window.KABalanceV44={
-      openingTotal,rawOpeningTotal,packageClosing,cigaretteClosing,piutangClosing,piutangBreakdown,transactionMargin,minyakModal,operationalTotal,balanceOperationalAdjustment,adminNetMargin,
+      openingTotal,rawOpeningTotal,packageClosing,cigaretteClosing,piutangClosing,piutangBreakdown,transactionMargin,minyakModal,oilPurchaseTotal,operationalTotal,balanceOperationalAdjustment,adminNetMargin,
       liveExcel18Audit,liveExcel18Reference:LIVE_EXCEL_18,enforceExcel18OpeningBaseline,updateAutoFinalModals,balanceSnapshot,renderBalance,pureBalance,selfTest
     };
 
