@@ -612,7 +612,7 @@ function exportReportCsv(){
   a.href=url;a.download='Konter-Anisa-'+type+'-'+new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'})+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function printReport(){renderReport();document.body.classList.add('report-printing');const cleanup=()=>document.body.classList.remove('report-printing');window.addEventListener('afterprint',cleanup,{once:true});window.print();setTimeout(cleanup,1200)}
-function purchasingNotes(){const a=read(PNOTES,[]);return Array.isArray(a)?a:[]}
+
 function auditEvents(){
   const ev=[];
   summaries().forEach(x=>ev.push({ts:Number(x.savedAt||0),source:'Sistem',actor:x.holder||'Karyawan',desc:'Snapshot shift '+(x.shiftLabel||x.shiftId)+' • Margin '+fmt(x.margin)+' • Balance '+fmt(x.balance)}));
