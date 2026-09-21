@@ -95,8 +95,6 @@
         c.sell=s.sell;
         c.display=s.display;
         c.warehouse=s.warehouse;
-        c.transfer_excel=0;
-        c.purchase_qty_excel=0;
         c.purchaseQty=0;
         c.purchaseCost=0;
       });
@@ -110,8 +108,6 @@
         c.sell=s.sell;
         c.display=s.display;
         c.warehouse=s.warehouse;
-        c.transfer_excel=0;
-        c.purchase_qty_excel=0;
       });
     }
   }

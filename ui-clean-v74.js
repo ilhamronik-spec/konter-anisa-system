@@ -33,7 +33,6 @@
     /^Modal aktual tetap diinput/i,
     /^Tombol kanan bawah selalu aktif/i,
     /^Opening dari stok akhir/i,
-    /^Data uji dari Excel/i,
     /^Fokus:/i,
     /^Alur stok:/i,
     /belum terhubung database/i,
