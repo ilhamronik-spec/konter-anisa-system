@@ -83,15 +83,15 @@ async function clickByText(page, selector, wanted){
     assert(cigSellUi.margin.replace(/\D/g,'')==='2000','Rokok live margin did not calculate to Rp2.000');
     assert(cigSellUi.notice.includes('AMAN'),'Rokok margin notice did not show safe status');
     const cigModalAccounting=await page.evaluate(()=>{
-      const c=cigCatalog[2]; // Slava opening 3 display + 70 warehouse @ 16.500
+      const c=cigCatalog[2]; // Slava opening base 16.500
       c.purchaseQty=10;c.purchaseCost=200000;
       window.syncCigBuy?.();
-      const expected=((Number(c.display||0)+Number(c.warehouse||0))*Number(c.base||0)+200000)/(Number(c.display||0)+Number(c.warehouse||0)+10);
-      return {activeBase:Number(c.activeBase||0),expected};
+      return {activeBase:Number(c.activeBase||0),expected:200000/10,balanceSelfTest:window.KABalanceV44?.selfTest?.().pass};
     });
-    assert(Math.abs(cigModalAccounting.activeBase-cigModalAccounting.expected)<0.001,'Rokok active modal basis did not absorb actual purchase cost');
+    assert(Math.abs(cigModalAccounting.activeBase-cigModalAccounting.expected)<0.001,'Rokok active base must follow current purchase unit cost like Paket');
+    assert(cigModalAccounting.balanceSelfTest===true,'Balance self-test must include Rokok repricing neutralization');
     assert(!!window.KAAccObatV41?.replaceShiftPurchases,'ACC/Obat shared restore bridge missing');
-    pass('Rokok selling price + weighted modal accounting + ACC/Obat restore bridge');
+    pass('Rokok selling price + Paket-style repricing correction + ACC/Obat restore bridge');
 
     // Create active-shift heartbeat for Purchasing and personal Purchasing session.
     const now=Date.now();
