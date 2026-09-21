@@ -78,6 +78,17 @@
 <div class="card kpi good"><small>Perubahan dari Data Pertama</small><strong id="capitalGrowth">Rp0</strong><div id="capitalGrowthSub">Belum ada data</div></div>
 <div class="card kpi warn"><small>Shift Terekam</small><strong id="capitalCount">0</strong><div>Riwayat perkembangan modal</div></div>
 </div>
+<div class="card section-card" style="margin-bottom:15px">
+<div class="hero" style="margin:0 0 12px;padding:0;border:0;box-shadow:none;background:transparent"><div><h3 style="margin:0">Grafik Perkembangan Modal per Hari</h3><p style="margin:4px 0 0">Satu titik per tanggal menggunakan Modal Akhir dari snapshot terakhir pada hari tersebut.</p></div><div class="actions"><span class="pill purple" id="capitalChartRange">Belum ada data</span></div></div>
+<div id="capitalChartWrap" style="min-height:320px;border:1px solid #eee7f4;border-radius:16px;background:linear-gradient(180deg,#fff,#fcfaff);padding:12px;overflow:hidden">
+  <div id="capitalChartEmpty" class="empty" style="padding:110px 12px!important">Belum ada data untuk grafik. Buka halaman Karyawan agar snapshot modal tersimpan.</div>
+  <svg id="capitalChart" viewBox="0 0 1000 300" preserveAspectRatio="none" style="display:none;width:100%;height:300px"></svg>
+</div>
+<div class="actions" style="margin-top:10px;justify-content:space-between">
+  <div style="font-size:11px;color:var(--muted)">Garis menunjukkan total Modal Akhir harian. Titik terakhir setiap tanggal dipakai bila ada lebih dari satu shift.</div>
+  <div style="font-size:11px;color:var(--muted)" id="capitalChartSummary">—</div>
+</div>
+</div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="capitalSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="capitalDate"><option value="">Semua tanggal</option></select><button class="btn" id="capitalRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Modal Awal</th><th>Modal Akhir</th><th>Perubahan</th><th>Status</th><th>Detail</th></tr></thead><tbody id="capitalBody"></tbody></table></div></div>
 </section>
 
@@ -160,6 +171,67 @@ function renderMinus(){const s=summaries().filter(x=>Number(x.balance||0)<0);fil
 function renderOp(){const s=summaries();fillDates('opDate',datesFrom(s));const a=filtered(s,'opSearch','opDate');$('opBody').innerHTML=a.length?a.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money"><b>'+fmt(x.operational)+'</b></td><td class="money green">'+fmt(x.margin)+'</td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'}
 
 function capitalRows(){return summaries().filter(x=>Number.isFinite(Number(x.modalOpening))||Number.isFinite(Number(x.modalClosing))).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0))}
+
+function dailyCapitalRows(){
+  const byDate=new Map();
+  capitalRows().forEach(x=>{
+    const d=String(x.date||'');if(!d)return;
+    const prev=byDate.get(d);
+    if(!prev||Number(x.savedAt||0)>=Number(prev.savedAt||0))byDate.set(d,x);
+  });
+  return [...byDate.values()].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+}
+function shortMoney(n){
+  n=Number(n)||0;
+  const a=Math.abs(n);
+  if(a>=1e9)return (n/1e9).toLocaleString('id-ID',{maximumFractionDigits:1})+' M';
+  if(a>=1e6)return (n/1e6).toLocaleString('id-ID',{maximumFractionDigits:1})+' jt';
+  if(a>=1e3)return (n/1e3).toLocaleString('id-ID',{maximumFractionDigits:0})+' rb';
+  return String(Math.round(n));
+}
+function renderCapitalChart(){
+  const svg=$('capitalChart'),empty=$('capitalChartEmpty'),range=$('capitalChartRange'),sum=$('capitalChartSummary');
+  if(!svg||!empty)return;
+  const rows=dailyCapitalRows().filter(x=>Number(x.modalClosing||0)>0);
+  if(!rows.length){
+    svg.style.display='none';empty.style.display='block';
+    range.textContent='Belum ada data';sum.textContent='—';svg.innerHTML='';
+    return;
+  }
+  empty.style.display='none';svg.style.display='block';
+  const W=1000,H=300,L=82,R=24,T=22,B=54,plotW=W-L-R,plotH=H-T-B;
+  const vals=rows.map(x=>Number(x.modalClosing||0));
+  let min=Math.min(...vals),max=Math.max(...vals);
+  if(min===max){const pad=Math.max(1000,Math.abs(max)*.05);min-=pad;max+=pad;}
+  else{const pad=(max-min)*.12;min-=pad;max+=pad;}
+  const x=i=>rows.length===1?L+plotW/2:L+(i/(rows.length-1))*plotW;
+  const y=v=>T+(max-v)/(max-min)*plotH;
+  const grid=[],labels=[];
+  for(let i=0;i<5;i++){
+    const gy=T+(i/4)*plotH,v=max-(i/4)*(max-min);
+    grid.push('<line x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+gy.toFixed(1)+'" stroke="#eee7f4" stroke-width="1"/>');
+    labels.push('<text x="'+(L-10)+'" y="'+(gy+4).toFixed(1)+'" text-anchor="end" font-size="11" fill="#83788d">'+shortMoney(v)+'</text>');
+  }
+  const pts=rows.map((r,i)=>({r,x:x(i),y:y(Number(r.modalClosing||0))}));
+  const path=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
+  const area=path+' L '+pts[pts.length-1].x.toFixed(1)+' '+(H-B)+' L '+pts[0].x.toFixed(1)+' '+(H-B)+' Z';
+  const xLabels=pts.map((p,i)=>{
+    const show=rows.length<=8||i===0||i===rows.length-1||i%Math.ceil(rows.length/7)===0;
+    return show?'<text x="'+p.x.toFixed(1)+'" y="'+(H-20)+'" text-anchor="middle" font-size="11" fill="#746b7e">'+dateLabel(p.r.date)+'</text>':'';
+  }).join('');
+  const dots=pts.map(p=>'<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="5" fill="#7c3aed" stroke="#fff" stroke-width="3"><title>'+dateLabel(p.r.date)+' • '+(p.r.holder||'—')+' • '+fmt(p.r.modalClosing)+'</title></circle>').join('');
+  svg.innerHTML=
+    '<defs><linearGradient id="capArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8b5cf6" stop-opacity=".22"/><stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/></linearGradient></defs>'+
+    grid.join('')+labels.join('')+
+    '<path d="'+area+'" fill="url(#capArea)"/>'+
+    '<path d="'+path+'" fill="none" stroke="#7c3aed" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'+
+    dots+xLabels;
+  const first=rows[0],last=rows[rows.length-1],chg=Number(last.modalClosing||0)-Number(first.modalClosing||0);
+  range.textContent=dateLabel(first.date)+' → '+dateLabel(last.date);
+  sum.textContent='Perubahan periode: '+(chg<0?'- ':'+ ')+fmt(Math.abs(chg));
+  sum.className=chg<0?'red':chg>0?'green':'';
+}
+
 function renderCapital(){
   const all=capitalRows();fillDates('capitalDate',datesFrom(all));
   const q=String($('capitalSearch')?.value||'').toLowerCase(),d=$('capitalDate')?.value||'';
@@ -235,9 +307,9 @@ let returnShiftId='';
 function openReturn(id){const x=summaries().find(s=>s.shiftId===id);if(!x)return;returnShiftId=id;{const bal=Number(x.balance||0),cls=bal<0?'red':'amber',prefix=bal<0?'MINUS':'PLUS / BERLEBIH';$('returnInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'')+' • '+esc(x.holder||'')+'</b><br>'+prefix+': <b class="'+cls+'">'+fmt(Math.abs(bal))+'</b>';}$('returnReason').value='';$('returnModal').classList.add('open')}
 function submitReturn(){const reason=String($('returnReason').value||'').trim();if(!reason)return alert('Alasan/temuan Admin wajib diisi.');const x=summaries().find(s=>s.shiftId===returnShiftId);if(!x)return;const arr=corrections(),id='corr-'+Date.now();arr.push({id,shiftId:x.shiftId,shiftLabel:x.shiftLabel,date:x.date,shift:x.shift,employeeName:x.holder,employeeId:(window.KAAdminAccounts?.activeByRole?.('employee')||[]).find(a=>a.name===x.holder)?.id||'',reason,status:'returned',snapshot:{margin:x.margin,balance:x.balance,operational:x.operational},requestedAt:new Date().toISOString(),requestedBy:adminUser()?.name||'Admin'});write(CORR,arr);$('returnModal').classList.remove('open');renderReview();renderMinus()}
 function resolveCorrection(id){const arr=corrections(),x=arr.find(a=>a.id===id);if(!x)return;x.status='resolved';x.resolvedAt=new Date().toISOString();x.resolvedBy=adminUser()?.name||'Admin';write(CORR,arr);renderReview();renderMinus()}
-function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderDebt();renderReview();renderAttendance();renderAccounts()}
+function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderReview();renderAttendance();renderAccounts()}
 function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('crumbView').textContent={dashboard:'Dashboard',margin:'Margin',minus:'Minus',operational:'Operasional',capital:'Perkembangan Modal',debt:'Hutang',review:'Cek Inputan',attendance:'Kehadiran',accounts:'Akun & Role'}[v]||v;$('side').classList.remove('mobile-open')}
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh'].forEach(id=>$(id).onclick=renderAll);$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};window.addEventListener('storage',e=>{if([SUM,ATT,CORR,'ka_admin_accounts_v59'].includes(e.key))renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);setInterval(renderAll,5000)}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh'].forEach(id=>$(id).onclick=renderAll);$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};window.addEventListener('storage',e=>{if([SUM,ATT,CORR,'ka_admin_accounts_v59'].includes(e.key))renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){bind();renderAll()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
