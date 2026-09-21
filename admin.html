@@ -391,21 +391,57 @@ function demoReportData(){
     s:[
       {date:'2026-09-15',shift:'Full',holder:'Sifa',margin:425000,balance:0,operational:185000,modalOpening:102500000,modalClosing:102740000},
       {date:'2026-09-16',shift:'Full',holder:'Fitri',margin:510000,balance:-65000,operational:210000,modalOpening:102740000,modalClosing:102975000},
-      {date:'2026-09-17',shift:'Full',holder:'Rifda',margin:468000,balance:72000,operational:95000,modalOpening:102975000,modalClosing:103315000}
+      {date:'2026-09-17',shift:'Full',holder:'Rifda',margin:468000,balance:72000,operational:125000,modalOpening:102975000,modalClosing:103390000}
     ],
     a:[
       {date:'2026-09-17',employeeName:'Rifda',shiftLabel:'17 September 2026 • Shift Full • Rifda',checkIn:'2026-09-17T06:04:00+07:00',checkOut:'2026-09-17T22:58:00+07:00'},
-      {date:'2026-09-16',employeeName:'Fitri',shiftLabel:'16 September 2026 • Shift Full • Fitri',checkIn:'2026-09-16T06:09:00+07:00',checkOut:'2026-09-16T23:03:00+07:00'}
+      {date:'2026-09-16',employeeName:'Fitri',shiftLabel:'16 September 2026 • Shift Full • Fitri',checkIn:'2026-09-16T06:09:00+07:00',checkOut:'2026-09-16T23:03:00+07:00'},
+      {date:'2026-09-15',employeeName:'Sifa',shiftLabel:'15 September 2026 • Shift Full • Sifa',checkIn:'2026-09-15T06:03:00+07:00',checkOut:'2026-09-15T22:57:00+07:00'}
     ],
-    debts:[{name:'Egi',types:['Hutang Purchasing'],debt:500000,paid:200000,outstanding:300000}]
+    debts:[{name:'Egi',types:['Hutang Purchasing'],debt:500000,paid:200000,outstanding:300000}],
+    stock:[
+      {category:'Paket',unit:'unit',opening:578,incoming:210,outgoing:245,closing:543,closingValue:8300000},
+      {category:'Rokok',unit:'unit',opening:700,incoming:160,outgoing:205,closing:655,closingValue:11800000},
+      {category:'Aksesoris',unit:'nilai modal',opening:6200000,incoming:1400000,outgoing:1500000,closing:6100000,closingValue:6100000},
+      {category:'Obat',unit:'nilai modal',opening:2300000,incoming:900000,outgoing:947000,closing:2253000,closingValue:2253000},
+      {category:'Minyak',unit:'liter/nilai',opening:80,incoming:150,outgoing:110,closing:120,closingValue:1200000}
+    ],
+    ops:[
+      {date:'2026-09-15',cat:'transport',label:'Transportasi',amount:70000,note:'Ongkos pengambilan barang'},
+      {date:'2026-09-15',cat:'routine',label:'Operasional rutin',amount:115000,note:'Kebutuhan toko'},
+      {date:'2026-09-16',cat:'sedekah',label:'Sedekah',amount:100000,note:'Sedekah'},
+      {date:'2026-09-16',cat:'alat',label:'Perkakas & peralatan',amount:90000,note:'Peralatan toko'},
+      {date:'2026-09-16',cat:'repair',label:'Perbaikan',amount:20000,note:'Perbaikan kecil'},
+      {date:'2026-09-17',cat:'repair',label:'Perbaikan',amount:40000,note:'Servis perlengkapan'},
+      {date:'2026-09-17',cat:'transport',label:'Transportasi',amount:50000,note:'Transport barang'},
+      {date:'2026-09-17',cat:'routine',label:'Operasional rutin',amount:35000,note:'Kebutuhan harian'}
+    ]
   };
+}
+function aggregateStockForReport(s){
+  const byCat=new Map();
+  s.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0)).forEach(shift=>{
+    (Array.isArray(shift.stockMovement)?shift.stockMovement:[]).forEach(r=>{
+      const key=String(r.category||'Lainnya'),prev=byCat.get(key);
+      if(!prev){
+        byCat.set(key,{category:key,unit:r.unit||'',opening:Number(r.opening||0),incoming:Number(r.incoming||0),outgoing:Number(r.outgoing||0),closing:Number(r.closing||0),closingValue:Number(r.closingValue||0)});
+      }else{
+        prev.incoming+=Number(r.incoming||0);prev.outgoing+=Number(r.outgoing||0);prev.closing=Number(r.closing||prev.closing);prev.closingValue=Number(r.closingValue||prev.closingValue);prev.unit=r.unit||prev.unit;
+      }
+    });
+  });
+  return [...byCat.values()];
+}
+function operationalRowsForReport(s){
+  const out=[];
+  s.forEach(shift=>(Array.isArray(shift.operationalEntries)?shift.operationalEntries:[]).forEach(x=>out.push({date:shift.date,holder:shift.holder,receipt:x.receipt||'',cat:x.cat||'',label:x.label||x.cat||'Operasional',amount:Number(x.amount||0),note:x.note||'',over:!!x.over})));
+  return out;
 }
 function reportData(){
   if(reportDemo)return demoReportData();
   const s=summaries().filter(x=>reportDateInRange(x.date)),a=attendance().filter(x=>reportDateInRange(x.date));
-  const allowed=new Set(s.map(x=>x.shiftId));
   const allDebts=debtLedger();
-  return {s,a,debts:allDebts};
+  return {s,a,debts:allDebts,stock:aggregateStockForReport(s),ops:operationalRowsForReport(s)};
 }
 function reportPeriodText(){
   if(reportDemo)return 'CONTOH DATA • 15–17 September 2026';
@@ -434,6 +470,10 @@ function renderReport(){
   let body='';
   if(type==='management'||type==='finance'){
     body+='<div class="report-section"><h3>Rekap Keuangan per Shift</h3>'+reportTable(['Tanggal','Shift','Pemegang','Margin','Operasional','Balance'],s.slice().sort((x,y)=>String(x.date).localeCompare(String(y.date))).map(x=>[esc(dateLabel(x.date)),esc(x.shift||'—'),'<b>'+esc(x.holder||'—')+'</b>',fmt(x.margin),fmt(x.operational),'<b class="'+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+(x.balance>0?'+ ':'')+fmt(x.balance)+'</b>']))+'</div>';
+    const stockRows=Array.isArray(data.stock)?data.stock:[];
+    body+='<div class="report-section"><h3>Pergerakan Stok & Persediaan</h3>'+reportTable(['Kategori','Satuan','Stok Awal','Masuk / Belanja','Keluar / Terjual','Stok Akhir','Nilai Akhir'],stockRows.map(r=>{const val=v=>String(r.unit||'').includes('nilai')?fmt(v):Number(v||0).toLocaleString('id-ID');return ['<b>'+esc(r.category)+'</b>',esc(r.unit||'—'),val(r.opening),val(r.incoming),val(r.outgoing),val(r.closing),fmt(r.closingValue)]}))+'</div>';
+    const opRows=Array.isArray(data.ops)?data.ops:[];
+    body+='<div class="report-section"><h3>Detail Biaya Operasional</h3>'+reportTable(['Tanggal','Kategori','Nominal','Keterangan'],opRows.map(r=>[esc(dateLabel(r.date)),esc(r.label||r.cat||'Operasional'),fmt(r.amount),esc(r.note||'—')]))+'</div>';
   }
   if(type==='management'||type==='capital'){
     const activeDebt=debt.filter(x=>Number(x.outstanding||0)>0);
@@ -447,7 +487,7 @@ function renderReport(){
 function csvEscape(v){const s=String(v??'');return '"'+s.replace(/"/g,'""')+'"'}
 function exportReportCsv(){
   renderReport();const d=reportData(),type=$('reportType')?.value||'management';let rows=[['KONTER ANISA - LAPORAN '+type.toUpperCase()],['Periode',reportPeriodText()],[]];
-  if(type==='management'||type==='finance'){rows.push(['Tanggal','Shift','Pemegang','Margin','Operasional','Balance']);d.s.forEach(x=>rows.push([x.date,x.shift,x.holder,x.margin,x.operational,x.balance]));rows.push([])}
+  if(type==='management'||type==='finance'){rows.push(['Tanggal','Shift','Pemegang','Margin','Operasional','Balance']);d.s.forEach(x=>rows.push([x.date,x.shift,x.holder,x.margin,x.operational,x.balance]));rows.push([]);rows.push(['PERGERAKAN STOK']);rows.push(['Kategori','Satuan','Stok Awal','Masuk/Belanja','Keluar/Terjual','Stok Akhir','Nilai Akhir']);(d.stock||[]).forEach(x=>rows.push([x.category,x.unit,x.opening,x.incoming,x.outgoing,x.closing,x.closingValue]));rows.push([]);rows.push(['DETAIL OPERASIONAL']);rows.push(['Tanggal','Kategori','Nominal','Keterangan']);(d.ops||[]).forEach(x=>rows.push([x.date,x.label||x.cat,x.amount,x.note||'']));rows.push([])}
   if(type==='management'||type==='capital'){rows.push(['Debitur','Jenis','Total Hutang','Total Dibayar','Sisa']);(d.debts||[]).filter(x=>x.outstanding>0).forEach(x=>rows.push([x.name,(x.types||[]).join(', '),x.debt,x.paid,x.outstanding]));rows.push([])}
   if(type==='management'||type==='attendance'){rows.push(['Tanggal','Karyawan','Shift','Masuk','Pulang']);d.a.forEach(x=>rows.push([x.date,x.employeeName,x.shiftLabel,time(x.checkIn),time(x.checkOut)]))}
   const csv='\uFEFF'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
