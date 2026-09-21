@@ -95,6 +95,7 @@ async function clickByText(page, selector, wanted){
     pass('Purchasing V83 personal account + automatic active-shift routing');
 
     // 3. PURCHASING SALES NOTE (PHOTO + TOTAL ONLY)
+    await clickByText(page,'.nav [data-view]','Nota Barang Jualan');
     let before=await ls(page,'ka_v29_purchasing_notes')||[];
     const salesFile=await page.$('#salesPhoto'); await salesFile.uploadFile(pngPath);
     await sleep(350);
