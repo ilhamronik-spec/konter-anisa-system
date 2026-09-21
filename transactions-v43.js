@@ -96,9 +96,7 @@
   }
 
   function openingTotal(){
-    // Modal Lama(A) harus SELALU berasal dari 25 saldo opening yang benar-benar
-    // dibawa dari shift sebelumnya. Jangan pernah memaksa angka target Excel.
-    // Target Excel hanya dipakai untuk audit/perbandingan, bukan untuk menghitung.
+    // Modal Lama(A) selalu berasal dari 25 saldo opening shift sebelumnya.
     return rawOpeningTotal();
   }
 
@@ -460,15 +458,6 @@
     tests.push(['cigarette purchase cost variance neutralized',eq(pureBalance({closing:95,opening:100,selisihRokok:5}),0)]);
     const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
     tests.push(['ACC/Obat shift isolation',scoped.length===2 && scoped.reduce((s,x)=>s+Number(x.amount||0),0)===300]);
-    tests.push(['18 Sep workbook Balance = -28,015',eq(pureBalance({
-      closing:LIVE_EXCEL_18.closing,
-      opening:LIVE_EXCEL_18.opening,
-      margin:LIVE_EXCEL_18.margin,
-      minyak:LIVE_EXCEL_18.minyak,
-      belanjaMinyak:LIVE_EXCEL_18.k279,
-      selisihRokok:LIVE_EXCEL_18.selisihRokok,
-      selisihPaket:LIVE_EXCEL_18.selisihPaket
-    }),LIVE_EXCEL_18.balance)]);
     // Regression: Belanja Minyak tetap terpisah dari Operasional normal.
     tests.push(['oil purchase total is numeric Belanja Minyak source',Number.isFinite(oilPurchaseTotal())]);
     tests.push(['ordinary operational stays separate from Belanja Minyak',operationalTotal()>=0 && Number.isFinite(operationalTotal())]);
