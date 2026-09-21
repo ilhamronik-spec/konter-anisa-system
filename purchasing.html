@@ -391,7 +391,7 @@ body{
 <section class="view" id="view-history">
 <div class="hero"><div><h2>Riwayat Nota</h2><p>Riwayat Purchasing hanya menampilkan nota 24 jam terakhir. Setelah lewat 24 jam, nota otomatis hilang dari tampilan riwayat tanpa menghapus data transaksi internal.</p></div><div class="actions"><span class="pill purple">Retensi Tampilan 24 Jam</span></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="filterSearch" placeholder="Cari nota / pembuat / jenis"><select class="select" id="filterType"><option value="">Semua jenis</option><option value="package">Paket</option><option value="cigarette">Rokok</option><option value="accessory">Aksesoris</option><option value="medicine">Obat</option><option value="oil">Minyak</option><option value="operational">Operasional</option></select><select class="select" id="filterStatus"><option value="">Semua status</option><option value="ready">Siap</option><option value="used">Dipakai</option><option value="void">Dibatalkan</option></select><button class="btn" id="refreshHistory">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>No. Nota</th><th>Jenis</th><th>Total</th><th>Foto</th><th>Target Shift</th><th>Pembuat</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="historyBody"></tbody></table></div></div>
-<div class="notice amber" style="margin-top:14px"><b>Simulasi:</b> identitas Purchasing diperlakukan sebagai akun pribadi dari sesi login. Tujuan nota dibaca otomatis dari shift Karyawan aktif pada browser ini. Backend bersama akan dipasang setelah alur role dinyatakan final.</div>
+<div class="notice amber" style="margin-top:14px"><b>Mode transisi:</b> identitas Purchasing tetap berasal dari sesi aplikasi ini. Database bersama dapat dipasangkan per perangkat; integrasi login aplikasi utama dilakukan setelah modul hitungan dinyatakan siap.</div>
 </section>
 </div></main></div>
 
@@ -475,7 +475,7 @@ function renderIdentity(){
 }
 function openDb(){if(dbPromise)return dbPromise;dbPromise=new Promise(function(res,rej){var q=indexedDB.open(DB_NAME,1);q.onupgradeneeded=function(){if(!q.result.objectStoreNames.contains(DB_STORE))q.result.createObjectStore(DB_STORE,{keyPath:'id'})};q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}});return dbPromise}
 async function savePhoto(id,data){var db=await openDb();return new Promise(function(res,rej){var tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put({id:id,dataUrl:data});tx.oncomplete=function(){res(true)};tx.onerror=function(){rej(tx.error)}})}
-async function getPhoto(id){var db=await openDb();return new Promise(function(res,rej){var q=db.transaction(DB_STORE,'readonly').objectStore(DB_STORE).get(id);q.onsuccess=function(){res(q.result?q.result.dataUrl:null)};q.onerror=function(){rej(q.error)}})}
+async function getPhoto(id){var db=await openDb();var local=await new Promise(function(res,rej){var q=db.transaction(DB_STORE,'readonly').objectStore(DB_STORE).get(id);q.onsuccess=function(){res(q.result?q.result.dataUrl:null)};q.onerror=function(){rej(q.error)}});if(local)return local;try{return await window.KASharedDBV1?.getMediaUrl?.(id)||null}catch(_){return null}}
 async function compress(file){if(!file||!String(file.type||'').startsWith('image/'))throw new Error('File harus berupa gambar.');if(file.size>12*1024*1024)throw new Error('Foto maksimal 12 MB.');var url=URL.createObjectURL(file);try{var img=await new Promise(function(res,rej){var i=new Image();i.onload=function(){res(i)};i.onerror=function(){rej(new Error('Foto tidak dapat dibaca.'))};i.src=url});var sc=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.max(1,Math.round(img.naturalWidth*sc)),h=Math.max(1,Math.round(img.naturalHeight*sc)),cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);return cv.toDataURL('image/jpeg',.68)}finally{URL.revokeObjectURL(url)}}
 function photoBind(input,drop,prev,txt,set){$(input).addEventListener('change',async function(){var f=this.files&&this.files[0];if(!f)return;try{$(txt).textContent='Memproses foto…';var d=await compress(f);set(d);$(prev).src=d;$(prev).classList.add('show');$(drop).classList.add('has-photo');$(txt).textContent='Foto siap disimpan • '+Math.round(d.length/1024)+' KB';summary()}catch(e){set(null);this.value='';$(prev).classList.remove('show');$(drop).classList.remove('has-photo');$(txt).textContent='Belum ada foto.';toast(e.message,'bad')}})}
 function nextId(kind,date){var p=kind==='operational'?'NBO':'NBJ',d=String(date).replace(/-/g,'').slice(4),base=p+'-'+d+'-',mx=0;notes().forEach(function(n){if(String(n.id||'').indexOf(base)===0){var z=Number(String(n.id).slice(base.length));if(Number.isFinite(z))mx=Math.max(mx,z)}});return base+String(mx+1).padStart(2,'0')}
@@ -539,5 +539,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 <script src="./purchasing-lock-v83.js?build=83"></script>
+<script>
+setTimeout(function(){
+  import('./shared-db-v1.js?build=1').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+},0);
+</script>
 </body>
 </html>
