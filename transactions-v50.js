@@ -237,13 +237,28 @@
     if(!sel||typeof cigCatalog==='undefined') return;
     const i=Number(sel.value||0),c=cigCatalog[i];
     if(!c) return;
-    const qty=byId('cigQty'),total=byId('cigTotal'),unit=byId('cigUnit');
+    const qty=byId('cigQty'),total=byId('cigTotal'),unit=byId('cigUnit'),sell=byId('cigSell'),margin=byId('cigMarginUnit');
     if(qty) qty.value=String(num(c.purchaseQty));
     if(total){
       if(typeof setMoneyInput==='function') setMoneyInput(total,num(c.purchaseCost));
       else total.value=num(c.purchaseCost)?Math.round(num(c.purchaseCost)).toLocaleString('id-ID'):'';
     }
-    if(unit) unit.value=num(c.purchaseQty)?Math.round(num(c.purchaseCost)/num(c.purchaseQty)).toLocaleString('id-ID'):'0';
+    const unitBase=num(c.purchaseQty)?num(c.purchaseCost)/num(c.purchaseQty):num(c.base);
+    if(unit) unit.value=num(c.purchaseQty)?Math.round(unitBase).toLocaleString('id-ID'):'0';
+    if(sell){
+      if(typeof setMoneyInput==='function') setMoneyInput(sell,num(c.sell));
+      else sell.value=Math.round(num(c.sell)).toLocaleString('id-ID');
+    }
+    const unitMargin=num(c.sell)-unitBase;
+    if(margin) margin.value=Math.round(unitMargin).toLocaleString('id-ID');
+    const notice=byId('cigMarginNotice');
+    if(notice){
+      const bad=num(c.purchaseQty)>0 && unitMargin<1000;
+      notice.className='notice '+(bad?'red':'blue');
+      notice.innerHTML=bad
+        ? '<b>Margin kurang dari Rp1.000.</b> Naikkan Harga Jual sampai margin minimal Rp1.000 sebelum Preview/Konfirmasi.'
+        : '<b>Harga Jual dapat disesuaikan.</b> Kenaikan berlaku langsung; penurunan tertentu mengikuti persetujuan Admin.';
+    }
     if(byId('cigWarehouseBeforeCard')) byId('cigWarehouseBeforeCard').textContent=String(num(c.warehouse));
     if(byId('cigQtyOut')) byId('cigQtyOut').textContent='+'+num(c.purchaseQty);
     if(byId('cigWarehouseAfter')) byId('cigWarehouseAfter').textContent=String(num(c.warehouse)+num(c.purchaseQty));
@@ -258,10 +273,26 @@
     if(!c) return;
     const q=num(byId('cigQty')?.value);
     const total=typeof moneyValue==='function'?num(moneyValue(byId('cigTotal'))):num(String(byId('cigTotal')?.value||'').replace(/[^\d.-]/g,''));
+    const sellEl=byId('cigSell');
+    const newSell=sellEl
+      ? (typeof moneyValue==='function'?num(moneyValue(sellEl)):num(String(sellEl.value||'').replace(/[^\d.-]/g,'')))
+      : num(c.sell);
+    if(c._v29OriginalSell==null) c._v29OriginalSell=num(c.sell);
     c.purchaseQty=q;
     c.purchaseCost=total;
+    if(newSell>0) c.sell=newSell;
     const unit=q>0?total/q:0;
+    const unitMargin=q>0?num(c.sell)-unit:0;
     if(byId('cigUnit')) byId('cigUnit').value=q?Math.round(unit).toLocaleString('id-ID'):'0';
+    if(byId('cigMarginUnit')) byId('cigMarginUnit').value=q?Math.round(unitMargin).toLocaleString('id-ID'):'0';
+    const notice=byId('cigMarginNotice');
+    if(notice){
+      const bad=q>0 && unitMargin<1000;
+      notice.className='notice '+(bad?'red':'blue');
+      notice.innerHTML=bad
+        ? '<b>BLOKIR:</b> margin/unit '+money(unitMargin)+' masih di bawah minimum Rp1.000. Naikkan Harga Jual.'
+        : '<b>AMAN:</b> margin/unit '+money(unitMargin)+' memenuhi minimum Rp1.000.';
+    }
     if(byId('cigWarehouseBeforeCard')) byId('cigWarehouseBeforeCard').textContent=String(num(c.warehouse));
     if(byId('cigQtyOut')) byId('cigQtyOut').textContent='+'+q;
     if(byId('cigWarehouseAfter')) byId('cigWarehouseAfter').textContent=String(num(c.warehouse)+q);
