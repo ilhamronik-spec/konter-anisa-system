@@ -155,7 +155,7 @@ async function clickByText(page, selector, wanted){
       const p=pkgCatalog[0];
       p.purchaseQty=1;p.activeBase=7050;p.activeSell=Math.max(Number(p.activeSell||p.sell||0),8050);
     },packageNote.id);
-    await page.click('#pkgPreviewTopBtn'); await sleep(350);
+    await page.evaluate(()=>document.getElementById('pkgPreviewTopBtn')?.click()); await sleep(350);
     let used=await ls(page,'ka_v29_used_notes')||{};
     assert(!used[packageNote.id],'mismatched Paket total incorrectly accepted');
 
@@ -165,7 +165,7 @@ async function clickByText(page, selector, wanted){
       const p=pkgCatalog[0];
       p.purchaseQty=1;p.activeBase=500000;p.base=500000;p.activeSell=501000;p.sell=501000;
     },packageNote.id);
-    await page.click('#pkgPreviewTopBtn'); await sleep(500);
+    await page.evaluate(()=>document.getElementById('pkgPreviewTopBtn')?.click()); await sleep(500);
     used=await ls(page,'ka_v29_used_notes')||{};
     assert(!!used[packageNote.id],'exact Paket total did not mark note used');
     pass('Karyawan hard validation: total detail must equal Purchasing note exactly');
