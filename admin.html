@@ -21,6 +21,23 @@
 .group-tabs button.active{background:linear-gradient(135deg,#171019,#2d1837);color:#fff;border-color:#8b5cf6;box-shadow:0 6px 16px rgba(124,58,237,.15)}
 .side-foot{font-size:9.5px!important}
 .nav button{transition:.16s ease}.nav button:hover{background:rgba(168,85,247,.08);transform:translateX(2px)}
+.report-paper{background:#fff;border:1px solid #e8e0ee;border-radius:16px;box-shadow:0 14px 35px rgba(54,34,72,.06);padding:28px;margin-top:14px}
+.report-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;padding-bottom:16px;border-bottom:2px solid #22172a}
+.report-brand{display:flex;gap:12px;align-items:center}.report-logo{width:44px;height:44px;border:2px solid #211628;border-radius:11px;display:grid;place-items:center;font-weight:900}
+.report-head h2{margin:0;font-size:20px;letter-spacing:.03em}.report-head p{margin:4px 0 0;font-size:11px;color:#6f6678}.report-meta{text-align:right;font-size:11px;color:#5f5668;line-height:1.55}
+.report-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:16px 0}.report-kpi{padding:12px;border:1px solid #e9e3ef;border-radius:12px;background:#fcfbfd}.report-kpi small{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#82788b;font-weight:800}.report-kpi b{display:block;margin-top:5px;font-size:15px}
+.report-section{margin-top:18px}.report-section h3{font-size:13px;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid #ded6e6}.report-note{font-size:10px;color:#756c7f;line-height:1.5;margin-top:12px}
+.demo-stamp{display:none;font-weight:900;color:#b45309;border:1px solid #fed7aa;background:#fff8eb;border-radius:999px;padding:6px 9px;font-size:10px}.report-paper.demo .demo-stamp{display:inline-flex}
+.audit-list{display:grid;gap:8px}.audit-item{display:grid;grid-template-columns:150px 150px 1fr auto;gap:12px;align-items:center;padding:11px 12px;border:1px solid #ece6f1;border-radius:12px;background:#fff}.audit-item:hover{background:#fcfaff}.audit-time{font-size:10px;color:#776d82}.audit-actor{font-size:11px;font-weight:800}.audit-desc{font-size:12px}.audit-source{font-size:10px}
+@media(max-width:800px){.report-kpis{grid-template-columns:repeat(2,1fr)}.report-head{display:block}.report-meta{text-align:left;margin-top:10px}.audit-item{grid-template-columns:1fr}.audit-time,.audit-source{font-size:10px}}
+@media print{
+  body.report-printing *{visibility:hidden!important}
+  body.report-printing #reportPaper,body.report-printing #reportPaper *{visibility:visible!important}
+  body.report-printing #reportPaper{position:absolute!important;left:0!important;top:0!important;width:100%!important;margin:0!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:14mm!important}
+  body.report-printing .report-paper{font-size:10pt}
+  body.report-printing .btn{display:none!important}
+  @page{size:A4 portrait;margin:10mm}
+}
 
 .modal{position:fixed;inset:0;background:rgba(8,8,11,.74);backdrop-filter:blur(6px);z-index:30000;display:none;padding:22px;overflow:auto}.modal.open{display:grid;place-items:center}.modal-card{width:min(720px,100%);background:#fff;border:1px solid #d8c5e8;border-radius:20px;padding:18px;box-shadow:0 30px 90px rgba(30,10,45,.35)}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.modal-head h3{margin:0}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#776d82;font-weight:800;margin-bottom:6px}.mobile-menu{display:none}
 @media(max-width:1100px){.app{grid-template-columns:1fr}.side{position:fixed;left:0;top:0;bottom:0;width:270px;transform:translateX(-105%);transition:.2s;z-index:1000}.side.mobile-open{transform:translateX(0)}.mobile-menu{display:inline-flex}.kpis{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.content{padding:20px}}
@@ -38,8 +55,9 @@
 <button data-view="capital" data-group="capitaldebt"><span class="dot"></span>Modal & Hutang</button>
 <button data-view="review" data-group="review"><span class="dot"></span>Cek Inputan</button>
 <button data-view="attendance" data-group="people"><span class="dot"></span>Karyawan & Akses</button>
+<button data-view="reports" data-group="reports"><span class="dot"></span>Laporan & Audit</button>
 </div>
-<div class="side-foot"><b>ADMIN SIMULATION V2</b><br>Menu diringkas berdasarkan fungsi. Karyawan V80 dan Purchasing V83 tetap memakai logika yang sudah dikunci.</div>
+<div class="side-foot"><b>ADMIN SIMULATION V3</b><br>Menu diringkas berdasarkan fungsi. Karyawan V80 dan Purchasing V83 tetap memakai logika yang sudah dikunci.</div>
 </aside>
 <main class="main">
 <div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Admin / <span id="crumbView">Dashboard</span></span></div><div class="user"><div style="text-align:right"><b id="adminName" style="font-size:12px">Admin</b><div style="font-size:10px;color:var(--muted)">Administrator</div></div><div class="avatar" id="adminAvatar">AD</div></div></div>
@@ -53,7 +71,7 @@
 <div class="card kpi warn"><small>Total Operasional</small><strong id="kpiOperational">Rp0</strong><div id="kpiOperationalSub">Seluruh shift terekam</div></div>
 <div class="card kpi purple"><small>Absen Hari Ini</small><strong id="kpiAttendance">0</strong><div id="kpiAttendanceSub">Karyawan sudah absen masuk</div></div>
 </div>
-<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button></div>
+<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button><button data-go="reports">Laporan & Audit</button></div>
 <div class="grid two">
 <div class="card section-card"><h3>Kehadiran Hari Ini</h3><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>Karyawan</th><th>Shift</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th></tr></thead><tbody id="dashAttendance"></tbody></table></div></div>
 <div class="card section-card"><h3>Minus Perlu Perhatian</h3><div class="notice amber">Semua minus ditampilkan. Nilai ≥ Rp50.000 diberi status <b>MINUS BESAR</b> untuk dikaji pada menu Cek Inputan.</div><div id="dashMinusList" class="summary-list"></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-go="review">Buka Cek Inputan</button></div></div>
@@ -133,6 +151,44 @@
 </div>
 <div class="card table-card" style="margin-top:15px"><div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Role</th><th>Status</th><th>ID</th><th>Aksi</th></tr></thead><tbody id="accountBody"></tbody></table></div></div>
 </section>
+
+<section class="view" id="view-reports">
+<div class="group-tabs" data-tabgroup="reports"><button data-go="reports">Laporan</button><button data-go="audit">Audit Aktivitas</button></div>
+<div class="hero"><div><h2>Laporan & Ekspor</h2><p>Buat laporan manajemen dari data yang sudah terekam. Bisa dipreview, diekspor CSV untuk Excel, atau dicetak/disimpan sebagai PDF.</p></div><div class="actions"><span class="pill purple">Read Only</span><span class="pill green">Data Sistem</span></div></div>
+<div class="card section-card">
+<div class="form-grid">
+<div class="field"><label>Jenis Laporan</label><select class="select" id="reportType"><option value="management">Ringkasan Manajemen</option><option value="finance">Keuangan & Selisih</option><option value="capital">Modal & Hutang</option><option value="attendance">Kehadiran</option></select></div>
+<div class="field"><label>Periode</label><select class="select" id="reportPeriod"><option value="all">Semua Data</option><option value="today">Hari Ini</option><option value="7">7 Hari Terakhir</option><option value="30">30 Hari Terakhir</option><option value="custom">Rentang Tanggal</option></select></div>
+<div class="field"><label>Dari Tanggal</label><input class="input" id="reportFrom" type="date"></div>
+<div class="field"><label>Sampai Tanggal</label><input class="input" id="reportTo" type="date"></div>
+</div>
+<div class="actions" style="margin-top:12px"><button class="btn primary" id="reportPreview">Tampilkan Data Aktual</button><button class="btn" id="reportExample">Contoh Laporan</button><button class="btn purple" id="reportCsv">Export CSV</button><button class="btn" id="reportPrint">Cetak / Simpan PDF</button></div>
+</div>
+
+<div class="report-paper" id="reportPaper">
+<div class="report-head">
+<div class="report-brand"><div class="report-logo">KA</div><div><h2>KONTER ANISA</h2><p>LAPORAN MANAJEMEN USAHA</p></div></div>
+<div class="report-meta"><span class="demo-stamp">CONTOH / DEMO</span><div id="reportPeriodLabel">Periode: Semua data</div><div id="reportGenerated">Dibuat: —</div><div id="reportPrepared">Admin: —</div></div>
+</div>
+<div class="report-kpis">
+<div class="report-kpi"><small>Total Margin</small><b id="reportMargin">Rp0</b></div>
+<div class="report-kpi"><small>Total Minus</small><b id="reportMinus">Rp0</b></div>
+<div class="report-kpi"><small>Total Operasional</small><b id="reportOperational">Rp0</b></div>
+<div class="report-kpi"><small>Modal Terakhir</small><b id="reportCapital">Rp0</b></div>
+</div>
+<div id="reportBody"></div>
+<div class="report-note">Laporan ini dibuat otomatis dari data Konter Anisa System. Untuk mode simulasi, data hanya berasal dari browser/perangkat yang sama sampai backend bersama diaktifkan.</div>
+</div>
+</section>
+
+<section class="view" id="view-audit">
+<div class="group-tabs" data-tabgroup="reports"><button data-go="reports">Laporan</button><button data-go="audit">Audit Aktivitas</button></div>
+<div class="hero"><div><h2>Audit Aktivitas</h2><p>Jejak aktivitas penting yang sudah terekam: shift, absensi, Purchasing, koreksi Admin, dan perubahan akun.</p></div><div class="actions"><span class="pill purple">Monitoring</span></div></div>
+<div class="card table-card">
+<div class="table-toolbar"><input class="input" id="auditSearch" placeholder="Cari nama / aktivitas / nota"><select class="select" id="auditSource"><option value="">Semua sumber</option><option value="Karyawan">Karyawan</option><option value="Purchasing">Purchasing</option><option value="Admin">Admin</option><option value="Sistem">Sistem</option></select><button class="btn" id="auditRefresh">↻ Refresh</button></div>
+<div class="section-card"><div class="audit-list" id="auditList"></div></div>
+</div>
+</section>
 </div>
 </main>
 </div>
@@ -145,7 +201,7 @@
 <script>
 (function(){
 'use strict';
-const SUM='ka_admin_shift_summaries_v1',ATT='ka_attendance_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81',BIG=50000;
+const SUM='ka_admin_shift_summaries_v1',ATT='ka_attendance_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81',PNOTES='ka_v29_purchasing_notes',ACCOUNTS='ka_admin_accounts_v59',BIG=50000;
 const $=id=>document.getElementById(id);
 const read=(k,f)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}};
 const write=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));try{window.dispatchEvent(new StorageEvent('storage',{key:k,newValue:JSON.stringify(v)}))}catch(_){}};
@@ -318,17 +374,113 @@ let returnShiftId='';
 function openReturn(id){const x=summaries().find(s=>s.shiftId===id);if(!x)return;returnShiftId=id;{const bal=Number(x.balance||0),cls=bal<0?'red':'amber',prefix=bal<0?'MINUS':'PLUS / BERLEBIH';$('returnInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'')+' • '+esc(x.holder||'')+'</b><br>'+prefix+': <b class="'+cls+'">'+fmt(Math.abs(bal))+'</b>';}$('returnReason').value='';$('returnModal').classList.add('open')}
 function submitReturn(){const reason=String($('returnReason').value||'').trim();if(!reason)return alert('Alasan/temuan Admin wajib diisi.');const x=summaries().find(s=>s.shiftId===returnShiftId);if(!x)return;const arr=corrections(),id='corr-'+Date.now();arr.push({id,shiftId:x.shiftId,shiftLabel:x.shiftLabel,date:x.date,shift:x.shift,employeeName:x.holder,employeeId:(window.KAAdminAccounts?.activeByRole?.('employee')||[]).find(a=>a.name===x.holder)?.id||'',reason,status:'returned',snapshot:{margin:x.margin,balance:x.balance,operational:x.operational},requestedAt:new Date().toISOString(),requestedBy:adminUser()?.name||'Admin'});write(CORR,arr);$('returnModal').classList.remove('open');renderReview();renderMinus()}
 function resolveCorrection(id){const arr=corrections(),x=arr.find(a=>a.id===id);if(!x)return;x.status='resolved';x.resolvedAt=new Date().toISOString();x.resolvedBy=adminUser()?.name||'Admin';write(CORR,arr);renderReview();renderMinus()}
-function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderReview();renderAttendance();renderAccounts()}
+
+let reportDemo=false;
+function reportDateInRange(date){
+  const p=$('reportPeriod')?.value||'all',d=String(date||'');
+  if(!d)return true;
+  if(p==='all')return true;
+  const now=new Date(),todayStr=now.toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'});
+  if(p==='today')return d===todayStr;
+  if(p==='7'||p==='30'){const days=Number(p),end=new Date(todayStr+'T00:00:00+07:00'),start=new Date(end);start.setDate(start.getDate()-(days-1));const dt=new Date(d+'T00:00:00+07:00');return dt>=start&&dt<=end}
+  if(p==='custom'){const from=$('reportFrom')?.value||'',to=$('reportTo')?.value||'';return (!from||d>=from)&&(!to||d<=to)}
+  return true;
+}
+function demoReportData(){
+  return {
+    s:[
+      {date:'2026-09-15',shift:'Full',holder:'Sifa',margin:425000,balance:0,operational:185000,modalOpening:102500000,modalClosing:102740000},
+      {date:'2026-09-16',shift:'Full',holder:'Fitri',margin:510000,balance:-65000,operational:210000,modalOpening:102740000,modalClosing:102975000},
+      {date:'2026-09-17',shift:'Full',holder:'Rifda',margin:468000,balance:72000,operational:95000,modalOpening:102975000,modalClosing:103315000}
+    ],
+    a:[
+      {date:'2026-09-17',employeeName:'Rifda',shiftLabel:'17 September 2026 • Shift Full • Rifda',checkIn:'2026-09-17T06:04:00+07:00',checkOut:'2026-09-17T22:58:00+07:00'},
+      {date:'2026-09-16',employeeName:'Fitri',shiftLabel:'16 September 2026 • Shift Full • Fitri',checkIn:'2026-09-16T06:09:00+07:00',checkOut:'2026-09-16T23:03:00+07:00'}
+    ],
+    debts:[{name:'Egi',types:['Hutang Purchasing'],debt:500000,paid:200000,outstanding:300000}]
+  };
+}
+function reportData(){
+  if(reportDemo)return demoReportData();
+  const s=summaries().filter(x=>reportDateInRange(x.date)),a=attendance().filter(x=>reportDateInRange(x.date));
+  const allowed=new Set(s.map(x=>x.shiftId));
+  const allDebts=debtLedger();
+  return {s,a,debts:allDebts};
+}
+function reportPeriodText(){
+  if(reportDemo)return 'CONTOH DATA • 15–17 September 2026';
+  const p=$('reportPeriod')?.value||'all';
+  if(p==='all')return 'Semua data terekam';
+  if(p==='today')return 'Hari ini';
+  if(p==='7')return '7 hari terakhir';
+  if(p==='30')return '30 hari terakhir';
+  const f=$('reportFrom')?.value||'awal',t=$('reportTo')?.value||'akhir';return dateLabel(f)+' s.d. '+dateLabel(t);
+}
+function reportTable(headers,rows){
+  return '<div class="table-wrap"><table class="table" style="min-width:650px"><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+headers.length+'" class="empty">Tidak ada data pada periode ini.</td></tr>')+'</tbody></table></div>';
+}
+function renderReport(){
+  const data=reportData(),s=data.s,a=data.a,debt=data.debts||[],type=$('reportType')?.value||'management';
+  const margin=s.reduce((t,x)=>t+Number(x.margin||0),0);
+  const minus=s.filter(x=>Number(x.balance||0)<0).reduce((t,x)=>t+Math.abs(Number(x.balance||0)),0);
+  const op=s.reduce((t,x)=>t+Number(x.operational||0),0);
+  const validCapital=s.filter(x=>Number(x.modalClosing||0)>0).sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))||Number(x.savedAt||0)-Number(y.savedAt||0));
+  const capital=Number(validCapital[validCapital.length-1]?.modalClosing||0);
+  $('reportPaper').classList.toggle('demo',reportDemo);
+  $('reportPeriodLabel').textContent='Periode: '+reportPeriodText();
+  $('reportGenerated').textContent='Dibuat: '+new Date().toLocaleString('id-ID',{timeZone:'Asia/Jakarta'});
+  $('reportPrepared').textContent='Admin: '+(adminUser()?.name||'Admin');
+  $('reportMargin').textContent=fmt(margin);$('reportMinus').textContent=fmt(minus);$('reportOperational').textContent=fmt(op);$('reportCapital').textContent=fmt(capital);
+  let body='';
+  if(type==='management'||type==='finance'){
+    body+='<div class="report-section"><h3>Rekap Keuangan per Shift</h3>'+reportTable(['Tanggal','Shift','Pemegang','Margin','Operasional','Balance'],s.slice().sort((x,y)=>String(x.date).localeCompare(String(y.date))).map(x=>[esc(dateLabel(x.date)),esc(x.shift||'—'),'<b>'+esc(x.holder||'—')+'</b>',fmt(x.margin),fmt(x.operational),'<b class="'+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+(x.balance>0?'+ ':'')+fmt(x.balance)+'</b>']))+'</div>';
+  }
+  if(type==='management'||type==='capital'){
+    const activeDebt=debt.filter(x=>Number(x.outstanding||0)>0);
+    body+='<div class="report-section"><h3>Modal & Hutang</h3><div class="summary-list"><div class="summary-row"><span>Modal akhir terbaru</span><b>'+fmt(capital)+'</b></div><div class="summary-row"><span>Total hutang aktif</span><b>'+fmt(activeDebt.reduce((t,x)=>t+Number(x.outstanding||0),0))+'</b></div><div class="summary-row"><span>Debitur aktif</span><b>'+activeDebt.length+'</b></div></div>'+reportTable(['Debitur','Jenis','Hutang Masuk','Dibayar','Sisa'],activeDebt.map(x=>['<b>'+esc(x.name)+'</b>',esc((x.types||[]).join(', ')||'—'),fmt(x.debt),fmt(x.paid),'<b class="red">'+fmt(x.outstanding)+'</b>']))+'</div>';
+  }
+  if(type==='management'||type==='attendance'){
+    body+='<div class="report-section"><h3>Kehadiran</h3>'+reportTable(['Tanggal','Karyawan','Shift','Masuk','Pulang'],a.map(x=>[esc(dateLabel(x.date)),'<b>'+esc(x.employeeName||'—')+'</b>',esc(x.shiftLabel||'—'),time(x.checkIn),time(x.checkOut)]))+'</div>';
+  }
+  $('reportBody').innerHTML=body||'<div class="empty">Tidak ada bagian laporan untuk ditampilkan.</div>';
+}
+function csvEscape(v){const s=String(v??'');return '"'+s.replace(/"/g,'""')+'"'}
+function exportReportCsv(){
+  renderReport();const d=reportData(),type=$('reportType')?.value||'management';let rows=[['KONTER ANISA - LAPORAN '+type.toUpperCase()],['Periode',reportPeriodText()],[]];
+  if(type==='management'||type==='finance'){rows.push(['Tanggal','Shift','Pemegang','Margin','Operasional','Balance']);d.s.forEach(x=>rows.push([x.date,x.shift,x.holder,x.margin,x.operational,x.balance]));rows.push([])}
+  if(type==='management'||type==='capital'){rows.push(['Debitur','Jenis','Total Hutang','Total Dibayar','Sisa']);(d.debts||[]).filter(x=>x.outstanding>0).forEach(x=>rows.push([x.name,(x.types||[]).join(', '),x.debt,x.paid,x.outstanding]));rows.push([])}
+  if(type==='management'||type==='attendance'){rows.push(['Tanggal','Karyawan','Shift','Masuk','Pulang']);d.a.forEach(x=>rows.push([x.date,x.employeeName,x.shiftLabel,time(x.checkIn),time(x.checkOut)]))}
+  const csv='\uFEFF'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='Konter-Anisa-'+type+'-'+new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'})+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function printReport(){renderReport();document.body.classList.add('report-printing');const cleanup=()=>document.body.classList.remove('report-printing');window.addEventListener('afterprint',cleanup,{once:true});window.print();setTimeout(cleanup,1200)}
+function purchasingNotes(){const a=read(PNOTES,[]);return Array.isArray(a)?a:[]}
+function auditEvents(){
+  const ev=[];
+  summaries().forEach(x=>ev.push({ts:Number(x.savedAt||0),source:'Sistem',actor:x.holder||'Karyawan',desc:'Snapshot shift '+(x.shiftLabel||x.shiftId)+' • Margin '+fmt(x.margin)+' • Balance '+fmt(x.balance)}));
+  attendance().forEach(x=>{if(x.checkIn)ev.push({ts:Date.parse(x.checkIn)||0,source:'Karyawan',actor:x.employeeName||'Karyawan',desc:'Absen masuk • '+(x.shiftLabel||'')});if(x.checkOut)ev.push({ts:Date.parse(x.checkOut)||0,source:'Karyawan',actor:x.employeeName||'Karyawan',desc:'Absen pulang • '+(x.shiftLabel||'')})});
+  purchasingNotes().forEach(x=>{if(x.createdAt)ev.push({ts:Date.parse(x.createdAt)||0,source:'Purchasing',actor:x.createdByName||'Purchasing',desc:'Membuat nota '+(x.id||'')+' • '+fmt(x.amount)+' • '+String(x.type||'')});if(x.statusChangedAt)ev.push({ts:Date.parse(x.statusChangedAt)||0,source:'Purchasing',actor:x.statusChangedBy||x.createdByName||'Purchasing',desc:'Status nota '+(x.id||'')+' → '+String(x.status||'')})});
+  corrections().forEach(x=>{if(x.requestedAt)ev.push({ts:Date.parse(x.requestedAt)||0,source:'Admin',actor:x.requestedBy||'Admin',desc:'Mengembalikan hitungan '+(x.shiftLabel||x.shiftId)+' • '+String(x.reason||'')});if(x.resubmittedAt)ev.push({ts:Date.parse(x.resubmittedAt)||0,source:'Karyawan',actor:x.employeeName||'Karyawan',desc:'Mengirim ulang perbaikan '+(x.shiftLabel||x.shiftId)});if(x.resolvedAt)ev.push({ts:Date.parse(x.resolvedAt)||0,source:'Admin',actor:x.resolvedBy||'Admin',desc:'Menandai perbaikan selesai '+(x.shiftLabel||x.shiftId)})});
+  const accStore=read(ACCOUNTS,null);if(accStore?.updatedAt)ev.push({ts:Number(accStore.updatedAt),source:'Admin',actor:adminUser()?.name||'Admin',desc:'Master akun & role diperbarui'});
+  return ev.filter(x=>x.ts).sort((a,b)=>b.ts-a.ts);
+}
+function renderAudit(){
+  const q=String($('auditSearch')?.value||'').toLowerCase(),src=$('auditSource')?.value||'';
+  const rows=auditEvents().filter(x=>(!src||x.source===src)&&(!q||[x.actor,x.desc,x.source].join(' ').toLowerCase().includes(q))).slice(0,250);
+  $('auditList').innerHTML=rows.length?rows.map(x=>'<div class="audit-item"><div class="audit-time">'+esc(new Date(x.ts).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</div><div class="audit-actor">'+esc(x.actor)+'</div><div class="audit-desc">'+esc(x.desc)+'</div><div class="audit-source"><span class="status '+(x.source==='Admin'?'bad':x.source==='Purchasing'?'warn':x.source==='Karyawan'?'ok':'info')+'">'+esc(x.source)+'</span></div></div>').join(''):'<div class="empty">Belum ada aktivitas yang sesuai filter.</div>';
+}
+
+function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderReview();renderAttendance();renderAccounts();renderReport();renderAudit()}
 function show(v){
-  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',review:'review',attendance:'people',accounts:'people'};
-  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Keuangan / Selisih & Minus',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',review:'Cek Inputan',attendance:'Karyawan & Akses / Kehadiran',accounts:'Karyawan & Akses / Akun & Role'};
+  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',review:'review',attendance:'people',accounts:'people',reports:'reports',audit:'reports'};
+  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Keuangan / Selisih & Minus',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',review:'Cek Inputan',attendance:'Karyawan & Akses / Kehadiran',accounts:'Karyawan & Akses / Akun & Role',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
   document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.group===groups[v]));
   document.querySelectorAll('.group-tabs [data-go]').forEach(x=>x.classList.toggle('active',x.dataset.go===v));
   $('crumbView').textContent=crumbs[v]||v;
   $('side').classList.remove('mobile-open');
 }
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh'].forEach(id=>$(id).onclick=renderAll);$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};window.addEventListener('storage',e=>{if([SUM,ATT,CORR,'ka_admin_accounts_v59'].includes(e.key))renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};window.addEventListener('storage',e=>{if([SUM,ATT,CORR,PNOTES,ACCOUNTS].includes(e.key))renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){bind();renderAll()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
