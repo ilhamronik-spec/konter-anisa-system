@@ -190,6 +190,7 @@
     ensureNoteSelects();
     populateNoteSelect(document.getElementById('pkgNoteV29'), 'package');
     populateNoteSelect(document.getElementById('cigNoteV29'), 'cigarette');
+    populateNoteSelect(document.getElementById('oilBuyNoteSelect'), 'oil');
     populateNoteSelect(document.getElementById('opReceipt'), 'operational');
     const opSel = document.getElementById('opReceipt');
     if (opSel && !opSel.value) {
@@ -475,7 +476,7 @@
           <h4 style="margin-top:0">Purchasing — Upload Nota ke Shift Aktif</h4>
           <div class="form-grid">
             <div class="field"><label>No. Nota</label><input id="v29NoteId" class="input" placeholder="Contoh NBJ-0913-03"></div>
-            <div class="field"><label>Jenis</label><select id="v29NoteType" class="select"><option value="package">Belanja Paket</option><option value="cigarette">Belanja Rokok</option><option value="operational">Operasional</option></select></div>
+            <div class="field"><label>Jenis</label><select id="v29NoteType" class="select"><option value="package">Belanja Paket</option><option value="cigarette">Belanja Rokok</option><option value="oil">Belanja Minyak</option><option value="operational">Operasional</option></select></div>
             <div class="field"><label>Nominal Nota</label><input id="v29NoteAmount" class="input" inputmode="numeric" placeholder="0"></div>
             <div class="field"><label>Keterangan</label><input id="v29NoteDesc" class="input" placeholder="Opsional"></div>
           </div>
@@ -659,6 +660,46 @@
 
   window.KAPurchasingV56 = {
     refreshNotes: refreshNoteSelectors,
-    testNoteId: 'NBO-0918-01'
+    testNoteId: 'NBO-0918-01',
+    activeShift: ACTIVE_SHIFT,
+    listNotes(type){
+      return state.notes
+        .filter(n => noteUsable(n,type))
+        .map(n => ({...n, used:noteUsed(n.id)}));
+    },
+    getNote(id){ return noteById(String(id||'')); },
+    isUsed(id){ return noteUsed(String(id||'')); },
+    useNote(id,area){
+      const note=noteById(String(id||''));
+      if(!note || note.shiftId!==ACTIVE_SHIFT.id || note.status==='void') return false;
+      if(noteUsed(note.id)) return false;
+      markNoteUsed(note.id,String(area||'unknown'));
+      return true;
+    },
+    releaseNote(id){
+      freeNote(String(id||''));
+      return true;
+    },
+    createNote({id,type,amount,description='',label=''}) {
+      const noteId=String(id||'').trim().toUpperCase();
+      const noteType=String(type||'').trim();
+      const noteAmount=Math.max(0,Number(amount)||0);
+      if(!noteId || !['package','cigarette','oil','operational'].includes(noteType) || noteAmount<=0) return {ok:false,error:'invalid'};
+      if(state.notes.some(n=>n.id===noteId)) return {ok:false,error:'duplicate'};
+      const note={
+        id:noteId,type:noteType,amount:noteAmount,
+        description:String(description||'').trim(),
+        label:String(label||'').trim(),
+        shiftId:ACTIVE_SHIFT.id,
+        shiftLabel:ACTIVE_SHIFT.label,
+        uploadedAt:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
+        status:'ready'
+      };
+      state.notes.push(note);
+      save(STORE.notes,state.notes);
+      refreshNoteSelectors();
+      renderAdminPanel();
+      return {ok:true,note:{...note}};
+    }
   };
 })();
