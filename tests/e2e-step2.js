@@ -165,9 +165,12 @@ async function clickByText(page, selector, wanted){
       const p=pkgCatalog[0];
       p.purchaseQty=1;p.activeBase=500000;p.base=500000;p.activeSell=501000;p.sell=501000;
     },packageNote.id);
-    await page.evaluate(()=>document.getElementById('pkgPreviewTopBtn')?.click()); await sleep(500);
+    await page.evaluate(()=>document.getElementById('pkgPreviewTopBtn')?.click()); await sleep(300);
+    const previewState=await page.evaluate(()=>({display:document.getElementById('pkgPurchasePreview')?.style.display,valid:window.pkgPreviewValid}));
+    assert(previewState.display!=='none' && previewState.valid===true,'exact Paket total did not open a valid preview');
+    await page.evaluate(()=>document.getElementById('pkgConfirmPreviewBtn')?.click()); await sleep(300);
     used=await ls(page,'ka_v29_used_notes')||{};
-    assert(!!used[packageNote.id],'exact Paket total did not mark note used');
+    assert(!!used[packageNote.id],'exact Paket total was not marked used after confirmation');
     pass('Karyawan hard validation: total detail must equal Purchasing note exactly');
 
     // 7. SHIFT/DAY ISOLATION
