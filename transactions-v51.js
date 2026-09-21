@@ -22,7 +22,12 @@
     if(h) h.textContent=number+'. '+text;
   }
 
+  function v61OwnsWorkflow(){
+    return !!document.querySelector('script[src*="transactions-v61.js"]');
+  }
+
   function normalizeSteps(){
+    if(v61OwnsWorkflow()) return [];
     const map=[
       {i:0,s:findSection(/Cek Data Awal/i),title:'Cek Data Awal'},
       {i:1,s:findSection(/^\s*\d*\.?\s*Belanja\b/i),title:'Belanja'},
@@ -332,6 +337,10 @@
   }
 
   function installNavigation(){
+    if(v61OwnsWorkflow()){
+      wireDisplayButtons();
+      return;
+    }
     const originalSmart=typeof smartNextStep==='function'?smartNextStep:null;
     const replacement=function(){
       const current=Number(typeof idx!=='undefined'?idx:0);
