@@ -1,4 +1,4 @@
-/* Konter Anisa V65 — add Admin Keluar Rp5.000 */
+/* Konter Anisa V73 — final Minyak/Listrik/Admin rules */
 (function(){
 'use strict';
 
@@ -143,7 +143,7 @@ function installMinyakStep(){
 }
 
 /* ---------------- Admin Masuk / Admin Keluar ---------------- */
-const OUT_RATES=[2500,5000,14000,1500,6500,7000];
+const OUT_RATES=[2500,14000,1500,6500,7000];
 function adminArrays(){
   if(typeof txEntries==='undefined')return;
   if(!Array.isArray(txEntries.adminIn))txEntries.adminIn=[];
@@ -494,7 +494,7 @@ function installNavigation(){
 function refresh(){
   installListrik();installMinyakStep();installAdminStep();remapSteps();
   renderListrik();renderAdmin();try{window.KAPersistRenderV40?.();}catch(_){}
-  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V71 — EXCEL 18 AUDIT • TARGET BALANCE -Rp28.015';});
+  document.querySelectorAll('.topbar .status.info').forEach(el=>{if(/UI\s+V/i.test(String(el.textContent||'')))el.textContent='UI V73 — MINYAK + LISTRIK + ADMIN FINAL';});
   setTimeout(refreshStockNextVisual,0);
 }
 function selfTest(){
@@ -505,7 +505,7 @@ function selfTest(){
   ok('Electricity tab/pane',!!$('tx-electricity'));
   ok('Electricity <=500k margin 4500',listrikMargin(500000)===4500);
   ok('Electricity >500k follows BCA',listrikMargin(500001)===5000);
-  ok('Admin rates exact',OUT_RATES.join(',')==='2500,5000,14000,1500,6500,7000');
+  ok('Admin rates exact',OUT_RATES.join(',')==='2500,14000,1500,6500,7000');
   ok('Paket checkpoint step 10',Number(findSection(/Stok Akhir Paket/i)?.dataset.i)===9);
   ok('Rokok checkpoint step 11',Number(findSection(/Stok Akhir Rokok/i)?.dataset.i)===10);
   ok('Stock Enter navigation installed',document.documentElement.dataset.v64StockEnter==='1');
