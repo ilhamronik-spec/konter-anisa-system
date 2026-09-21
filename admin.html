@@ -30,6 +30,8 @@
 <button data-view="margin"><span class="dot"></span>Margin</button>
 <button data-view="minus"><span class="dot"></span>Minus</button>
 <button data-view="operational"><span class="dot"></span>Operasional</button>
+<button data-view="capital"><span class="dot"></span>Perkembangan Modal</button>
+<button data-view="debt"><span class="dot"></span>Hutang</button>
 <button data-view="review"><span class="dot"></span>Cek Inputan</button>
 <button data-view="attendance"><span class="dot"></span>Kehadiran</button>
 <button data-view="accounts"><span class="dot"></span>Akun & Role</button>
@@ -69,6 +71,27 @@
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="opSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="opDate"><option value="">Semua tanggal</option></select><button class="btn" id="opRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Operasional</th><th>Margin</th><th>Balance</th></tr></thead><tbody id="opBody"></tbody></table></div></div>
 </section>
 
+<section class="view" id="view-capital">
+<div class="hero"><div><h2>Perkembangan Modal</h2><p>Pantau perkembangan total modal dari shift ke shift. Klik Detail untuk melihat komposisi 25 kategori modal pada shift tersebut.</p></div><div class="actions"><span class="pill purple">Read Only</span></div></div>
+<div class="grid kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+<div class="card kpi purple"><small>Modal Terbaru</small><strong id="capitalLatest">Rp0</strong><div id="capitalLatestSub">Belum ada data</div></div>
+<div class="card kpi good"><small>Perubahan dari Data Pertama</small><strong id="capitalGrowth">Rp0</strong><div id="capitalGrowthSub">Belum ada data</div></div>
+<div class="card kpi warn"><small>Shift Terekam</small><strong id="capitalCount">0</strong><div>Riwayat perkembangan modal</div></div>
+</div>
+<div class="card table-card"><div class="table-toolbar"><input class="input" id="capitalSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="capitalDate"><option value="">Semua tanggal</option></select><button class="btn" id="capitalRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Modal Awal</th><th>Modal Akhir</th><th>Perubahan</th><th>Status</th><th>Detail</th></tr></thead><tbody id="capitalBody"></tbody></table></div></div>
+</section>
+
+<section class="view" id="view-debt">
+<div class="hero"><div><h2>Rekap Hutang</h2><p>Hanya menampilkan hutang yang masih berjalan. Pembayaran dilakukan dari workflow Karyawan; Admin tidak memiliki menu Bayar Hutang.</p></div><div class="actions"><span class="pill green">Otomatis Berkurang Saat Dibayar</span></div></div>
+<div class="notice blue"><b>Aturan:</b> pembayaran yang dicatat Karyawan otomatis mengurangi saldo debitur yang sama. Jika sisa hutang sudah Rp0, nama tersebut otomatis hilang dari rekap hutang aktif. Riwayat transaksi tetap tersimpan untuk audit.</div>
+<div class="grid kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+<div class="card kpi bad"><small>Total Hutang Berjalan</small><strong id="debtOutstanding">Rp0</strong><div>Saldo yang belum lunas</div></div>
+<div class="card kpi purple"><small>Jumlah Debitur Aktif</small><strong id="debtPeople">0</strong><div>Saldo > Rp0</div></div>
+<div class="card kpi good"><small>Total Pembayaran Terekam</small><strong id="debtPaid">Rp0</strong><div>Otomatis mengurangi hutang</div></div>
+</div>
+<div class="card table-card"><div class="table-toolbar"><input class="input" id="debtSearch" placeholder="Cari nama debitur / jenis"><select class="select" id="debtTypeFilter"><option value="">Semua jenis</option><option value="Hutang Karyawan">Hutang Karyawan</option><option value="Hutang Owner">Hutang Owner</option><option value="Hutang Purchasing">Hutang Purchasing</option><option value="Hutang Orang Lain">Hutang Orang Lain</option></select><button class="btn" id="debtRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Debitur</th><th>Jenis</th><th>Total Hutang Masuk</th><th>Total Dibayar</th><th>Sisa Hutang</th><th>Status</th><th>Detail</th></tr></thead><tbody id="debtBody"></tbody></table></div></div>
+</section>
+
 <section class="view" id="view-review">
 <div class="hero"><div><h2>Cek Inputan</h2><p>Kaji ulang shift yang menghasilkan selisih minus maupun plus/berlebih. Admin dapat mengembalikan hitungan kepada karyawan yang bersangkutan untuk diperbaiki tanpa menghapus data lama.</p></div><div class="actions"><span class="status bad">Review Selisih</span></div></div>
 <div class="notice blue"><b>Alur:</b> Admin pilih shift → tulis alasan → Kembalikan untuk Perbaikan → notifikasi masuk ke akun Karyawan pemegang shift → Karyawan memperbaiki input dan Kirim Ulang → Admin menandai selesai. <b>Prioritas review:</b> MINUS ≥ Rp50.000 dan PLUS/BERLEBIH ≥ Rp50.000.</div>
@@ -93,6 +116,8 @@
 </div>
 
 <div class="modal" id="returnModal"><div class="modal-card"><div class="modal-head"><h3>Kembalikan Hitungan ke Karyawan</h3><button class="btn" id="returnClose">Tutup ✕</button></div><div class="notice amber" id="returnInfo">—</div><div class="field"><label>Alasan / Temuan Admin — Wajib</label><textarea class="textarea" id="returnReason" placeholder="Contoh: Selisih minus terlalu besar. Periksa kembali Cash, QRIS BCA, dan transaksi transfer."></textarea></div><div class="actions" style="margin-top:12px"><button class="btn danger" id="returnConfirm">Kembalikan untuk Perbaikan</button></div></div></div>
+<div class="modal" id="capitalModal"><div class="modal-card" style="width:min(900px,100%)"><div class="modal-head"><h3 id="capitalModalTitle">Detail Modal</h3><button class="btn" id="capitalModalClose">Tutup ✕</button></div><div class="notice blue" id="capitalModalInfo">—</div><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>#</th><th>Kategori Modal</th><th>Nilai</th><th>Status</th></tr></thead><tbody id="capitalDetailBody"></tbody></table></div></div></div>
+<div class="modal" id="debtModal"><div class="modal-card" style="width:min(900px,100%)"><div class="modal-head"><h3 id="debtModalTitle">Detail Hutang</h3><button class="btn" id="debtModalClose">Tutup ✕</button></div><div class="notice blue" id="debtModalInfo">—</div><div class="table-wrap"><table class="table" style="min-width:720px"><thead><tr><th>Waktu/Shift</th><th>Jenis Transaksi</th><th>Nominal</th><th>Keterangan</th></tr></thead><tbody id="debtDetailBody"></tbody></table></div></div></div>
 
 <script src="./account-master-v59.js?build=80"></script>
 <script>
@@ -133,6 +158,62 @@ function filtered(base,searchId,dateId){const q=String($(searchId)?.value||'').t
 function renderMargin(){const s=summaries();fillDates('marginDate',datesFrom(s));const a=filtered(s,'marginSearch','marginDate');$('marginBody').innerHTML=a.length?a.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money green"><b>'+fmt(x.margin)+'</b></td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td><td>'+when(x.savedAt)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'}
 function renderMinus(){const s=summaries().filter(x=>Number(x.balance||0)<0);fillDates('minusDate',datesFrom(s));const a=filtered(s,'minusSearch','minusDate');$('minusBody').innerHTML=a.length?a.map(x=>{const c=corrForShift(x.shiftId);return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money red"><b>'+fmt(Math.abs(x.balance))+'</b></td><td>'+(Math.abs(x.balance)>=BIG?'<span class="status bad">MINUS BESAR</span>':'<span class="status warn">Minus</span>')+'</td><td>'+corrBadge(c)+'</td></tr>'}).join(''):'<tr><td colspan="6" class="empty">Tidak ada data minus.</td></tr>'}
 function renderOp(){const s=summaries();fillDates('opDate',datesFrom(s));const a=filtered(s,'opSearch','opDate');$('opBody').innerHTML=a.length?a.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money"><b>'+fmt(x.operational)+'</b></td><td class="money green">'+fmt(x.margin)+'</td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'}
+
+function capitalRows(){return summaries().filter(x=>Number.isFinite(Number(x.modalOpening))||Number.isFinite(Number(x.modalClosing))).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0))}
+function renderCapital(){
+  const all=capitalRows();fillDates('capitalDate',datesFrom(all));
+  const q=String($('capitalSearch')?.value||'').toLowerCase(),d=$('capitalDate')?.value||'';
+  const rows=all.filter(x=>(!d||x.date===d)&&(!q||[x.date,x.holder,x.shift,x.shiftLabel].join(' ').toLowerCase().includes(q)));
+  const valid=all.filter(x=>Number(x.modalClosing||0)>0);
+  const latest=valid[valid.length-1],first=valid[0];
+  const latestVal=Number(latest?.modalClosing||0),firstVal=Number(first?.modalOpening||first?.modalClosing||0),growth=latestVal-firstVal;
+  $('capitalLatest').textContent=fmt(latestVal);$('capitalLatestSub').textContent=latest?dateLabel(latest.date)+' • '+(latest.holder||'—'):'Belum ada data';
+  $('capitalGrowth').textContent=(growth<0?'- ':'+ ')+fmt(Math.abs(growth));$('capitalGrowth').className=growth<0?'red':'green';$('capitalGrowthSub').textContent=first&&latest?'Dari '+fmt(firstVal)+' ke '+fmt(latestVal):'Belum ada data';$('capitalCount').textContent=String(all.length);
+  $('capitalBody').innerHTML=rows.length?rows.slice().reverse().map(x=>{const open=Number(x.modalOpening||0),close=Number(x.modalClosing||0),chg=close-open,cls=chg<0?'red':chg>0?'green':'',label=chg<0?'Turun':chg>0?'Naik':'Tetap';return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money">'+fmt(open)+'</td><td class="money"><b>'+fmt(close)+'</b></td><td class="money '+cls+'">'+(chg<0?'- ':'+ ')+fmt(Math.abs(chg))+'</td><td><span class="status '+(chg<0?'bad':chg>0?'ok':'info')+'">'+label+'</span></td><td><button class="btn" data-capital-detail="'+esc(x.shiftId)+'">Detail</button></td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Belum ada data perkembangan modal. Buka halaman Karyawan agar snapshot terbaru tersimpan.</td></tr>';
+  document.querySelectorAll('[data-capital-detail]').forEach(b=>b.onclick=()=>openCapitalDetail(b.dataset.capitalDetail));
+}
+function openCapitalDetail(shiftId){
+  const x=summaries().find(s=>s.shiftId===shiftId);if(!x)return;
+  $('capitalModalTitle').textContent='Detail Modal • '+(x.holder||'—');
+  $('capitalModalInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'—')+'</b><br>Modal Awal: <b>'+fmt(x.modalOpening)+'</b> → Modal Akhir: <b>'+fmt(x.modalClosing)+'</b>';
+  const rows=Array.isArray(x.modalBreakdown)?x.modalBreakdown:[];
+  $('capitalDetailBody').innerHTML=rows.length?rows.map(r=>'<tr><td>'+esc(r.index)+'</td><td><b>'+esc(r.name)+'</b></td><td class="money"><b>'+fmt(r.value)+'</b></td><td>'+(r.filled?'<span class="status ok">Terisi</span>':'<span class="status warn">Belum Terisi</span>')+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">Detail 25 kategori belum tersedia pada snapshot lama.</td></tr>';
+  $('capitalModal').classList.add('open');
+}
+function debtLedger(){
+  const map=new Map(),events=[];
+  summaries().slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0)).forEach(s=>{
+    (Array.isArray(s.debtEntries)?s.debtEntries:[]).forEach((d,i)=>{
+      const name=String(d.debtor||'').trim();if(!name)return;const key=name.toLowerCase();
+      let r=map.get(key);if(!r){r={key,name,types:new Set(),debt:0,paid:0,events:[]};map.set(key,r)}
+      const amount=Number(d.amount||0),type=String(d.type||'Hutang');r.debt+=amount;r.types.add(type);
+      const ev={kind:'debt',date:s.date,shift:s.shift,holder:s.holder,amount,type,note:String(d.note||''),order:Number(s.savedAt||0)+i};r.events.push(ev);events.push(ev);
+    });
+    (Array.isArray(s.paymentEntries)?s.paymentEntries:[]).forEach((p,i)=>{
+      const name=String(p.name||'').trim();if(!name)return;const key=name.toLowerCase();
+      let r=map.get(key);if(!r){r={key,name,types:new Set(),debt:0,paid:0,events:[]};map.set(key,r)}
+      const amount=Number(p.amount||0);r.paid+=amount;
+      const ev={kind:'payment',date:s.date,shift:s.shift,holder:s.holder,amount,type:'Pembayaran',note:'Pembayaran hutang/piutang',order:Number(s.savedAt||0)+100+i};r.events.push(ev);events.push(ev);
+    });
+  });
+  return [...map.values()].map(r=>({...r,types:[...r.types],outstanding:Math.max(0,r.debt-r.paid)}));
+}
+function renderDebt(){
+  const all=debtLedger(),active=all.filter(x=>x.outstanding>0),q=String($('debtSearch')?.value||'').toLowerCase(),type=$('debtTypeFilter')?.value||'';
+  const rows=active.filter(x=>(!q||[x.name,...x.types].join(' ').toLowerCase().includes(q))&&(!type||x.types.includes(type)));
+  $('debtOutstanding').textContent=fmt(active.reduce((s,x)=>s+x.outstanding,0));$('debtPeople').textContent=String(active.length);$('debtPaid').textContent=fmt(all.reduce((s,x)=>s+x.paid,0));
+  $('debtBody').innerHTML=rows.length?rows.sort((a,b)=>b.outstanding-a.outstanding).map(x=>'<tr><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.types.join(', ')||'—')+'</td><td class="money">'+fmt(x.debt)+'</td><td class="money green">'+fmt(x.paid)+'</td><td class="money red"><b>'+fmt(x.outstanding)+'</b></td><td><span class="status bad">Belum Lunas</span></td><td><button class="btn" data-debt-detail="'+esc(x.key)+'">Detail</button></td></tr>').join(''):'<tr><td colspan="7" class="empty">Tidak ada hutang aktif. Hutang yang sudah lunas otomatis tidak ditampilkan.</td></tr>';
+  document.querySelectorAll('[data-debt-detail]').forEach(b=>b.onclick=()=>openDebtDetail(b.dataset.debtDetail));
+}
+function openDebtDetail(key){
+  const x=debtLedger().find(r=>r.key===key);if(!x)return;
+  $('debtModalTitle').textContent='Detail Hutang • '+x.name;
+  $('debtModalInfo').innerHTML='Total hutang masuk: <b>'+fmt(x.debt)+'</b> • Total pembayaran: <b class="green">'+fmt(x.paid)+'</b> • Sisa: <b class="red">'+fmt(x.outstanding)+'</b>';
+  const ev=x.events.slice().sort((a,b)=>a.order-b.order);
+  $('debtDetailBody').innerHTML=ev.length?ev.map(e=>'<tr><td>'+esc(dateLabel(e.date))+' • '+esc(e.shift||'—')+'</td><td>'+(e.kind==='payment'?'<span class="status ok">Pembayaran</span>':'<span class="status warn">'+esc(e.type)+'</span>')+'</td><td class="money '+(e.kind==='payment'?'green':'red')+'"><b>'+(e.kind==='payment'?'- ':'+ ')+fmt(e.amount)+'</b></td><td>'+esc(e.note||'—')+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">Belum ada detail.</td></tr>';
+  $('debtModal').classList.add('open');
+}
+
 function corrBadge(c){if(!c)return '<span class="status info">Belum Review</span>';if(c.status==='returned')return '<span class="status bad">Dikembalikan</span>';if(c.status==='resubmitted')return '<span class="status warn">Dikirim Ulang</span>';if(c.status==='resolved')return '<span class="status ok">Selesai</span>';return '<span class="status info">'+esc(c.status)+'</span>'}
 function renderReview(){
   let a=summaries().filter(x=>Number(x.balance||0)!==0),q=String($('reviewSearch').value||'').toLowerCase(),f=$('reviewFilter').value;
@@ -154,9 +235,9 @@ let returnShiftId='';
 function openReturn(id){const x=summaries().find(s=>s.shiftId===id);if(!x)return;returnShiftId=id;{const bal=Number(x.balance||0),cls=bal<0?'red':'amber',prefix=bal<0?'MINUS':'PLUS / BERLEBIH';$('returnInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'')+' • '+esc(x.holder||'')+'</b><br>'+prefix+': <b class="'+cls+'">'+fmt(Math.abs(bal))+'</b>';}$('returnReason').value='';$('returnModal').classList.add('open')}
 function submitReturn(){const reason=String($('returnReason').value||'').trim();if(!reason)return alert('Alasan/temuan Admin wajib diisi.');const x=summaries().find(s=>s.shiftId===returnShiftId);if(!x)return;const arr=corrections(),id='corr-'+Date.now();arr.push({id,shiftId:x.shiftId,shiftLabel:x.shiftLabel,date:x.date,shift:x.shift,employeeName:x.holder,employeeId:(window.KAAdminAccounts?.activeByRole?.('employee')||[]).find(a=>a.name===x.holder)?.id||'',reason,status:'returned',snapshot:{margin:x.margin,balance:x.balance,operational:x.operational},requestedAt:new Date().toISOString(),requestedBy:adminUser()?.name||'Admin'});write(CORR,arr);$('returnModal').classList.remove('open');renderReview();renderMinus()}
 function resolveCorrection(id){const arr=corrections(),x=arr.find(a=>a.id===id);if(!x)return;x.status='resolved';x.resolvedAt=new Date().toISOString();x.resolvedBy=adminUser()?.name||'Admin';write(CORR,arr);renderReview();renderMinus()}
-function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderReview();renderAttendance();renderAccounts()}
-function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('crumbView').textContent={dashboard:'Dashboard',margin:'Margin',minus:'Minus',operational:'Operasional',review:'Cek Inputan',attendance:'Kehadiran',accounts:'Akun & Role'}[v]||v;$('side').classList.remove('mobile-open')}
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','reviewRefresh','attRefresh'].forEach(id=>$(id).onclick=renderAll);$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};window.addEventListener('storage',e=>{if([SUM,ATT,CORR,'ka_admin_accounts_v59'].includes(e.key))renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);setInterval(renderAll,5000)}
+function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderDebt();renderReview();renderAttendance();renderAccounts()}
+function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('crumbView').textContent={dashboard:'Dashboard',margin:'Margin',minus:'Minus',operational:'Operasional',capital:'Perkembangan Modal',debt:'Hutang',review:'Cek Inputan',attendance:'Kehadiran',accounts:'Akun & Role'}[v]||v;$('side').classList.remove('mobile-open')}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh'].forEach(id=>$(id).onclick=renderAll);$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};window.addEventListener('storage',e=>{if([SUM,ATT,CORR,'ka_admin_accounts_v59'].includes(e.key))renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);setInterval(renderAll,5000)}
 function init(){bind();renderAll()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
