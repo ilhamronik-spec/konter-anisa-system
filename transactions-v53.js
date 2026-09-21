@@ -22,6 +22,25 @@
   }
   function storageKey(){ return PREFIX+shiftId(); }
 
+  function sourceFingerprint(){
+    try{
+      const modal=(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal))
+        ? openingPrevModal.map(x=>[String(x?.name||''),Number(x?.value||0)]) : [];
+      const pkg=(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog))
+        ? pkgCatalog.map(x=>[String(x?.group||''),String(x?.name||''),Number(x?.stock||0),Number(x?.base||0),Number(x?.sell||0)]) : [];
+      const cig=(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog))
+        ? cigCatalog.map(x=>[String(x?.name||''),Number(x?.display||0),Number(x?.warehouse||0),Number(x?.base||0),Number(x?.sell||0)]) : [];
+      const raw=JSON.stringify({modal,pkg,cig});
+      let h=2166136261;
+      for(let i=0;i<raw.length;i++){ h^=raw.charCodeAt(i); h=Math.imul(h,16777619); }
+      return 'src-'+(h>>>0).toString(16);
+    }catch(_){ return 'src-unknown'; }
+  }
+
+  function isOpeningSourceField(id){
+    return /^(?:prevModalCheck|prevModalReason|pkgCheck|pkgReason|cigDispCheck|cigWhCheck)\d+$/.test(String(id||''));
+  }
+
   function formSnapshot(){
     const out={};
     document.querySelectorAll('input[id],select[id],textarea[id]').forEach(el=>{
@@ -129,6 +148,7 @@
       const data={
         schema:SCHEMA,
         shiftId:shiftId(),
+        sourceFingerprint:sourceFingerprint(),
         savedAt:ts,
         reason,
         forms:formSnapshot(),
@@ -153,7 +173,7 @@
     saveTimer=setTimeout(()=>saveNow(reason),180);
   }
 
-  function restoreCatalogs(saved){
+  function restoreCatalogs(saved,sameSource){
     const cats=saved?.catalogs||{};
     try{
       if(typeof pkgCatalog!=='undefined' && Array.isArray(cats.pkg)){
@@ -161,7 +181,7 @@
         pkgCatalog.forEach(p=>{
           const rec=map.get(String(p.group||'')+'|'+String(p.name||''));
           if(!rec) return;
-          p.stock=Number(rec.stock||0);
+          if(sameSource) p.stock=Number(rec.stock||0);
           p.purchaseQty=Number(rec.purchaseQty||0);
           p.activeBase=Number(rec.activeBase??p.base??0);
           p.activeSell=Number(rec.activeSell??p.sell??0);
@@ -174,20 +194,23 @@
         cigCatalog.forEach(c=>{
           const rec=map.get(String(c.name||''));
           if(!rec) return;
-          c.display=Number(rec.display||0);
-          c.warehouse=Number(rec.warehouse||0);
+          if(sameSource){
+            c.display=Number(rec.display||0);
+            c.warehouse=Number(rec.warehouse||0);
+            if(Number.isFinite(Number(rec.base))) c.base=Number(rec.base);
+            if(Number.isFinite(Number(rec.sell))) c.sell=Number(rec.sell);
+          }
           c.purchaseQty=Number(rec.purchaseQty||0);
           c.purchaseCost=Number(rec.purchaseCost||0);
-          if(Number.isFinite(Number(rec.base))) c.base=Number(rec.base);
-          if(Number.isFinite(Number(rec.sell))) c.sell=Number(rec.sell);
         });
       }
     }catch(_){}
   }
 
-  function restoreForms(saved){
+  function restoreForms(saved,sameSource){
     const forms=saved?.forms||{};
     Object.entries(forms).forEach(([id,rec])=>{
+      if(!sameSource && isOpeningSourceField(id)) return;
       const el=byId(id);
       if(!el||!rec) return;
       const type=String(el.type||'').toLowerCase();
@@ -309,14 +332,18 @@
     const saved=readSaved();
     if(!saved){ updateStatus(0,false); return false; }
     restoring=true;
-    restoreCatalogs(saved);
-    restoreForms(saved);
+    const sameSource=String(saved?.sourceFingerprint||'')===sourceFingerprint();
+    restoreCatalogs(saved,sameSource);
+    restoreForms(saved,sameSource);
     restoreCore(saved);
     renderRecovered();
     restoreFlags(saved);
     restoreStep(saved);
     lastSavedAt=Number(saved.savedAt||0);
     updateStatus(lastSavedAt,true);
+    if(!sameSource){
+      console.info('V79 opening source changed: canonical opening retained; operational autosave restored.');
+    }
     restoring=false;
     return true;
   }
