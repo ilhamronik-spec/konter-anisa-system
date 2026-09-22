@@ -2704,6 +2704,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v43.js?build=80&fix=weighted1"></script>
 <script src="./transactions-v50.js?build=80&fix=weighted1"></script>
 <script src="./transactions-v51.js?build=80"></script>
+<script src="./day-rollover-v1.js?build=2"></script>
 <script src="./transactions-v53.js?build=80&fix=weighted1"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80"></script>
@@ -2916,7 +2917,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 <script>
 setTimeout(function(){
-  import('./day-rollover-v1.js?build=1').then(function(){window.KADayRolloverV1?.start?.()}).catch(function(e){console.error('Day rollover gagal dimuat',e)});
   import('./shared-db-v1.js?build=4').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
