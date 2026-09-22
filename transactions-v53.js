@@ -64,6 +64,9 @@
           key:String(p.group||'')+'|'+String(p.name||''),
           stock:Number(p.stock||0),
           purchaseQty:Number(p.purchaseQty||0),
+          base:Number(p.base||0),
+          openingBase:Number(p._openingBase??p.base??0),
+          purchaseBase:Number(p.purchaseBase??p._openingBase??p.base??0),
           activeBase:Number(p.activeBase??p.base??0),
           activeSell:Number(p.activeSell??p.sell??0)
         }));
@@ -185,7 +188,12 @@
           if(!rec) return;
           if(sameSource) p.stock=Number(rec.stock||0);
           p.purchaseQty=Number(rec.purchaseQty||0);
-          p.activeBase=Number(rec.activeBase??p.base??0);
+          p._openingBase=Number(rec.openingBase??rec.base??p.base??0);
+          p.purchaseBase=Number(rec.purchaseBase??rec.activeBase??p._openingBase??0);
+          const openingStock=Number(p.stock||0),q=Number(p.purchaseQty||0),totalUnits=openingStock+q;
+          p.activeBase=totalUnits>0
+            ? ((openingStock*Number(p._openingBase||0))+(q*Number(p.purchaseBase||0)))/totalUnits
+            : Number(p._openingBase||0);
           p.activeSell=Number(rec.activeSell??p.sell??0);
         });
       }
@@ -206,7 +214,8 @@
           c.purchaseCost=Number(rec.purchaseCost||0);
           c._openingBase=Number(rec.openingBase??c.base??0);
           const q=Number(c.purchaseQty||0),cost=Number(c.purchaseCost||0);
-          if(q>0 && cost>0) c.activeBase=cost/q;
+          const openingUnits=Number(c.display||0)+Number(c.warehouse||0),totalUnits=openingUnits+q;
+          if(q>0 && cost>0 && totalUnits>0) c.activeBase=((openingUnits*Number(c._openingBase||0))+cost)/totalUnits;
           else if(Number.isFinite(Number(rec.activeBase))) c.activeBase=Number(rec.activeBase);
           else c.activeBase=Number(c._openingBase||0);
         });
