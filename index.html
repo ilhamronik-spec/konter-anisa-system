@@ -2885,18 +2885,27 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
   function applyPreviousClosingAsCanonical(cfg,prev){
     if(!prev?.forms||!prev?.catalogs)return false;
     const forms=prev.forms, cats=prev.catalogs;
+    const money=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 
-    // 25 modal penutupan hari sebelumnya menjadi modal awal hari baru.
+    // 25 modal penutupan hari sebelumnya = NILAI SISTEM awal hari baru.
+    // Kolom koreksi hanya menjadi verifikasi dan default-nya sama persis dengan sistem.
     try{
       if(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal)){
         openingPrevModal.forEach((x,ix)=>{
           const raw=val(forms,'modalInput'+(ix+1),'');
-          if(raw!=='')x.value=parseMoney(raw);
+          if(raw==='')return;
+          const amount=parseMoney(raw);
+          x.value=amount;
+          const check=document.getElementById('prevModalCheck'+(ix+1));
+          if(check)check.value=amount.toLocaleString('id-ID');
+          const row=check?.closest('tr');
+          if(row?.cells?.[1])row.cells[1].textContent=money(amount);
+          const reason=document.getElementById('prevModalReason'+(ix+1));if(reason)reason.value='';
         });
       }
     }catch(_){}
 
-    // Paket: stok akhir + modal aktif akhir menjadi basis opening hari berikutnya.
+    // Paket: STOK AKHIR hari sebelumnya benar-benar menjadi STOK SISTEM hari baru.
     try{
       if(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog)&&Array.isArray(cats.pkg)){
         const map=new Map(cats.pkg.map(x=>[String(x.key||''),x]));
@@ -2908,15 +2917,29 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
           const stock=endRaw===''?num(old.stock):Math.max(0,num(endRaw));
           const base=num(old.activeBase??old.purchaseBase??old.openingBase??old.base);
           const sell=num(old.activeSell??old.sell??p.sell);
+
           p.stock=stock;p.base=base;p._openingBase=base;p.purchaseBase=base;p.activeBase=base;
           p.purchaseQty=0;p.activeSell=sell;p.sell=sell;
-          const chk=document.getElementById('pkgCheck'+(ix+1));if(chk)chk.value=String(stock);
+
+          if(typeof openingPkg!=='undefined'&&Array.isArray(openingPkg)&&openingPkg[ix]){
+            openingPkg[ix].stock=stock;
+            openingPkg[ix].base=base;
+            openingPkg[ix].sell=sell;
+          }
+
+          const chk=document.getElementById('pkgCheck'+(ix+1));
+          if(chk){
+            chk.value=String(stock);
+            const row=chk.closest('tr');
+            if(row?.cells?.[2])row.cells[2].textContent=money(base);
+            if(row?.cells?.[3])row.cells[3].innerHTML='<b>'+stock+'</b>';
+          }
           const reason=document.getElementById('pkgReason'+(ix+1));if(reason)reason.value='';
         });
       }
     }catch(_){}
 
-    // Rokok: Display akhir + Gudang akhir menjadi opening; modal aktif akhir dibawa ke hari baru.
+    // Rokok: Display akhir + Gudang akhir menjadi STOK SISTEM opening hari baru.
     try{
       if(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog)&&Array.isArray(cats.cig)){
         const map=new Map(cats.cig.map(x=>[String(x.key||''),x]));
@@ -2930,10 +2953,27 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
           const warehouse=Math.max(0,num(old.warehouse)+num(old.purchaseQty)-moved);
           const base=num(old.activeBase??old.openingBase??old.base);
           const sell=num(old.sell??x.sell);
+
           x.display=display;x.warehouse=warehouse;x.base=base;x._openingBase=base;x.activeBase=base;
           x.purchaseQty=0;x.purchaseCost=0;x.sell=sell;
-          const dc=document.getElementById('cigDispCheck'+n);if(dc)dc.value=String(display);
-          const wc=document.getElementById('cigWhCheck'+n);if(wc)wc.value=String(warehouse);
+
+          if(typeof openingCig!=='undefined'&&Array.isArray(openingCig)&&openingCig[ix]){
+            openingCig[ix].display=display;
+            openingCig[ix].warehouse=warehouse;
+            openingCig[ix].base=base;
+            openingCig[ix].sell=sell;
+          }
+
+          const dc=document.getElementById('cigDispCheck'+n);
+          const wc=document.getElementById('cigWhCheck'+n);
+          if(dc){
+            dc.value=String(display);
+            const row=dc.closest('tr');
+            if(row?.cells?.[1])row.cells[1].textContent=money(base);
+            if(row?.cells?.[2])row.cells[2].innerHTML='<b>'+display+'</b>';
+            if(row?.cells?.[4])row.cells[4].innerHTML='<b>'+warehouse+'</b>';
+          }
+          if(wc)wc.value=String(warehouse);
           const rs=document.getElementById('cigReason'+n);if(rs)rs.value='';
           const mv=document.getElementById('move'+n);if(mv)mv.value='0';
         });
@@ -2941,12 +2981,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     }catch(_){}
 
     try{
-      for(let i=1;i<=25;i++){
-        const raw=val(forms,'modalInput'+i,'');
-        const el=document.getElementById('prevModalCheck'+i);
-        if(el&&raw!=='')el.value=raw;
-        const reason=document.getElementById('prevModalReason'+i);if(reason)reason.value='';
-      }
+      if(typeof updateOpeningCorrections==='function')updateOpeningCorrections();
     }catch(_){}
     return true;
   }
