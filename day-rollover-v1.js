@@ -171,6 +171,79 @@
     return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   }
 
+  function parseMoney(v){
+    return Number(String(v??'').replace(/[^0-9-]/g,''))||0;
+  }
+
+  function applyPreviousClosingAsCanonical(cfg,prev){
+    if(!prev?.forms||!prev?.catalogs)return false;
+    const forms=prev.forms, cats=prev.catalogs;
+
+    // 25 modal penutupan hari sebelumnya menjadi modal awal hari baru.
+    try{
+      if(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal)){
+        openingPrevModal.forEach((x,ix)=>{
+          const raw=val(forms,'modalInput'+(ix+1),'');
+          if(raw!=='')x.value=parseMoney(raw);
+        });
+      }
+    }catch(_){}
+
+    // Paket: stok akhir + modal aktif akhir menjadi basis opening hari berikutnya.
+    try{
+      if(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog)&&Array.isArray(cats.pkg)){
+        const map=new Map(cats.pkg.map(x=>[String(x.key||''),x]));
+        pkgCatalog.forEach((p,ix)=>{
+          const key=String(p.group||'')+'|'+String(p.name||'');
+          const old=map.get(key)||cats.pkg[ix];
+          if(!old)return;
+          const endRaw=val(forms,'pkgEnd'+(ix+1),'');
+          const stock=endRaw===''?num(old.stock):Math.max(0,num(endRaw));
+          const base=num(old.activeBase??old.purchaseBase??old.openingBase??old.base);
+          const sell=num(old.activeSell??old.sell??p.sell);
+          p.stock=stock;p.base=base;p._openingBase=base;p.purchaseBase=base;p.activeBase=base;
+          p.purchaseQty=0;p.activeSell=sell;p.sell=sell;
+          const chk=document.getElementById('pkgCheck'+(ix+1));if(chk)chk.value=String(stock);
+          const reason=document.getElementById('pkgReason'+(ix+1));if(reason)reason.value='';
+        });
+      }
+    }catch(_){}
+
+    // Rokok: Display akhir + Gudang akhir menjadi opening; modal aktif akhir dibawa ke hari baru.
+    try{
+      if(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog)&&Array.isArray(cats.cig)){
+        const map=new Map(cats.cig.map(x=>[String(x.key||''),x]));
+        cigCatalog.forEach((x,ix)=>{
+          const old=map.get(String(x.name||''))||cats.cig[ix];
+          if(!old)return;
+          const n=ix+1;
+          const displayRaw=val(forms,'cigEnd'+n,'');
+          const display=displayRaw===''?num(old.display):Math.max(0,num(displayRaw));
+          const moved=Math.max(0,num(val(forms,'move'+n,'0')));
+          const warehouse=Math.max(0,num(old.warehouse)+num(old.purchaseQty)-moved);
+          const base=num(old.activeBase??old.openingBase??old.base);
+          const sell=num(old.sell??x.sell);
+          x.display=display;x.warehouse=warehouse;x.base=base;x._openingBase=base;x.activeBase=base;
+          x.purchaseQty=0;x.purchaseCost=0;x.sell=sell;
+          const dc=document.getElementById('cigDispCheck'+n);if(dc)dc.value=String(display);
+          const wc=document.getElementById('cigWhCheck'+n);if(wc)wc.value=String(warehouse);
+          const rs=document.getElementById('cigReason'+n);if(rs)rs.value='';
+          const mv=document.getElementById('move'+n);if(mv)mv.value='0';
+        });
+      }
+    }catch(_){}
+
+    try{
+      for(let i=1;i<=25;i++){
+        const raw=val(forms,'modalInput'+i,'');
+        const el=document.getElementById('prevModalCheck'+i);
+        if(el&&raw!=='')el.value=raw;
+        const reason=document.getElementById('prevModalReason'+i);if(reason)reason.value='';
+      }
+    }catch(_){}
+    return true;
+  }
+
   function paint(cfg){
     const dateLabel=labelDate(cfg.date);
     const prevLabel=labelDate(cfg.prevDate);
@@ -234,9 +307,19 @@
     if(started)return;started=true;
     const cfg=config();if(!cfg)return;
     paint(cfg);
+    const prev=read(PREFIX+cfg.prevId,null);
+    if(prev)applyPreviousClosingAsCanonical(cfg,prev);
     if(trySeed())return;
-    window.addEventListener('ka:shared-sync',()=>trySeed());
-    timer=setInterval(()=>{if(trySeed())clearInterval(timer)},1200);
+    window.addEventListener('ka:shared-sync',()=>{
+      const fresh=read(PREFIX+cfg.prevId,null);
+      if(fresh)applyPreviousClosingAsCanonical(cfg,fresh);
+      trySeed();
+    });
+    timer=setInterval(()=>{
+      const fresh=read(PREFIX+cfg.prevId,null);
+      if(fresh)applyPreviousClosingAsCanonical(cfg,fresh);
+      if(trySeed())clearInterval(timer);
+    },1200);
     setTimeout(()=>{if(timer)clearInterval(timer)},20000);
   }
 
