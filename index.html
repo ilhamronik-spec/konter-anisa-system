@@ -614,7 +614,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <div class="field"><label>Harga Jual Berjalan</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);markPackageDirty();calcPkgBuy()" id="pkgSell" inputmode="numeric" type="text" value="16.000"/></div>
 <div class="field"><label>Jumlah Beli</label><input class="input" data-ui-input="markPackageDirty();calcPkgBuy()" id="pkgQty" min="0" type="number" value="10"/></div>
 <div class="field"><label>Harga Beli / Satuan</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);markPackageDirty();calcPkgBuy()" id="pkgNewBase" inputmode="numeric" type="text" value="14.800"/></div>
-<div class="field"><label>Harga Dasar Baru</label><input class="input" disabled="" id="pkgBasePreview" value="14.800"/></div>
+<div class="field"><label>Modal Aktif Rata-rata</label><input class="input" disabled="" id="pkgBasePreview" value="14.800"/></div>
 </div>
 <div class="calc-grid">
 <div class="calcbox"><small>Stok Setelah Belanja</small><b id="pkgAfter">34 unit</b></div>
@@ -622,7 +622,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <div class="calcbox" id="marginBox"><small>Margin / Unit</small><b id="pkgUnitMargin">Rp1.200</b></div>
 <div class="calcbox"><small>Status</small><b id="pkgMarginStatus" style="color:var(--green)">AMAN ≥ Rp1.000</b></div>
 </div>
-<div class="notice amber" id="pkgMarginNotice" style="margin-top:13px;margin-bottom:0">Harga Dasar baru langsung berlaku pada hitungan berjalan. Perubahan modal akibat pergantian Harga Dasar tetap dinetralkan oleh mekanisme selisih pada perhitungan akhir.</div>
+<div class="notice amber" id="pkgMarginNotice" style="margin-top:13px;margin-bottom:0">Weighted average aktif: harga beli baru digabung dengan modal stok lama agar perubahan harga tidak membuat modal semu.</div>
 <div class="actions" style="margin-top:14px">
 <a class="btn primary" data-preview-fallback="1" data-ui-click="savePackagePreview()" href="#pkgPurchasePreview" id="pkgPreviewBtn">Simpan &amp; Preview Paket</a>
 <span class="status warn" id="pkgConfirmBadge">Belum Dikonfirmasi</span>
@@ -640,7 +640,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <thead>
 <tr>
 <th>Item Paket</th><th>Stok Sebelum</th><th>Qty Beli</th><th>Stok Setelah</th>
-<th>Harga Dasar Baru</th><th>Harga Jual</th><th>Margin/Unit</th><th>Nilai Belanja</th>
+<th>Modal Aktif Rata-rata</th><th>Harga Jual</th><th>Margin/Unit</th><th>Nilai Belanja</th>
 </tr>
 </thead>
 <tbody id="pkgPreviewBody"><tr><td colspan="8">Klik Simpan &amp; Preview Paket untuk melihat hasil stok setelah belanja.</td></tr></tbody>
@@ -658,7 +658,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 </div>
 </div>
 </div>
-<div class="card summary"><h4>Aturan Belanja Paket</h4><div class="sumrow"><span>Input karyawan</span><b>Jenis + Qty + Harga/Satuan</b></div><div class="sumrow"><span>Harga Dasar berjalan</span><b>Mengikuti harga beli baru</b></div><div class="sumrow"><span>Margin unit</span><b>Harga Jual − Harga Dasar Baru</b></div><div class="sumrow"><span>Margin minimum</span><b>Rp1.000</b></div><div class="sumrow"><span>Margin &lt; Rp1.000</span><b style="color:var(--red)">BLOKIR</b></div><div class="sumrow"><span>Harga jual turun</span><b>Persetujuan Admin</b></div><div class="sumrow"><span>Harga jual naik</span><b>Boleh langsung</b></div></div>
+<div class="card summary"><h4>Aturan Belanja Paket</h4><div class="sumrow"><span>Input karyawan</span><b>Jenis + Qty + Harga/Satuan</b></div><div class="sumrow"><span>Harga beli terbaru</span><b>Dipakai untuk nilai nota belanja</b></div><div class="sumrow"><span>Modal aktif</span><b>Weighted average stok lama + belanja baru</b></div><div class="sumrow"><span>Margin unit</span><b>Harga Jual − Modal Aktif Rata-rata</b></div><div class="sumrow"><span>Margin minimum</span><b>Rp1.000</b></div><div class="sumrow"><span>Margin &lt; Rp1.000</span><b style="color:var(--red)">BLOKIR</b></div><div class="sumrow"><span>Harga jual turun</span><b>Persetujuan Admin</b></div><div class="sumrow"><span>Harga jual naik</span><b>Boleh langsung</b></div></div>
 </div>
 </div>
 <div class="subpane" id="buy-rokok">
@@ -677,7 +677,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <div class="field"><label>Stok Gudang Sebelum</label><input class="input" disabled="" id="cigOldWarehouse" value="0"/></div>
 <div class="field"><label>Jumlah Beli</label><input class="input" data-ui-input="markCigaretteDirty();calcCigBuy()" id="cigQty" min="0" type="number" value="10"/></div>
 <div class="field"><label>Total Harga Belanja</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);markCigaretteDirty();calcCigBuy()" id="cigTotal" inputmode="numeric" type="text" value="300.000"/></div>
-<div class="field"><label>Harga Modal / Unit</label><input class="input" disabled="" id="cigUnit" value="30.000"/></div>
+<div class="field"><label>Modal Aktif Rata-rata / Unit</label><input class="input" disabled="" id="cigUnit" value="30.000"/></div>
 <div class="field"><label>Harga Jual Berjalan</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);markCigaretteDirty();calcCigBuy()" id="cigSell" inputmode="numeric" type="text" value="0"/></div>
 <div class="field"><label>Margin / Unit</label><input class="input" disabled="" id="cigMarginUnit" value="0"/></div>
 </div>
@@ -691,7 +691,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <div class="section-head" style="margin-bottom:10px">
 <div>
 <h4 style="margin:0">Preview Stok Gudang Rokok Setelah Belanja</h4>
-<p style="margin:4px 0 0;color:var(--muted)">Periksa Qty, total belanja, modal/unit dan stok Gudang setelah pembelian.</p>
+<p style="margin:4px 0 0;color:var(--muted)">Periksa Qty, total belanja, modal aktif rata-rata dan stok Gudang setelah pembelian.</p>
 </div>
 <span class="status info" id="cigPreviewCount">0 item</span>
 <a class="btn preview-close" href="#">Tutup Preview</a></div><div class="notice blue" id="cigPreviewMessage" style="margin-bottom:12px">Preview Rokok siap.</div>
@@ -700,7 +700,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <thead>
 <tr>
 <th>Rokok</th><th>Gudang Sebelum</th><th>Qty Beli</th><th>Gudang Setelah</th>
-<th>Total Belanja</th><th>Modal / Unit</th>
+<th>Total Belanja</th><th>Harga Beli / Unit</th>
 </tr>
 </thead>
 <tbody id="cigPreviewBody"><tr><td colspan="6">Klik Simpan &amp; Preview Rokok untuk melihat hasil stok Gudang setelah belanja.</td></tr></tbody>
@@ -718,7 +718,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 </div>
 </div>
 </div>
-<div class="card summary"><h4>Aturan Belanja Rokok</h4><div class="sumrow"><span>Input karyawan</span><b>Qty + Total Belanja + Harga Jual</b></div><div class="sumrow"><span>Harga dasar baru</span><b>Total Belanja ÷ Qty</b></div><div class="sumrow"><span>Perubahan harga dasar</span><b>Dinetralkan via Selisih Rokok di Balance</b></div><div class="sumrow"><span>Margin minimum</span><b>Rp1.000 / unit</b></div><div class="sumrow"><span>Margin &lt; Rp1.000</span><b style="color:var(--red)">BLOKIR</b></div><div class="sumrow"><span>Harga jual naik</span><b>Boleh langsung</b></div><div class="sumrow"><span>Harga jual turun</span><b>Persetujuan Admin bila memenuhi aturan</b></div><div class="sumrow"><span>Barang baru masuk</span><b>Gudang</b></div><div class="sumrow"><span>Langsung ke Display?</span><b style="color:var(--red)">Tidak</b></div><div class="sumrow"><span>Stok Gudang</span><b>Dihitung sebagai modal</b></div><div class="sumrow"><span>Pindah ke Display</span><b>Tahap berikutnya</b></div></div>
+<div class="card summary"><h4>Aturan Belanja Rokok</h4><div class="sumrow"><span>Input karyawan</span><b>Qty + Total Belanja + Harga Jual</b></div><div class="sumrow"><span>Harga beli terbaru</span><b>Total Belanja ÷ Qty</b></div><div class="sumrow"><span>Modal aktif</span><b>Weighted average stok lama + belanja baru</b></div><div class="sumrow"><span>Selisih harga normal</span><b>Rp0 — terserap di weighted average</b></div><div class="sumrow"><span>Margin minimum</span><b>Rp1.000 / unit</b></div><div class="sumrow"><span>Margin &lt; Rp1.000</span><b style="color:var(--red)">BLOKIR</b></div><div class="sumrow"><span>Harga jual naik</span><b>Boleh langsung</b></div><div class="sumrow"><span>Harga jual turun</span><b>Persetujuan Admin bila memenuhi aturan</b></div><div class="sumrow"><span>Barang baru masuk</span><b>Gudang</b></div><div class="sumrow"><span>Langsung ke Display?</span><b style="color:var(--red)">Tidak</b></div><div class="sumrow"><span>Stok Gudang</span><b>Dihitung sebagai modal</b></div><div class="sumrow"><span>Pindah ke Display</span><b>Tahap berikutnya</b></div></div>
 </div>
 </div>
 <div class="subpane" id="buy-nota"><div class="grid two-equal"><div class="card summary"><h4>Nota Siap Input</h4><div class="receipt"><div><b>NBJ-0913-01</b><small>Purchasing • 07:18 • Rp1.680.000</small></div><span class="status info">Siap Input</span></div><div class="receipt"><div><b>NBJ-0913-02</b><small>Purchasing • 09:02 • Rp850.000</small></div><span class="status info">Siap Input</span></div></div><div class="card summary"><h4>Kontrol Nota</h4><div class="sumrow"><span>Belanja tanpa nota</span><b style="color:var(--red)">Tidak diizinkan</b></div><div class="sumrow"><span>Nota setelah dipakai</span><b>Diproses</b></div><div class="sumrow"><span>Audit</span><b>Nota ↔ transaksi</b></div></div></div></div>
@@ -958,22 +958,30 @@ function setPaymentMode(has){
 
 const pkgCatalog=[{"group":"AXIS","name":"1.5 GB/1H","base":7050,"sell":8000,"stock":44},{"group":"AXIS","name":"5gb/2H","base":9500,"sell":10000,"stock":33},{"group":"AXIS","name":"5 gb/5 H","base":13950,"sell":15000,"stock":19},{"group":"AXIS","name":"5,5 GB/3 H","base":12000,"sell":13000,"stock":24},{"group":"AXIS","name":"6 gb/5H","base":14550,"sell":16000,"stock":28},{"group":"AXIS","name":"8,5 GB/3H","base":13500,"sell":15000,"stock":10},{"group":"AXIS","name":"16 GB/5H","base":23500,"sell":24000,"stock":8},{"group":"AXIS","name":"12,5/3h","base":15950,"sell":17000,"stock":17},{"group":"AXIS","name":"10GB/7H","base":23500,"sell":25000,"stock":3},{"group":"AXIS","name":"24/5H","base":26000,"sell":29000,"stock":4},{"group":"AXIS","name":"5gb\\15h","base":23100,"sell":25000,"stock":1},{"group":"AXIS","name":"11GB/7H","base":31800,"sell":33000,"stock":0},{"group":"AXIS","name":"24gb/15H","base":44000,"sell":48000,"stock":5},{"group":"SMARTFREEN","name":"1GB/3H","base":6900,"sell":7000,"stock":11},{"group":"SMARTFREEN","name":"2GB/3H","base":8900,"sell":10000,"stock":0},{"group":"SMARTFREEN","name":"3GB/5H","base":13750,"sell":15000,"stock":38},{"group":"SMARTFREEN","name":"4GB/7H","base":16100,"sell":17000,"stock":8},{"group":"SMARTFREEN","name":"4GB/14H","base":19500,"sell":21000,"stock":4},{"group":"SMARTFREEN","name":"4gb/3h","base":9750,"sell":11000,"stock":17},{"group":"SMARTFREEN","name":"UNLI 1GB/7H","base":17200,"sell":19000,"stock":14},{"group":"SMARTFREEN","name":"UNLI 2GB/7H","base":23000,"sell":25000,"stock":23},{"group":"SMARTFREEN","name":"UNLI 3 GB/7H","base":30000,"sell":32000,"stock":0},{"group":"SMARTFREEN","name":"UNLI 700MB/28H","base":64500,"sell":76000,"stock":3},{"group":"SMARTFREEN","name":"UNLI 2GB/28H","base":90000,"sell":95000,"stock":2},{"group":"TELKOMSEL","name":"1,5GB/3H","base":8400,"sell":10000,"stock":0},{"group":"TELKOMSEL","name":"6gb/2h","base":10200,"sell":12000,"stock":23},{"group":"TELKOMSEL","name":"2GB/3H","base":9900,"sell":12000,"stock":0},{"group":"TELKOMSEL","name":"2GB/5H","base":11850,"sell":13000,"stock":4},{"group":"TELKOMSEL","name":"7GB/3H","base":14550,"sell":16000,"stock":13},{"group":"TELKOMSEL","name":"6GB/5H","base":14700,"sell":16000,"stock":5},{"group":"TELKOMSEL","name":"9GB/5H","base":22200,"sell":24000,"stock":1},{"group":"TELKOMSEL","name":"9GB/7H","base":27500,"sell":29000,"stock":7},{"group":"TELKOMSEL","name":"4GB/5H","base":13200,"sell":14000,"stock":40},{"group":"IM3","name":"1,5GB/1H","base":7800,"sell":8000,"stock":23},{"group":"IM3","name":"5/2h","base":9200,"sell":11000,"stock":9},{"group":"IM3","name":"2,5GB/5H","base":13250,"sell":15000,"stock":3},{"group":"IM3","name":"3,5GB/5H","base":15150,"sell":17000,"stock":4},{"group":"IM3","name":"5GB/5H","base":17100,"sell":18000,"stock":17},{"group":"IM3","name":"7GB/7H","base":23100,"sell":25000,"stock":8},{"group":"IM3","name":"3GB/30H","base":20100,"sell":22000,"stock":0},{"group":"IM3","name":"7GB/30H","base":34750,"sell":34000,"stock":2},{"group":"TRI","name":"6gb/2h","base":9600,"sell":11000,"stock":2},{"group":"TRI","name":"5gb 1hri","base":7800,"sell":8000,"stock":10},{"group":"TRI","name":"4GB/3H","base":12300,"sell":13000,"stock":24},{"group":"TRI","name":"12GB/7H","base":22800,"sell":24000,"stock":36},{"group":"TRI","name":"3GB/30H","base":22500,"sell":25000,"stock":0},{"group":"XL","name":"2,5GB","base":12100,"sell":13000,"stock":1},{"group":"XL","name":"3,5GB","base":16500,"sell":18000,"stock":3},{"group":"XL","name":"5,5GB","base":15750,"sell":22000,"stock":1},{"group":"XL","name":"9GB","base":26800,"sell":28000,"stock":10},{"group":"PERDANA","name":"TELS 0","base":19500,"sell":25000,"stock":3},{"group":"PERDANA","name":"TELS 4","base":28500,"sell":36000,"stock":4},{"group":"PERDANA","name":"AXIS 0","base":8750,"sell":17000,"stock":0},{"group":"PERDANA","name":"AXIS 3GB","base":15000,"sell":27000,"stock":1},{"group":"PERDANA","name":"IM3 3GB","base":16000,"sell":38000,"stock":3},{"group":"PERDANA","name":"TRI 3GB","base":15000,"sell":42000,"stock":1},{"group":"PERDANA","name":"SMARTFREEN 12GB","base":11000,"sell":25000,"stock":0},{"group":"PERDANA","name":"SMARTFREEN 3GB","base":18500,"sell":32000,"stock":4}];
 const cigCatalog=[{"name":"HASTA","base":14700,"sell":16000,"display":8,"warehouse":80},{"name":"Sempurna B","base":35100,"sell":37000,"display":10,"warehouse":20},{"name":"Slava","base":16500,"sell":20000,"display":13,"warehouse":70},{"name":"LM","base":7900,"sell":9000,"display":1,"warehouse":20},{"name":"Surya Kecil","base":25900,"sell":27000,"display":2,"warehouse":10},{"name":"Rasta bluberi","base":15200,"sell":17000,"display":0,"warehouse":10},{"name":"Harum Manis","base":7200,"sell":8000,"display":0,"warehouse":10},{"name":"Novem","base":16000,"sell":18000,"display":6,"warehouse":10},{"name":"Dji Samso hitam","base":21300,"sell":23000,"display":6,"warehouse":0},{"name":"Surya Besar","base":34900,"sell":36000,"display":5,"warehouse":10},{"name":"Aspro","base":22400,"sell":24000,"display":9,"warehouse":0},{"name":"A.O","base":15500,"sell":18000,"display":5,"warehouse":6},{"name":"Savero","base":16000,"sell":17000,"display":3,"warehouse":10},{"name":"Sempurna K","base":25600,"sell":27000,"display":6,"warehouse":10},{"name":"rasta","base":13200,"sell":15000,"display":1,"warehouse":10},{"name":"Tunggal","base":14000,"sell":15000,"display":1,"warehouse":0},{"name":"Titan","base":15700,"sell":18000,"display":7,"warehouse":10},{"name":"Konser","base":14700,"sell":16000,"display":0,"warehouse":0},{"name":"sempurna A kretek","base":15400,"sell":17000,"display":1,"warehouse":20},{"name":"Sempurna A 2 +","base":15400,"sell":20000,"display":0,"warehouse":0},{"name":"Wezz","base":12900,"sell":15000,"display":8,"warehouse":10},{"name":"Twizz","base":21350,"sell":23000,"display":0,"warehouse":0},{"name":"EVO","base":25100,"sell":26000,"display":7,"warehouse":10},{"name":"Luffman","base":11600,"sell":14000,"display":9,"warehouse":10},{"name":"Clasmid","base":29500,"sell":30000,"display":3,"warehouse":10},{"name":"sempurna prima","base":14800,"sell":16000,"display":9,"warehouse":0},{"name":"Sempurna hijau","base":15350,"sell":16000,"display":0,"warehouse":0},{"name":"duff","base":24000,"sell":25000,"display":0,"warehouse":0},{"name":"abs","base":16500,"sell":18000,"display":6,"warehouse":10},{"name":"di jam su kretek 234","base":19500,"sell":21000,"display":1,"warehouse":0},{"name":"Malboro KECIL","base":24000,"sell":25000,"display":9,"warehouse":10},{"name":"Esse Double Change","base":42388.88888888889,"sell":45000,"display":2,"warehouse":9},{"name":"Chiff","base":15000,"sell":17000,"display":0,"warehouse":0},{"name":"L.A ice","base":34000,"sell":35000,"display":0,"warehouse":0},{"name":"malboro besar","base":38950,"sell":40000,"display":9,"warehouse":10},{"name":"Novem Manggo","base":16300,"sell":18000,"display":10,"warehouse":10},{"name":"la bold hitam","base":37100,"sell":40000,"display":0,"warehouse":0},{"name":"esse merah","base":39400,"sell":42000,"display":0,"warehouse":0},{"name":"gudang garam merah","base":18000,"sell":19000,"display":0,"warehouse":0},{"name":"Sempurna zetta","base":23000,"sell":24000,"display":0,"warehouse":0},{"name":"twizz biru","base":23500,"sell":25000,"display":0,"warehouse":0},{"name":"king garet","base":17500,"sell":19000,"display":0,"warehouse":0},{"name":"titan biru","base":16700,"sell":18000,"display":8,"warehouse":10},{"name":"honey pop","base":32000,"sell":33000,"display":0,"warehouse":0},{"name":"slava klik","base":17900,"sell":20000,"display":2,"warehouse":20},{"name":"rasta mangga","base":15200,"sell":17000,"display":0,"warehouse":10},{"name":"aspro 12","base":16800,"sell":18000,"display":1,"warehouse":0},{"name":"aspro bold","base":26500,"sell":28000,"display":0,"warehouse":0},{"name":"sempurna 89 edition","base":32600,"sell":34000,"display":1,"warehouse":0},{"name":"sempurna min","base":34000,"sell":36000,"display":0,"warehouse":0},{"name":"malboro 16","base":31000,"sell":32000,"display":4,"warehouse":0},{"name":"sempurna prima kertas","base":13450,"sell":15000,"display":0,"warehouse":0},{"name":"malboro vista","base":33000,"sell":35000,"display":0,"warehouse":0},{"name":"sempurna evolution","base":41900,"sell":44000,"display":0,"warehouse":0},{"name":"oris","base":13700,"sell":15000,"display":5,"warehouse":10},{"name":"marlong","base":10700,"sell":15000,"display":11,"warehouse":50},{"name":"sempurna tropizal","base":30000,"sell":35000,"display":0,"warehouse":0},{"name":"sempurna royal","base":30000,"sell":35000,"display":0,"warehouse":0},{"name":"slava semangka","base":17900,"sell":20000,"display":6,"warehouse":10},{"name":"slava ice blast","base":17000,"sell":20000,"display":0,"warehouse":0}];
-pkgCatalog.forEach(p=>{p.purchaseQty=0;p.activeBase=p.base;p.activeSell=p.sell});
+pkgCatalog.forEach(p=>{p.purchaseQty=0;p._openingBase=Number(p.base||0);p.purchaseBase=Number(p.base||0);p.activeBase=Number(p.base||0);p.activeSell=p.sell});
 cigCatalog.forEach(c=>{c.purchaseQty=0;c.purchaseCost=0});
 
 function syncPkgBuy(){
  const i=Number(pkgBuyType.value||0),p=pkgCatalog[i];
- pkgOldStock.value=p.stock;pkgOldBase.value=p.activeBase.toLocaleString('id-ID');setMoneyInput(pkgSell,p.activeSell);
- pkgQty.value=p.purchaseQty||0;setMoneyInput(pkgNewBase,p.activeBase);calcPkgBuy();
+ const openingBase=Number(p._openingBase??p.base??0);
+ pkgOldStock.value=p.stock;pkgOldBase.value=Math.round(openingBase).toLocaleString('id-ID');setMoneyInput(pkgSell,p.activeSell);
+ pkgQty.value=p.purchaseQty||0;setMoneyInput(pkgNewBase,Number(p.purchaseBase??openingBase));calcPkgBuy();
 }
 function calcPkgBuy(){
  const i=Number(pkgBuyType.value||0),p=pkgCatalog[i],q=Math.max(0,Number(pkgQty.value||0)),
- base=Math.max(0,moneyValue(pkgNewBase)),sell=Math.max(0,moneyValue(pkgSell)),m=sell-base;
- p.purchaseQty=q;p.activeBase=base;p.activeSell=sell;
- pkgBasePreview.value=base.toLocaleString('id-ID');pkgAfter.textContent=(p.stock+q)+' unit';pkgCost.textContent=fmt(q*base);pkgUnitMargin.textContent=fmt(m);
- const bad=m<1000;marginBox.className='calcbox '+(bad?'bad':'good');pkgMarginStatus.textContent=bad?'BLOKIR < Rp1.000':'AMAN ≥ Rp1.000';
+ purchaseBase=Math.max(0,moneyValue(pkgNewBase)),sell=Math.max(0,moneyValue(pkgSell));
+ const openingStock=Math.max(0,Number(p.stock||0));
+ const openingBase=Number(p._openingBase??p.base??0);
+ if(p._openingBase==null)p._openingBase=openingBase;
+ const totalUnits=openingStock+q;
+ const weighted=totalUnits>0?((openingStock*openingBase)+(q*purchaseBase))/totalUnits:openingBase;
+ const activeBase=Number.isFinite(weighted)?weighted:openingBase;
+ const m=sell-activeBase;
+ p.purchaseQty=q;p.purchaseBase=purchaseBase;p.activeBase=activeBase;p.activeSell=sell;
+ pkgBasePreview.value=Math.round(activeBase).toLocaleString('id-ID');pkgAfter.textContent=(openingStock+q)+' unit';pkgCost.textContent=fmt(q*purchaseBase);pkgUnitMargin.textContent=fmt(m);
+ const bad=q>0&&m<1000;marginBox.className='calcbox '+(bad?'bad':'good');pkgMarginStatus.textContent=bad?'BLOKIR < Rp1.000':'AMAN ≥ Rp1.000';
  pkgMarginStatus.style.color=bad?'var(--red)':'var(--green)';pkgMarginNotice.className='notice '+(bad?'red':'amber');
- pkgMarginNotice.textContent=bad?'Margin per unit kurang dari Rp1.000. Transaksi tidak boleh dilanjutkan sebelum Harga Jual/Harga Dasar dikoreksi.':'Harga Dasar baru langsung berlaku pada hitungan berjalan. Perubahan modal akibat pergantian Harga Dasar tetap dinetralkan oleh mekanisme selisih pada perhitungan akhir.';
+ pkgMarginNotice.textContent=bad?'Margin rata-rata per unit kurang dari Rp1.000. Naikkan Harga Jual sebelum konfirmasi.':'Weighted average aktif: harga beli baru '+fmt(purchaseBase)+' digabung dengan modal stok lama menjadi modal aktif '+fmt(activeBase)+'.';
  syncPkgEndRow(i+1);
 }
 function syncPkgEndRow(i){
@@ -1188,9 +1196,10 @@ function savePackagePreview(){
       const q=Number(p.purchaseQty||0);
       const after=Number(p.stock||0)+q;
       const base=Number(p.activeBase||0);
+      const purchaseBase=Number(p.purchaseBase??p._openingBase??p.base??0);
       const sell=Number(p.activeSell||0);
       const margin=sell-base;
-      const cost=q*base;
+      const cost=q*purchaseBase;
       const invalid=margin<1000;
       if(invalid) invalidCount++;
       qty+=q;
@@ -1201,7 +1210,7 @@ function savePackagePreview(){
         <td>${p.stock}</td>
         <td><b>+${q}</b></td>
         <td><b>${after}</b></td>
-        <td class="money">${fmt(base)}</td>
+        <td class="money"><b>${fmt(base)}</b><br><small>Beli ${fmt(purchaseBase)}</small></td>
         <td class="money">${fmt(sell)}</td>
         <td class="money" style="color:${invalid?'var(--red)':'var(--green)'}">
           <b>${fmt(margin)}</b>${invalid?'<br><small>Di bawah minimum Rp1.000</small>':''}
@@ -1236,7 +1245,7 @@ function savePackagePreview(){
     msg.className='notice blue';
     msg.innerHTML=entries.length===0
       ? '<b>Tidak ada belanja Paket.</b> Periksa sekali lagi lalu konfirmasi jika memang benar.'
-      : '<b>Preview berhasil dibuat.</b> Periksa stok setelah belanja, harga dasar baru, harga jual dan margin.';
+      : '<b>Preview berhasil dibuat.</b> Periksa stok setelah belanja, harga beli, modal aktif rata-rata, harga jual dan margin.';
     if(confirmBtn) confirmBtn.disabled=false;
   }
 
@@ -1338,7 +1347,7 @@ function saveCigarettePreview(){
     msg.className='notice blue';
     msg.innerHTML=entries.length===0
       ? '<b>Tidak ada belanja Rokok.</b> Periksa sekali lagi lalu konfirmasi jika memang benar.'
-      : '<b>Preview berhasil dibuat.</b> Periksa Qty, stok Gudang setelah pembelian, total belanja dan modal/unit.';
+      : '<b>Preview berhasil dibuat.</b> Periksa Qty, stok Gudang setelah pembelian, total belanja dan harga beli/unit. Modal aktif dihitung weighted average.';
     if(confirmBtn) confirmBtn.disabled=false;
   }
 
@@ -2663,7 +2672,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 })();
 </script>
 <script src="./account-master-v59.js?build=80"></script>
-<script src="./rules-v29.js?build=80&fix=nota4"></script>
+<script src="./rules-v29.js?build=80&fix=weighted1"></script>
 <script src="./layout-v31.js?build=80"></script>
 <script src="./transactions-v33.js?build=80"></script>
 <script src="./transactions-v34.js?build=80"></script>
@@ -2673,10 +2682,10 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v40.js?build=80"></script>
 <script src="./transactions-v41.js?build=80&fix=acccloud1"></script>
 <script src="./transactions-v42.js?build=80"></script>
-<script src="./transactions-v43.js?build=80&fix=cigrepricing1"></script>
-<script src="./transactions-v50.js?build=80&fix=cigrepricing1"></script>
+<script src="./transactions-v43.js?build=80&fix=weighted1"></script>
+<script src="./transactions-v50.js?build=80&fix=weighted1"></script>
 <script src="./transactions-v51.js?build=80"></script>
-<script src="./transactions-v53.js?build=80&fix=cigrepricing1"></script>
+<script src="./transactions-v53.js?build=80&fix=weighted1"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80"></script>
 <script src="./ui-clean-v74.js?build=80"></script>
@@ -2794,24 +2803,24 @@ function stockMovementSnapshot(){
   const rows=[];
   try{
     if(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog)){
-      let opening=0,incoming=0,outgoing=0,closing=0,value=0,sales=0,cogs=0;
+      let opening=0,incoming=0,incomingValue=0,outgoing=0,closing=0,value=0,sales=0,cogs=0;
       pkgCatalog.forEach((p,i)=>{
-        const ix=i+1,base=Number(p.activeBase??p.base??0),sell=Number(p.activeSell??p.sell??0),op=Number(p.stock||0),inc=Number(p.purchaseQty||0);
+        const ix=i+1,base=Number(p.activeBase??p.base??0),purchaseBase=Number(p.purchaseBase??p._openingBase??p.base??0),sell=Number(p.activeSell??p.sell??0),op=Number(p.stock||0),inc=Number(p.purchaseQty||0);
         const sold=numberText('pkgSold'+ix),endEl=$('pkgEnd'+ix),end=String(endEl?.value||'').trim()!==''?Number(endEl.value||0):Math.max(0,op+inc-sold);
-        opening+=op;incoming+=inc;outgoing+=sold;closing+=end;value+=end*base;sales+=sold*sell;cogs+=sold*base;
+        opening+=op;incoming+=inc;incomingValue+=inc*purchaseBase;outgoing+=sold;closing+=end;value+=end*base;sales+=sold*sell;cogs+=sold*base;
       });
-      rows.push({category:'Paket',unit:'unit',opening,incoming,outgoing,closing,closingValue:value,sales,cogs,margin:sales-cogs});
+      rows.push({category:'Paket',unit:'unit',opening,incoming,incomingValue,outgoing,closing,closingValue:value,sales,cogs,margin:sales-cogs});
     }
   }catch(_){}
   try{
     if(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog)){
-      let opening=0,incoming=0,outgoing=0,closing=0,value=0,sales=0,cogs=0;
+      let opening=0,incoming=0,incomingValue=0,outgoing=0,closing=0,value=0,sales=0,cogs=0;
       cigCatalog.forEach((r,i)=>{
         const ix=i+1,base=Number(r.activeBase??r.base??0),sell=Number(r.sell||0),op=Number(r.display||0)+Number(r.warehouse||0),inc=Number(r.purchaseQty||0);
         const sold=numberText('cigSold'+ix),endDisp=numberText('cigEnd'+ix),endWh=numberText('cigWh'+ix),end=(endDisp+endWh)||Math.max(0,op+inc-sold);
-        opening+=op;incoming+=inc;outgoing+=sold;closing+=end;value+=end*base;sales+=sold*sell;cogs+=sold*base;
+        opening+=op;incoming+=inc;incomingValue+=Number(r.purchaseCost||0);outgoing+=sold;closing+=end;value+=end*base;sales+=sold*sell;cogs+=sold*base;
       });
-      rows.push({category:'Rokok',unit:'unit',opening,incoming,outgoing,closing,closingValue:value,sales,cogs,margin:sales-cogs});
+      rows.push({category:'Rokok',unit:'unit',opening,incoming,incomingValue,outgoing,closing,closingValue:value,sales,cogs,margin:sales-cogs});
     }
   }catch(_){}
   try{
