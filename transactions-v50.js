@@ -76,9 +76,11 @@
     if(!c) return 0;
     const openingBase=Number(c._openingBase ?? c.base ?? 0);
     if(c._openingBase==null) c._openingBase=openingBase;
+    const openingUnits=num(c.display)+num(c.warehouse);
     const q=num(c.purchaseQty),cost=num(c.purchaseCost);
-    const newBase=(q>0 && cost>0)?(cost/q):openingBase;
-    c.activeBase=Number.isFinite(newBase)?newBase:openingBase;
+    const totalUnits=openingUnits+q;
+    const weighted=totalUnits>0?((openingUnits*openingBase)+cost)/totalUnits:openingBase;
+    c.activeBase=Number.isFinite(weighted)?weighted:openingBase;
     return c.activeBase;
   }
 
@@ -314,22 +316,22 @@
       if(typeof setMoneyInput==='function') setMoneyInput(total,num(c.purchaseCost));
       else total.value=num(c.purchaseCost)?Math.round(num(c.purchaseCost)).toLocaleString('id-ID'):'';
     }
-    const unitBase=num(c.purchaseQty)?num(c.purchaseCost)/num(c.purchaseQty):num(c.base);
-    recalcCigActiveBase(c);
-    if(unit) unit.value=num(c.purchaseQty)?Math.round(unitBase).toLocaleString('id-ID'):'0';
+    const purchaseUnit=num(c.purchaseQty)?num(c.purchaseCost)/num(c.purchaseQty):num(c.base);
+    const activeBase=recalcCigActiveBase(c);
+    if(unit) unit.value=num(c.purchaseQty)?Math.round(activeBase).toLocaleString('id-ID'):'0';
     if(sell){
       if(typeof setMoneyInput==='function') setMoneyInput(sell,num(c.sell));
       else sell.value=Math.round(num(c.sell)).toLocaleString('id-ID');
     }
-    const unitMargin=num(c.sell)-unitBase;
+    const unitMargin=num(c.sell)-activeBase;
     if(margin) margin.value=Math.round(unitMargin).toLocaleString('id-ID');
     const notice=byId('cigMarginNotice');
     if(notice){
       const bad=num(c.purchaseQty)>0 && unitMargin<1000;
       notice.className='notice '+(bad?'red':'blue');
       notice.innerHTML=bad
-        ? '<b>Margin kurang dari Rp1.000.</b> Naikkan Harga Jual sampai margin minimal Rp1.000 sebelum Preview/Konfirmasi.'
-        : '<b>Harga Jual dapat disesuaikan.</b> Kenaikan berlaku langsung; penurunan tertentu mengikuti persetujuan Admin.';
+        ? '<b>Margin rata-rata kurang dari Rp1.000.</b> Harga beli nota '+money(purchaseUnit)+' • modal aktif '+money(activeBase)+'.'
+        : '<b>Weighted average aktif.</b> Harga beli nota '+money(purchaseUnit)+' • modal aktif rata-rata '+money(activeBase)+'.';
     }
     if(byId('cigWarehouseBeforeCard')) byId('cigWarehouseBeforeCard').textContent=String(num(c.warehouse));
     if(byId('cigQtyOut')) byId('cigQtyOut').textContent='+'+num(c.purchaseQty);
@@ -353,18 +355,18 @@
     c.purchaseQty=q;
     c.purchaseCost=total;
     if(newSell>0) c.sell=newSell;
-    recalcCigActiveBase(c);
-    const unit=q>0?total/q:0;
-    const unitMargin=q>0?num(c.sell)-unit:0;
-    if(byId('cigUnit')) byId('cigUnit').value=q?Math.round(unit).toLocaleString('id-ID'):'0';
+    const activeBase=recalcCigActiveBase(c);
+    const purchaseUnit=q>0?total/q:0;
+    const unitMargin=q>0?num(c.sell)-activeBase:0;
+    if(byId('cigUnit')) byId('cigUnit').value=q?Math.round(activeBase).toLocaleString('id-ID'):'0';
     if(byId('cigMarginUnit')) byId('cigMarginUnit').value=q?Math.round(unitMargin).toLocaleString('id-ID'):'0';
     const notice=byId('cigMarginNotice');
     if(notice){
       const bad=q>0 && unitMargin<1000;
       notice.className='notice '+(bad?'red':'blue');
       notice.innerHTML=bad
-        ? '<b>BLOKIR:</b> margin/unit '+money(unitMargin)+' masih di bawah minimum Rp1.000. Naikkan Harga Jual.'
-        : '<b>AMAN:</b> margin/unit '+money(unitMargin)+' memenuhi minimum Rp1.000.';
+        ? '<b>BLOKIR:</b> margin rata-rata '+money(unitMargin)+' masih di bawah minimum Rp1.000. Harga beli nota '+money(purchaseUnit)+'.'
+        : '<b>AMAN — weighted average:</b> harga beli nota '+money(purchaseUnit)+' • modal aktif '+money(activeBase)+' • margin '+money(unitMargin)+'.';
     }
     if(byId('cigWarehouseBeforeCard')) byId('cigWarehouseBeforeCard').textContent=String(num(c.warehouse));
     if(byId('cigQtyOut')) byId('cigQtyOut').textContent='+'+q;
@@ -433,8 +435,10 @@
     ok('Sheet18 after transfer display=195',d===195);
     ok('Sheet18 after transfer warehouse=465',w===465);
     ok('Sempurna Prima base corrected to 15300',Number(canonicalFor({name:'sempurna prima'}).base)===15300);
-    const testCig={base:16500,display:0,warehouse:70,purchaseQty:10,purchaseCost:200000};
-    ok('Rokok active base follows actual purchase unit cost',Math.abs(recalcCigActiveBase(testCig)-20000)<0.0001);
+    const testCig={base:16500,display:3,warehouse:70,purchaseQty:10,purchaseCost:200000};
+    const testWeighted=((73*16500)+200000)/83;
+    ok('Rokok weighted average preserves opening modal + purchase',Math.abs(recalcCigActiveBase(testCig)-testWeighted)<0.0001);
+    ok('Rokok weighted modal identity',Math.abs((83*testCig.activeBase)-((73*16500)+200000))<0.001);
     installWarehouseAuditColumns();
     ok('Rokok warehouse audit columns installed',!!byId('cigWhOpen1')&&!!byId('cigBuyIn1')&&!!byId('cigWhAvailable1'));
     const pass=results.every(x=>x[1]);
