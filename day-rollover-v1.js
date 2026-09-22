@@ -135,6 +135,7 @@
       reason:'rollover-from-'+cfg.prevId,
       rolloverFrom:cfg.prevId,
       rolloverSimulation:true,
+      rolloverVersion:2,
       forms,
       catalogs:{pkg,cig},
       core:emptyTxCore(),
@@ -201,7 +202,9 @@
     paint(cfg);
     const currentKey=PREFIX+cfg.id;
     const current=read(currentKey,null);
-    if(current&&String(current.shiftId||'')===cfg.id){
+    if(current&&String(current.shiftId||'')===cfg.id
+      && current.rolloverSimulation===true
+      && String(current.rolloverFrom||'')===cfg.prevId){
       return true;
     }
     const prev=read(PREFIX+cfg.prevId,null);
