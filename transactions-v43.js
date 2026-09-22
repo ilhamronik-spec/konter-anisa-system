@@ -160,8 +160,8 @@
         total+=end*base;
         units+=end;
         margin+=sold*(sell-base);
-        // Neutralize repricing of stock that already existed at shift opening.
-        selisih+=Number(p.stock||0)*(Number(p.base||0)-base);
+        // Weighted average sudah menjaga modal stok lama + belanja baru secara intrinsik.
+        // Selisih Paket normalnya 0; field tetap dipertahankan untuk kompatibilitas/audit.
       });
       return {complete,total,margin,selisih,units};
     } catch(_) { return {complete:false,total:0,margin:0,selisih:0,units:0}; }
@@ -187,10 +187,8 @@
         const base=Number.isFinite(activeBase)?activeBase:openingBase, sell=Number(c.sell||0);
         total+=(end+warehouse)*base;
         margin+=sold*(sell-base);
-        // Sama seperti Paket: jika harga dasar baru berbeda dari harga dasar awal,
-        // perubahan nilai pada stok lama dinetralkan melalui Selisih Rokok.
-        const openingUnits=Number(c.display||0)+Number(c.warehouse||0);
-        selisih+=openingUnits*(openingBase-base);
+        // Weighted average menyerap perubahan harga beli tanpa revaluasi semu stok lama.
+        // Selisih Rokok normalnya 0; field tetap dipertahankan untuk kompatibilitas/audit.
       });
       return {complete,total,margin,selisih};
     } catch(_) { return {complete:false,total:0,margin:0,selisih:0}; }
@@ -408,7 +406,7 @@
         <div><h3>${stepNo}. Balance Akhir Shift</h3><p>Rekonsiliasi otomatis dari Modal Lama sampai Modal Baru. Balance hanya final setelah stok akhir dan 25 Modal Inputan lengkap.</p></div>
         <button class="btn primary" id="v44RefreshBalance" type="button">Hitung Ulang Balance</button>
       </div>
-      <div class="notice blue"><b>Rumus Balance Sistem:</b> BALANCE = Modal Baru(A) − [Modal Lama(A) + Margin + Modal Minyak Terjual − Belanja Minyak] + Selisih Rokok + Selisih Paket. <b>Operasional normal sudah masuk ke Piutang/Modal Baru(A)</b>, sehingga tidak dihitung dua kali.</div>
+      <div class="notice blue"><b>Rumus Balance Sistem:</b> BALANCE = Modal Baru(A) − [Modal Lama(A) + Margin + Modal Minyak Terjual − Belanja Minyak] + Selisih Rokok + Selisih Paket. Paket dan Rokok memakai <b>weighted average</b>, sehingga selisih harga beli normalnya 0. <b>Operasional normal sudah masuk ke Piutang/Modal Baru(A)</b>, sehingga tidak dihitung dua kali.</div>
       <div class="grid two">
         <div class="card summary">
           <h4>Rekonsiliasi Modal</h4>
@@ -457,13 +455,13 @@
     tests.push(['base formula',eq(pureBalance({closing:125,opening:100,margin:10,minyak:20,belanjaMinyak:5}),0)]);
     tests.push(['1-day balanced simulation',eq(pureBalance({closing:126140299,opening:125870299,margin:445000,minyak:125000,belanjaMinyak:300000}),0)]);
     tests.push(['oil purchase Belanja Minyak neutralizes oil-stock cash outflow',eq(pureBalance({closing:90,opening:100,margin:0,minyak:0,belanjaMinyak:10}),0)]);
-    tests.push(['package repricing neutralized',eq(pureBalance({closing:110,opening:100,selisihPaket:-10}),0)]);
-    tests.push(['cigarette repricing neutralized',eq(pureBalance({closing:110,opening:100,selisihRokok:-10}),0)]);
-    const oldQty=70,oldBase=16500,buyQty=10,newBase=20000;
-    const repricedClosing=(oldQty+buyQty)*newBase;
-    const cashOut=buyQty*newBase;
-    const selisih=oldQty*(oldBase-newBase);
-    tests.push(['cigarette purchase uses new base + repricing correction',eq(repricedClosing-cashOut+selisih,oldQty*oldBase)]);
+    const pkgOldQty=100,pkgOldBase=10000,pkgBuyQty=20,pkgBuyBase=12000;
+    const pkgWeighted=((pkgOldQty*pkgOldBase)+(pkgBuyQty*pkgBuyBase))/(pkgOldQty+pkgBuyQty);
+    tests.push(['package weighted average preserves modal identity',eq((pkgOldQty+pkgBuyQty)*pkgWeighted,(pkgOldQty*pkgOldBase)+(pkgBuyQty*pkgBuyBase))]);
+    const cigOldQty=73,cigOldBase=16500,cigBuyQty=10,cigBuyCost=200000;
+    const cigWeighted=((cigOldQty*cigOldBase)+cigBuyCost)/(cigOldQty+cigBuyQty);
+    tests.push(['cigarette weighted average preserves modal identity',eq((cigOldQty+cigBuyQty)*cigWeighted,(cigOldQty*cigOldBase)+cigBuyCost)]);
+    tests.push(['normal weighted purchases require zero repricing correction',eq(pureBalance({closing:100,opening:100,selisihPaket:0,selisihRokok:0}),0)]);
     const scoped=filterShiftPurchases([{shiftId:'OLD',amount:999},{shiftId:'ACTIVE',amount:100},{shiftId:'ACTIVE',amount:200}],'ACTIVE');
     tests.push(['ACC/Obat shift isolation',scoped.length===2 && scoped.reduce((s,x)=>s+Number(x.amount||0),0)===300]);
     // Regression: Belanja Minyak tetap terpisah dari Operasional normal.
