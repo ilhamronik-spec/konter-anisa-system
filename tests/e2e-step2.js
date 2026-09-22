@@ -65,33 +65,50 @@ async function clickByText(page, selector, wanted){
     assert(employeeHealth.shift?.id===SID,'unexpected active test shift '+JSON.stringify(employeeHealth.shift));
     pass('Karyawan V80 lock + balance/stock/workflow self-tests');
 
-    // Rokok purchase UI must expose editable selling price so margin can be corrected.
-    const cigSellUi=await page.evaluate(()=>{
-      const sell=document.getElementById('cigSell'),qty=document.getElementById('cigQty'),total=document.getElementById('cigTotal');
-      if(!sell||!qty||!total||typeof cigCatalog==='undefined') return {exists:false};
-      document.getElementById('cigType').value='0';
-      qty.value='10'; total.value='150000'; sell.value='17000';
+    // Paket + Rokok must use weighted-average modal accounting while keeping invoice totals exact.
+    const weightedHealth=await page.evaluate(()=>{
+      const cigSell=document.getElementById('cigSell'),cigQty=document.getElementById('cigQty'),cigTotal=document.getElementById('cigTotal');
+      const pkgQtyEl=document.getElementById('pkgQty'),pkgBaseEl=document.getElementById('pkgNewBase'),pkgSellEl=document.getElementById('pkgSell');
+      if(!cigSell||!cigQty||!cigTotal||!pkgQtyEl||!pkgBaseEl||!pkgSellEl||typeof cigCatalog==='undefined'||typeof pkgCatalog==='undefined') return {exists:false};
+
+      document.getElementById('cigType').value='2'; // Slava: opening 3 display + 70 warehouse @ 16.500
+      cigQty.value='10';cigTotal.value='200000';cigSell.value='21000';
       window.calcCigBuy?.();
-      const rec=cigCatalog[0];
-      const out={exists:true,sell:Number(rec.sell||0),margin:String(document.getElementById('cigMarginUnit')?.value||''),notice:String(document.getElementById('cigMarginNotice')?.textContent||'')};
-      rec.purchaseQty=0;rec.purchaseCost=0;
-      window.syncCigBuy?.();
+      const cig=cigCatalog[2];
+      const cigOpening=Number(cig.display||0)+Number(cig.warehouse||0);
+      const cigExpected=((cigOpening*Number(cig._openingBase??cig.base??0))+200000)/(cigOpening+10);
+      const cigMarginText=String(document.getElementById('cigMarginUnit')?.value||'').replace(/\D/g,'');
+
+      document.getElementById('pkgBuyType').value='0';
+      window.syncPkgBuy?.();
+      const pkg=pkgCatalog[0],pkgOpening=Number(pkg.stock||0),pkgOpeningBase=Number(pkg._openingBase??pkg.base??0);
+      pkgQtyEl.value='20';pkgBaseEl.value='12000';pkgSellEl.value='15000';
+      window.calcPkgBuy?.();
+      const pkgExpected=((pkgOpening*pkgOpeningBase)+(20*12000))/(pkgOpening+20);
+
+      const out={
+        exists:true,
+        cigActive:Number(cig.activeBase||0),cigExpected,
+        cigMargin:Number(cigMarginText||0),cigExpectedMargin:Math.round(21000-cigExpected),
+        pkgActive:Number(pkg.activeBase||0),pkgExpected,
+        pkgPurchaseBase:Number(pkg.purchaseBase||0),
+        balanceSelfTest:window.KABalanceV44?.selfTest?.().pass
+      };
+
+      // restore test edits before normal E2E flow
+      cig.purchaseQty=0;cig.purchaseCost=0;cig.activeBase=Number(cig._openingBase??cig.base??0);
+      pkg.purchaseQty=0;pkg.purchaseBase=pkgOpeningBase;pkg.activeBase=pkgOpeningBase;
+      window.syncCigBuy?.();window.syncPkgBuy?.();
       return out;
     });
-    assert(cigSellUi.exists,'Harga Jual Berjalan Rokok field missing');
-    assert(cigSellUi.sell===17000,'editing Rokok selling price did not update catalog sell');
-    assert(cigSellUi.margin.replace(/\D/g,'')==='2000','Rokok live margin did not calculate to Rp2.000');
-    assert(cigSellUi.notice.includes('AMAN'),'Rokok margin notice did not show safe status');
-    const cigModalAccounting=await page.evaluate(()=>{
-      const c=cigCatalog[2]; // Slava opening base 16.500
-      c.purchaseQty=10;c.purchaseCost=200000;
-      window.syncCigBuy?.();
-      return {activeBase:Number(c.activeBase||0),expected:200000/10,balanceSelfTest:window.KABalanceV44?.selfTest?.().pass};
-    });
-    assert(Math.abs(cigModalAccounting.activeBase-cigModalAccounting.expected)<0.001,'Rokok active base must follow current purchase unit cost like Paket');
-    assert(cigModalAccounting.balanceSelfTest===true,'Balance self-test must include Rokok repricing neutralization');
+    assert(weightedHealth.exists,'Paket/Rokok purchase inputs missing');
+    assert(Math.abs(weightedHealth.cigActive-weightedHealth.cigExpected)<0.001,'Rokok weighted average modal is wrong');
+    assert(Math.abs(weightedHealth.pkgActive-weightedHealth.pkgExpected)<0.001,'Paket weighted average modal is wrong');
+    assert(weightedHealth.pkgPurchaseBase===12000,'Paket latest purchase base not separated from weighted modal');
+    assert(Math.abs(weightedHealth.cigMargin-weightedHealth.cigExpectedMargin)<=1,'Rokok margin must use weighted modal');
+    assert(weightedHealth.balanceSelfTest===true,'Balance weighted-average self-test failed');
     assert(!!window.KAAccObatV41?.replaceShiftPurchases,'ACC/Obat shared restore bridge missing');
-    pass('Rokok selling price + Paket-style repricing correction + ACC/Obat restore bridge');
+    pass('Paket + Rokok weighted-average modal accounting + ACC/Obat restore bridge');
 
     // Create active-shift heartbeat for Purchasing and personal Purchasing session.
     const now=Date.now();
@@ -201,7 +218,7 @@ async function clickByText(page, selector, wanted){
     await page.evaluate(noteId=>{
       document.getElementById('pkgNoteV29').value=noteId;
       const p=pkgCatalog[0];
-      p.purchaseQty=1;p.activeBase=500000;p.base=500000;p.activeSell=501000;p.sell=501000;
+      p.purchaseQty=1;p.purchaseBase=500000;p.activeBase=500000;p.base=500000;p._openingBase=500000;p.activeSell=501000;p.sell=501000;
     },packageNote.id);
     await page.evaluate(()=>document.getElementById('pkgPreviewTopBtn')?.click()); await sleep(300);
     const previewState=await page.evaluate(()=>({display:document.getElementById('pkgPurchasePreview')?.style.display,valid:window.pkgPreviewValid}));
