@@ -28,7 +28,8 @@
     d.setDate(d.getDate()-1);
     const prevDate=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
     const prevId=prevDate+'-'+slug(shift)+'-'+slug(holder);
-    return {date,shift,holder,id,prevDate,prevId};
+    const ready=q.get('rollover_ready')==='1';
+    return {date,shift,holder,id,prevDate,prevId,ready};
   }
 
   function fingerprint(){
@@ -202,12 +203,20 @@
     paint(cfg);
     const currentKey=PREFIX+cfg.id;
     const current=read(currentKey,null);
-    if(current&&String(current.shiftId||'')===cfg.id
-      && current.rolloverSimulation===true
-      && String(current.rolloverFrom||'')===cfg.prevId){
-      return true;
-    }
     const prev=read(PREFIX+cfg.prevId,null);
+
+    if(current&&String(current.shiftId||'')===cfg.id){
+      // Setelah seed pertama, V53 autosave memang tidak mempertahankan metadata rollover.
+      // URL rollover_ready atau kecocokan opening 19 = closing 18 cukup untuk menganggap seed valid.
+      if(cfg.ready) return true;
+      if(prev?.forms&&current?.forms){
+        const norm=v=>String(v??'').replace(/[^0-9-]/g,'');
+        const pkgOk=norm(current.forms?.prevModalCheck20?.value)===norm(prev.forms?.modalInput20?.value);
+        const cigOk=norm(current.forms?.prevModalCheck24?.value)===norm(prev.forms?.modalInput24?.value);
+        const piuOk=norm(current.forms?.prevModalCheck25?.value)===norm(prev.forms?.modalInput25?.value);
+        if(pkgOk&&cigOk&&piuOk) return true;
+      }
+    }
     if(!prev||!prev.forms||!prev.catalogs)return false;
 
     seeding=true;
