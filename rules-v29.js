@@ -226,7 +226,7 @@
 
   function packagePurchaseTotal() {
     if (typeof pkgCatalog === 'undefined') return 0;
-    return pkgCatalog.reduce((sum, p) => sum + (Number(p.purchaseQty || 0) * Number(p.activeBase || p.base || 0)), 0);
+    return pkgCatalog.reduce((sum, p) => sum + (Number(p.purchaseQty || 0) * Number(p.purchaseBase ?? p.activeBase ?? p.base ?? 0)), 0);
   }
   function cigarettePurchaseTotal() {
     if (typeof cigCatalog === 'undefined') return 0;
@@ -312,15 +312,16 @@
     cigCatalog.forEach(c => {
       const q = Number(c.purchaseQty || 0);
       if (q <= 0) return;
-      const unitBase = Number(c.purchaseCost || 0) / q;
+      const purchaseUnit = Number(c.purchaseCost || 0) / q;
+      const activeBase = Number(c.activeBase ?? c.base ?? purchaseUnit);
       const sell = Number(c.sell || 0);
       const min = effectiveMinMargin('cigarette', c.name);
-      const margin = sell - unitBase;
+      const margin = sell - activeBase;
       if (margin < min) bad.push(`${c.name}: ${fmtMoney(margin)} < minimum ${fmtMoney(min)}`);
       const oldSell = Number(c._v29OriginalSell ?? c.sell ?? sell);
-      const oldBase = Number(c.base || unitBase);
-      if (sell < oldSell && (oldSell - oldBase) > PRICE_DROP_APPROVAL_TRIGGER && priceDropNeedsApproval('cigarette', c.name, oldSell, sell, unitBase)) {
-        requestPriceApproval('cigarette', c.name, oldSell, sell, unitBase);
+      const oldBase = Number(c.base || activeBase);
+      if (sell < oldSell && (oldSell - oldBase) > PRICE_DROP_APPROVAL_TRIGGER && priceDropNeedsApproval('cigarette', c.name, oldSell, sell, activeBase)) {
+        requestPriceApproval('cigarette', c.name, oldSell, sell, activeBase);
         approvalsNeeded.push(c.name);
       }
     });
