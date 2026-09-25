@@ -445,14 +445,22 @@
     ok('Rokok warehouse audit columns installed',!!byId('cigWhOpen1')&&!!byId('cigBuyIn1')&&!!byId('cigWhAvailable1'));
     const pass=results.every(x=>x[1]);
     document.documentElement.dataset.v50Selftest=pass?'PASS':'FAIL';
-    window.KAStockV50={source17,results,pass,sync:syncBeforeOperationalStep};
+    window.KAStockV50={
+      source17,results,pass,sync:syncBeforeOperationalStep,
+      refreshOpeningSystem(){
+        hydratePackageOpeningUI(false);
+        hydrateCigOpeningUI(false);
+        try{ if(typeof updateOpeningCorrections==='function') updateOpeningCorrections(); }catch(_){}
+      }
+    };
   }
 
   function init(){
-    syncCanonicalCatalogs();
+    const sim=!!window.KADayRolloverV1?.isSimulation?.();
+    if(!sim) syncCanonicalCatalogs();
     resetDaySpecificDefaults();
-    hydratePackageOpeningUI(true);
-    hydrateCigOpeningUI(true);
+    hydratePackageOpeningUI(!sim);
+    hydrateCigOpeningUI(!sim);
     try{
       if(typeof openingPkgPreviewConfirmed!=='undefined') openingPkgPreviewConfirmed=false;
       if(typeof openingCigPreviewConfirmed!=='undefined') openingCigPreviewConfirmed=false;
