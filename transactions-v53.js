@@ -147,15 +147,18 @@
 
   function saveNow(reason='auto'){
     if(restoring) return false;
+    if(window.KADayRolloverV1?.isSimulation?.() && !window.KADayRolloverV1?.ready?.()) return false;
     try{
       const key=storageKey();
       const ts=Date.now();
+      const roll=window.KADayRolloverV1?.metadata?.()||{};
       const data={
         schema:SCHEMA,
         shiftId:shiftId(),
         sourceFingerprint:sourceFingerprint(),
         savedAt:ts,
         reason,
+        ...roll,
         forms:formSnapshot(),
         catalogs:catalogSnapshot(),
         core:coreSnapshot(),
@@ -296,7 +299,8 @@
     safeCall(()=>window.KAAccObatV41?.refreshSales?.());
     safeCall(()=>{ if(typeof renderTxGlobalSummary==='function') renderTxGlobalSummary(); });
 
-    // Propagate restored opening checks/catalog values through stock flow.
+    // Propagate restored opening/catalog values through stock flow.
+    safeCall(()=>window.KAStockV50?.refreshOpeningSystem?.());
     safeCall(()=>window.KAStockV50?.sync?.());
     safeCall(()=>{
       if(typeof pkgCatalog!=='undefined' && typeof calcPkgEnd==='function'){
