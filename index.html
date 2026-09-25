@@ -2709,24 +2709,24 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v41.js?build=80&fix=acccloud1"></script>
 <script src="./transactions-v42.js?build=80"></script>
 <script src="./transactions-v43.js?build=80&fix=weighted1"></script>
-<script src="./transactions-v50.js?build=80&fix=rollover4"></script>
+<script src="./transactions-v50.js?build=80&fix=sim24a"></script>
 <script src="./transactions-v51.js?build=80"></script>
 <script>
-/* Konter Anisa Day Rollover V1
-   Simulation-only rollover. Activated only when index.html has ?sim_date=YYYY-MM-DD.
-   Seeds a new shift from the previous shift's closing state, then lets V53 restore it normally.
+/* Konter Anisa Day Rollover V2
+   Simulation-only. Target date comes from ?sim_date=YYYY-MM-DD.
+   Optional ?sim_base=YYYY-MM-DD selects the source closing date.
+   The previous closing becomes the REAL system opening, never a correction input.
 */
 (function(){
   'use strict';
 
   const PREFIX='ka_shift_autosave_v53_';
   const INDEX_KEY='ka_shift_autosave_v53_index';
-  let started=false,seeding=false,timer=null;
+  let started=false,timer=null,currentMeta=null;
 
   const read=(k,f=null)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}};
   const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
   const num=v=>Number(v)||0;
-  const clone=v=>JSON.parse(JSON.stringify(v));
   const slug=v=>String(v||'unknown').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'unknown';
   const val=(forms,id,f='')=>String(forms?.[id]?.value??f);
 
@@ -2736,15 +2736,17 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     const shift=String(q.get('sim_shift')||window.KARegulationsV29?.activeShift?.shift||'Full');
     const holder=String(q.get('sim_holder')||window.KARegulationsV29?.activeShift?.holder||'Rifda');
-    const active=window.KARegulationsV29?.activeShift;
-    const id=String(active?.id||date+'-'+slug(shift)+'-'+slug(holder));
-    const d=new Date(date+'T12:00:00');
-    d.setDate(d.getDate()-1);
-    const prevDate=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
-    const prevId=prevDate+'-'+slug(shift)+'-'+slug(holder);
-    const ready=q.get('rollover_ready')==='1';
-    return {date,shift,holder,id,prevDate,prevId,ready};
+    const id=String(window.KARegulationsV29?.activeShift?.id||date+'-'+slug(shift)+'-'+slug(holder));
+    let baseDate=String(q.get('sim_base')||'').trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(baseDate)){
+      const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-1);
+      baseDate=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+    }
+    const baseId=baseDate+'-'+slug(shift)+'-'+slug(holder);
+    return {date,shift,holder,id,baseDate,baseId};
   }
+
+  function isSimulation(){ return !!config(); }
 
   function fingerprint(){
     try{
@@ -2778,11 +2780,15 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
   function emptyTxCore(){
     const tx={};
     try{
-      if(typeof txEntries!=='undefined'&&txEntries&&typeof txEntries==='object'){
-        Object.keys(txEntries).forEach(k=>tx[k]=[]);
-      }
+      if(typeof txEntries!=='undefined'&&txEntries&&typeof txEntries==='object') Object.keys(txEntries).forEach(k=>tx[k]=[]);
     }catch(_){}
     return {debtEntries:[],paymentEntries:[],opEntries:[],txEntries:tx,adminState:{}};
+  }
+
+  function endingWarehouse(prev,ix,x){
+    const n=ix+1;
+    const moved=Math.max(0,num(val(prev.forms,'move'+n,'0')));
+    return Math.max(0,num(x.warehouse)+num(x.purchaseQty)-moved);
   }
 
   function buildSeed(cfg,prev){
@@ -2790,22 +2796,22 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     const prevForms=prev?.forms||{};
     const prevCats=prev?.catalogs||{};
 
-    // Reset all day-specific drafts/endings first.
+    // New day fields are empty. Opening check/correction inputs are NOT used to carry balances.
     Object.keys(forms).forEach(id=>{
-      if(/^modalInput\d+$/.test(id))setForm(forms,id,'');
-      else if(/^pkgEnd\d+$/.test(id))setForm(forms,id,'');
-      else if(/^cigEnd\d+$/.test(id))setForm(forms,id,'');
-      else if(/^move\d+$/.test(id))setForm(forms,id,'0');
-      else if(/^(pkgQty|cigQty)$/.test(id))setForm(forms,id,'0');
-      else if(/^(cigTotal|opAmount|opNote|debtAmount|debtNote|payAmount|oilBuyAmount)$/.test(id))setForm(forms,id,'');
+      if(/^modalInput\d+$/.test(id)) setForm(forms,id,'');
+      else if(/^pkgEnd\d+$/.test(id)) setForm(forms,id,'');
+      else if(/^cigEnd\d+$/.test(id)) setForm(forms,id,'');
+      else if(/^move\d+$/.test(id)) setForm(forms,id,'0');
+      else if(/^pkgCheck\d+$/.test(id)) setForm(forms,id,'');
+      else if(/^cig(?:Disp|Wh)Check\d+$/.test(id)) setForm(forms,id,'');
+      else if(/^prevModalCheck\d+$/.test(id)) setForm(forms,id,'');
+      else if(/^(?:pkg|cig|prevModal)Reason\d+$/.test(id)) setForm(forms,id,'');
+      else if(/^(pkgQty|cigQty)$/.test(id)) setForm(forms,id,'0');
+      else if(/^(cigTotal|opAmount|opNote|debtAmount|debtNote|payAmount|oilBuyAmount)$/.test(id)) setForm(forms,id,'');
     });
 
-    // Closing modal 18 -> opening modal 19.
-    for(let i=1;i<=25;i++){
-      const closing=val(prevForms,'modalInput'+i,'');
-      setForm(forms,'prevModalCheck'+i,closing);
-      setForm(forms,'prevModalReason'+i,'');
-    }
+    const openingModal=[];
+    for(let i=1;i<=25;i++) openingModal.push(num(String(val(prevForms,'modalInput'+i,'0')).replace(/[^0-9.-]/g,'')));
 
     const pkgPrev=Array.isArray(prevCats.pkg)?prevCats.pkg:[];
     const pkg=pkgPrev.map((p,ix)=>{
@@ -2813,71 +2819,97 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       const stock=endRaw===''?num(p.stock):Math.max(0,num(endRaw));
       const base=num(p.activeBase??p.purchaseBase??p.openingBase??p.base);
       const sell=num(p.activeSell??p.sell);
-      setForm(forms,'pkgCheck'+(ix+1),'');
-      setForm(forms,'pkgReason'+(ix+1),'');
-      return {
-        key:String(p.key||''),
-        stock,purchaseQty:0,
-        base,openingBase:base,purchaseBase:base,activeBase:base,activeSell:sell
-      };
+      return {key:String(p.key||''),stock,purchaseQty:0,base,openingBase:base,purchaseBase:base,activeBase:base,activeSell:sell};
     });
 
     const cigPrev=Array.isArray(prevCats.cig)?prevCats.cig:[];
     const cig=cigPrev.map((x,ix)=>{
-      const n=ix+1;
-      const displayRaw=val(prevForms,'cigEnd'+n,'');
-      const display=displayRaw===''?num(x.display):Math.max(0,num(displayRaw));
-      const moved=Math.max(0,num(val(prevForms,'move'+n,'0')));
-      const warehouse=Math.max(0,num(x.warehouse)+num(x.purchaseQty)-moved);
+      const endRaw=val(prevForms,'cigEnd'+(ix+1),'');
+      const display=endRaw===''?num(x.display):Math.max(0,num(endRaw));
+      const warehouse=endingWarehouse(prev,ix,x);
       const base=num(x.activeBase??x.openingBase??x.base);
       const sell=num(x.sell);
-      setForm(forms,'cigDispCheck'+n,'');
-      setForm(forms,'cigWhCheck'+n,'');
-      setForm(forms,'cigReason'+n,'');
-      setForm(forms,'move'+n,'0');
-      return {
-        key:String(x.key||''),
-        display,warehouse,purchaseQty:0,purchaseCost:0,
-        base,openingBase:base,activeBase:base,sell
-      };
+      return {key:String(x.key||''),display,warehouse,purchaseQty:0,purchaseCost:0,base,openingBase:base,activeBase:base,sell};
     });
 
     return {
-      schema:53,
-      shiftId:cfg.id,
-      sourceFingerprint:fingerprint(),
-      savedAt:Date.now(),
-      reason:'rollover-from-'+cfg.prevId,
-      rolloverFrom:cfg.prevId,
-      rolloverSimulation:true,
-      rolloverVersion:2,
-      forms,
-      catalogs:{pkg,cig},
-      core:emptyTxCore(),
-      flags:{
-        idx:0,
-        openingPkgPreviewConfirmed:false,
-        openingCigPreviewConfirmed:false,
-        openingPkgPreviewSignature:'',
-        openingCigPreviewSignature:'',
-        openingPkgHardBlock:false,
-        openingCigHardBlock:false,
-        openingApprovalState:'none',
-        openingCorrectionsSubmitted:false,
-        pkgBuyConfirmed:false,
-        cigBuyConfirmed:false,
-        v51:{displayPreviewConfirmed:false,displayPreviewSignature:''}
-      }
+      schema:53,shiftId:cfg.id,sourceFingerprint:'pending',savedAt:Date.now(),
+      reason:'rollover-from-'+cfg.baseId,
+      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:2,
+      rolloverOpeningModal:openingModal,
+      forms,catalogs:{pkg,cig},core:emptyTxCore(),
+      flags:{idx:0,openingPkgPreviewConfirmed:false,openingCigPreviewConfirmed:false,openingPkgPreviewSignature:'',openingCigPreviewSignature:'',openingPkgHardBlock:false,openingCigHardBlock:false,openingApprovalState:'none',openingCorrectionsSubmitted:false,pkgBuyConfirmed:false,cigBuyConfirmed:false,v51:{displayPreviewConfirmed:false,displayPreviewSignature:''}}
     };
   }
 
+  function formatMoney(n){
+    return 'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
+  }
+
+  function applyRuntime(saved){
+    if(!saved||saved.rolloverSimulation!==true)return false;
+    const cats=saved.catalogs||{};
+
+    try{
+      if(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal)){
+        const arr=Array.isArray(saved.rolloverOpeningModal)?saved.rolloverOpeningModal:[];
+        openingPrevModal.forEach((x,i)=>{if(i<arr.length)x.value=num(arr[i]);});
+        document.querySelectorAll('.modal-prev-row').forEach((row,i)=>{
+          if(row.cells?.[1]&&i<arr.length) row.cells[1].textContent=formatMoney(arr[i]);
+        });
+      }
+    }catch(_){}
+
+    try{
+      if(typeof pkgCatalog!=='undefined'&&Array.isArray(cats.pkg)){
+        const map=new Map(cats.pkg.map(x=>[String(x.key||''),x]));
+        pkgCatalog.forEach((p,i)=>{
+          const rec=map.get(String(p.group||'')+'|'+String(p.name||''));if(!rec)return;
+          p.stock=num(rec.stock);p.purchaseQty=num(rec.purchaseQty);
+          p.base=num(rec.base??rec.openingBase);p._openingBase=num(rec.openingBase??rec.base);
+          p.purchaseBase=num(rec.purchaseBase??p._openingBase);p.activeBase=num(rec.activeBase??p._openingBase);
+          p.activeSell=num(rec.activeSell??p.sell);
+          if(typeof openingPkg!=='undefined'&&openingPkg[i]){
+            openingPkg[i].stock=p.stock;openingPkg[i].base=p._openingBase;openingPkg[i].sell=p.activeSell;
+          }
+        });
+      }
+    }catch(_){}
+
+    try{
+      if(typeof cigCatalog!=='undefined'&&Array.isArray(cats.cig)){
+        const map=new Map(cats.cig.map(x=>[String(x.key||''),x]));
+        cigCatalog.forEach((c,i)=>{
+          const rec=map.get(String(c.name||''));if(!rec)return;
+          c.display=num(rec.display);c.warehouse=num(rec.warehouse);c.purchaseQty=num(rec.purchaseQty);c.purchaseCost=num(rec.purchaseCost);
+          c.base=num(rec.base??rec.openingBase);c._openingBase=num(rec.openingBase??rec.base);c.activeBase=num(rec.activeBase??c._openingBase);c.sell=num(rec.sell??c.sell);
+          if(typeof openingCig!=='undefined'&&openingCig[i]){
+            openingCig[i].display=c.display;openingCig[i].warehouse=c.warehouse;openingCig[i].base=c._openingBase;openingCig[i].sell=c.sell;
+          }
+        });
+      }
+    }catch(_){}
+
+    // Keep physical/correction inputs empty on a fresh simulated day.
+    try{
+      const forms=saved.forms||{};
+      Object.entries(forms).forEach(([id,rec])=>{
+        if(!/^(?:pkgCheck|cigDispCheck|cigWhCheck|prevModalCheck|pkgReason|cigReason|prevModalReason)\d+$/.test(id))return;
+        const el=document.getElementById(id);if(el)el.value=String(rec?.value??'');
+      });
+    }catch(_){}
+
+    currentMeta={
+      rolloverSimulation:true,rolloverVersion:2,rolloverFrom:String(saved.rolloverFrom||''),
+      rolloverBaseDate:String(saved.rolloverBaseDate||''),rolloverOpeningModal:Array.isArray(saved.rolloverOpeningModal)?saved.rolloverOpeningModal.slice():[]
+    };
+    return true;
+  }
+
   function touchIndex(key,ts){
-    let arr=read(INDEX_KEY,[]);
-    if(!Array.isArray(arr))arr=[];
-    arr=arr.filter(x=>String(x?.key||'')!==key);
-    arr.unshift({key,ts});
-    while(arr.length>20)arr.pop();
-    write(INDEX_KEY,arr);
+    let arr=read(INDEX_KEY,[]);if(!Array.isArray(arr))arr=[];
+    arr=arr.filter(x=>String(x?.key||'')!==key);arr.unshift({key,ts});
+    while(arr.length>20)arr.pop();write(INDEX_KEY,arr);
   }
 
   function labelDate(iso){
@@ -2885,201 +2917,75 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   }
 
-  function parseMoney(v){
-    return Number(String(v??'').replace(/[^0-9-]/g,''))||0;
-  }
-
-  function applyPreviousClosingAsCanonical(cfg,prev){
-    if(!prev?.forms||!prev?.catalogs)return false;
-    const forms=prev.forms, cats=prev.catalogs;
-    const money=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
-
-    // 25 modal penutupan hari sebelumnya = NILAI SISTEM awal hari baru.
-    // Untuk stok Paket/Rokok, kolom koreksi sengaja dikosongkan: stok sistem berasal dari closing kemarin,
-    // bukan dari nilai koreksi yang disuntikkan otomatis.
-    try{
-      if(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal)){
-        openingPrevModal.forEach((x,ix)=>{
-          const raw=val(forms,'modalInput'+(ix+1),'');
-          if(raw==='')return;
-          const amount=parseMoney(raw);
-          x.value=amount;
-          const check=document.getElementById('prevModalCheck'+(ix+1));
-          if(check)check.value=amount.toLocaleString('id-ID');
-          const row=check?.closest('tr');
-          if(row?.cells?.[1])row.cells[1].textContent=money(amount);
-          const reason=document.getElementById('prevModalReason'+(ix+1));if(reason)reason.value='';
-        });
-      }
-    }catch(_){}
-
-    // Paket: STOK AKHIR hari sebelumnya benar-benar menjadi STOK SISTEM hari baru.
-    try{
-      if(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog)&&Array.isArray(cats.pkg)){
-        const map=new Map(cats.pkg.map(x=>[String(x.key||''),x]));
-        pkgCatalog.forEach((p,ix)=>{
-          const key=String(p.group||'')+'|'+String(p.name||'');
-          const old=map.get(key)||cats.pkg[ix];
-          if(!old)return;
-          const endRaw=val(forms,'pkgEnd'+(ix+1),'');
-          const stock=endRaw===''?num(old.stock):Math.max(0,num(endRaw));
-          const base=num(old.activeBase??old.purchaseBase??old.openingBase??old.base);
-          const sell=num(old.activeSell??old.sell??p.sell);
-
-          p.stock=stock;p.base=base;p._openingBase=base;p.purchaseBase=base;p.activeBase=base;
-          p.purchaseQty=0;p.activeSell=sell;p.sell=sell;
-
-          if(typeof openingPkg!=='undefined'&&Array.isArray(openingPkg)&&openingPkg[ix]){
-            openingPkg[ix].stock=stock;
-            openingPkg[ix].base=base;
-            openingPkg[ix].sell=sell;
-          }
-
-          const chk=document.getElementById('pkgCheck'+(ix+1));
-          if(chk){
-            chk.value='';
-            const row=chk.closest('tr');
-            if(row?.cells?.[2])row.cells[2].textContent=money(base);
-            if(row?.cells?.[3])row.cells[3].innerHTML='<b>'+stock+'</b>';
-          }
-          const reason=document.getElementById('pkgReason'+(ix+1));if(reason)reason.value='';
-        });
-      }
-    }catch(_){}
-
-    // Rokok: Display akhir + Gudang akhir menjadi STOK SISTEM opening hari baru.
-    try{
-      if(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog)&&Array.isArray(cats.cig)){
-        const map=new Map(cats.cig.map(x=>[String(x.key||''),x]));
-        cigCatalog.forEach((x,ix)=>{
-          const old=map.get(String(x.name||''))||cats.cig[ix];
-          if(!old)return;
-          const n=ix+1;
-          const displayRaw=val(forms,'cigEnd'+n,'');
-          const display=displayRaw===''?num(old.display):Math.max(0,num(displayRaw));
-          const moved=Math.max(0,num(val(forms,'move'+n,'0')));
-          const warehouse=Math.max(0,num(old.warehouse)+num(old.purchaseQty)-moved);
-          const base=num(old.activeBase??old.openingBase??old.base);
-          const sell=num(old.sell??x.sell);
-
-          x.display=display;x.warehouse=warehouse;x.base=base;x._openingBase=base;x.activeBase=base;
-          x.purchaseQty=0;x.purchaseCost=0;x.sell=sell;
-
-          if(typeof openingCig!=='undefined'&&Array.isArray(openingCig)&&openingCig[ix]){
-            openingCig[ix].display=display;
-            openingCig[ix].warehouse=warehouse;
-            openingCig[ix].base=base;
-            openingCig[ix].sell=sell;
-          }
-
-          const dc=document.getElementById('cigDispCheck'+n);
-          const wc=document.getElementById('cigWhCheck'+n);
-          if(dc){
-            dc.value='';
-            const row=dc.closest('tr');
-            if(row?.cells?.[1])row.cells[1].textContent=money(base);
-            if(row?.cells?.[2])row.cells[2].innerHTML='<b>'+display+'</b>';
-            if(row?.cells?.[4])row.cells[4].innerHTML='<b>'+warehouse+'</b>';
-          }
-          if(wc)wc.value='';
-          const rs=document.getElementById('cigReason'+n);if(rs)rs.value='';
-          const mv=document.getElementById('move'+n);if(mv)mv.value='0';
-        });
-      }
-    }catch(_){}
-
-    try{
-      if(typeof updateOpeningCorrections==='function')updateOpeningCorrections();
-    }catch(_){}
-    return true;
-  }
-
   function paint(cfg){
-    const dateLabel=labelDate(cfg.date);
-    const prevLabel=labelDate(cfg.prevDate);
-    const replaceDate=(root)=>{
-      if(!root)return;
-      const walk=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-      const nodes=[];while(walk.nextNode())nodes.push(walk.currentNode);
-      nodes.forEach(n=>{
-        n.textContent=String(n.textContent||'').replace(/18\s+September\s+2026/gi,dateLabel);
-      });
+    const target=labelDate(cfg.date),base=labelDate(cfg.baseDate);
+    const rewrite=root=>{
+      if(!root)return;const walk=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const nodes=[];
+      while(walk.nextNode())nodes.push(walk.currentNode);
+      nodes.forEach(n=>{n.textContent=String(n.textContent||'').replace(/18\s+September\s+2026/gi,target).replace(/19\s+September\s+2026/gi,target);});
     };
-    replaceDate(document.querySelector('.crumb'));
-    replaceDate(document.querySelector('.hero'));
-
+    rewrite(document.querySelector('.crumb'));rewrite(document.querySelector('.hero'));
+    const foot=document.querySelector('.side-foot div:last-child');
+    if(foot)foot.textContent='SIMULASI '+target+' • sistem opening dari closing '+base;
     if(!document.getElementById('kaRolloverSimBanner')){
       const host=document.querySelector('.content');
       if(host){
-        const b=document.createElement('div');
-        b.id='kaRolloverSimBanner';
-        b.className='notice blue';
-        b.style.cssText='margin:0 0 14px;border-width:2px';
-        b.innerHTML='<b>MODE SIMULASI '+dateLabel.toUpperCase()+'</b> • Opening otomatis dari penutupan '+prevLabel+' • Shift '+cfg.shift+' • '+cfg.holder;
+        const b=document.createElement('div');b.id='kaRolloverSimBanner';b.className='notice blue';b.style.cssText='margin:0 0 14px;border-width:2px';
+        b.innerHTML='<b>MODE SIMULASI '+target.toUpperCase()+'</b> • Stok/modal SISTEM berasal dari penutupan '+base+' • kolom koreksi tidak diisi otomatis';
         host.prepend(b);
       }
     }
   }
 
   function trySeed(){
-    const cfg=config();if(!cfg||seeding)return false;
+    const cfg=config();if(!cfg)return false;
     paint(cfg);
     const currentKey=PREFIX+cfg.id;
-    const current=read(currentKey,null);
-    const prev=read(PREFIX+cfg.prevId,null);
+    let current=read(currentKey,null);
 
-    if(current&&String(current.shiftId||'')===cfg.id){
-      // Setelah seed pertama, V53 autosave memang tidak mempertahankan metadata rollover.
-      // URL rollover_ready atau kecocokan opening 19 = closing 18 cukup untuk menganggap seed valid.
-      if(cfg.ready) return true;
-      if(prev?.forms&&current?.forms){
-        const norm=v=>String(v??'').replace(/[^0-9-]/g,'');
-        const pkgOk=norm(current.forms?.prevModalCheck20?.value)===norm(prev.forms?.modalInput20?.value);
-        const cigOk=norm(current.forms?.prevModalCheck24?.value)===norm(prev.forms?.modalInput24?.value);
-        const piuOk=norm(current.forms?.prevModalCheck25?.value)===norm(prev.forms?.modalInput25?.value);
-        if(pkgOk&&cigOk&&piuOk) return true;
-      }
+    if(current&&current.rolloverSimulation===true&&String(current.rolloverFrom||'')===cfg.baseId){
+      applyRuntime(current);return true;
     }
-    if(!prev||!prev.forms||!prev.catalogs)return false;
 
-    seeding=true;
-    const seed=buildSeed(cfg,prev);
-    write(currentKey,seed);
-    touchIndex(currentKey,seed.savedAt);
-    sessionStorage.setItem('ka_rollover_last_v1',JSON.stringify({from:cfg.prevId,to:cfg.id,at:seed.savedAt}));
-    const q=new URLSearchParams(location.search);
-    q.set('rollover_ready','1');
-    location.replace(location.pathname+'?'+q.toString()+location.hash);
+    const base=read(PREFIX+cfg.baseId,null);
+    if(!base||!base.forms||!base.catalogs)return false;
+
+    current=buildSeed(cfg,base);
+    applyRuntime(current);
+    current.sourceFingerprint=fingerprint();
+    write(currentKey,current);touchIndex(currentKey,current.savedAt);
+    currentMeta={
+      rolloverSimulation:true,rolloverVersion:2,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
+      rolloverOpeningModal:current.rolloverOpeningModal.slice()
+    };
+    sessionStorage.setItem('ka_rollover_last_v2',JSON.stringify({from:cfg.baseId,to:cfg.id,at:current.savedAt}));
     return true;
   }
+
+  function ready(){
+    const cfg=config();if(!cfg)return true;
+    const x=read(PREFIX+cfg.id,null);
+    return !!(x&&x.rolloverSimulation===true&&String(x.rolloverFrom||'')===cfg.baseId);
+  }
+
+  function metadata(){return currentMeta?JSON.parse(JSON.stringify(currentMeta)):{}}
 
   function start(){
     if(started)return;started=true;
     const cfg=config();if(!cfg)return;
-    paint(cfg);
-    const prev=read(PREFIX+cfg.prevId,null);
-    if(prev)applyPreviousClosingAsCanonical(cfg,prev);
+    // Run immediately, before DOMContentLoaded initializers overwrite the opening.
     if(trySeed())return;
-    window.addEventListener('ka:shared-sync',()=>{
-      const fresh=read(PREFIX+cfg.prevId,null);
-      if(fresh)applyPreviousClosingAsCanonical(cfg,fresh);
-      trySeed();
-    });
-    timer=setInterval(()=>{
-      const fresh=read(PREFIX+cfg.prevId,null);
-      if(fresh)applyPreviousClosingAsCanonical(cfg,fresh);
-      if(trySeed())clearInterval(timer);
-    },1200);
-    setTimeout(()=>{if(timer)clearInterval(timer)},20000);
+    window.addEventListener('ka:shared-sync',()=>{if(trySeed()&&timer){clearInterval(timer);timer=null;}});
+    timer=setInterval(()=>{if(trySeed()){clearInterval(timer);timer=null;}},500);
+    setTimeout(()=>{if(timer){clearInterval(timer);timer=null;}},20000);
   }
 
-  window.KADayRolloverV1={start,trySeed};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
-  else start();
+  window.KADayRolloverV1={start,trySeed,ready,metadata,isSimulation,config};
+  start();
 })();
 
 </script>
-<script src="./transactions-v53.js?build=80&fix=rollover4"></script>
+<script src="./transactions-v53.js?build=80&fix=sim24a"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80"></script>
 <script src="./ui-clean-v74.js?build=80"></script>
