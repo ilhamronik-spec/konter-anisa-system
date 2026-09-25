@@ -548,14 +548,42 @@ function bind(){
   window.addEventListener('ka:admin-accounts-updated',render);
   setInterval(function(){renderIdentity();summary()},5000)
 }
-function init(){bind();render();try{openDb()}catch(_){}}
+function migrateAccidental18NotesTo24(){
+  var map={
+    'NBJ-0918-05':'NBJ-0924-01',
+    'NBJ-0918-06':'NBJ-0924-02',
+    'NBO-0918-03':'NBO-0924-01',
+    'NBO-0918-04':'NBO-0924-02',
+    'NBO-0918-05':'NBO-0924-03'
+  };
+  var a=notes(),changed=false,out=[];
+  a.forEach(function(n){
+    var old=String(n&&n.id||''),nid=map[old];
+    if(!nid){out.push(n);return}
+    changed=true;
+    if(out.some(function(x){return String(x&&x.id||'')===nid}))return;
+    out.push(Object.assign({},n,{
+      id:nid,
+      shiftId:'2026-09-24-full-rifda',
+      shiftLabel:'24 September 2026 • Shift Full • Rifda',
+      photoRef:String(n.photoRef||old),
+      status:'ready',
+      simulationMigratedFrom:old
+    }));
+  });
+  if(changed)write(NOTE_KEY,out);
+  var u=used(),uch=false;
+  Object.keys(map).forEach(function(old){if(Object.prototype.hasOwnProperty.call(u,old)){delete u[old];uch=true}});
+  if(uch)write(USED_KEY,u);
+}
+function init(){migrateAccidental18NotesTo24();bind();render();try{openDb()}catch(_){}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
 <script src="./purchasing-lock-v83.js?build=83"></script>
 <script>
 setTimeout(function(){
-  import('./shared-db-v1.js?build=4').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+  import('./shared-db-v1.js?build=5').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
 </body>
