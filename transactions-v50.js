@@ -154,9 +154,10 @@
   function openingSnapshot(ix){
     const i=ix+1,c=cigCatalog[ix];
     const d=byId('cigDispCheck'+i),w=byId('cigWhCheck'+i);
+    const dr=String(d?.value??'').trim(),wr=String(w?.value??'').trim();
     return {
-      display:d?num(d.value):num(c.display),
-      warehouse:w?num(w.value):num(c.warehouse)
+      display:dr===''?num(c.display):num(dr),
+      warehouse:wr===''?num(c.warehouse):num(wr)
     };
   }
 
@@ -164,7 +165,8 @@
     if(typeof pkgCatalog!=='undefined'){
       pkgCatalog.forEach((p,ix)=>{
         const input=byId('pkgCheck'+(ix+1));
-        if(input) p.stock=num(input.value);
+        const raw=String(input?.value??'').trim();
+        if(input && raw!=='') p.stock=num(raw);
         if(typeof openingPkg!=='undefined' && openingPkg[ix]) openingPkg[ix].stock=num(p.stock);
       });
     }
