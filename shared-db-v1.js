@@ -120,6 +120,12 @@ function applyOne(r){
   if(!r)return;
   const p=r.payload,id=String(r.record_id||'');
   if(r.is_deleted){
+    if(r.kind==='note'){
+      let a=read('ka_v29_purchasing_notes',[]);if(!Array.isArray(a))a=[];
+      const next=a.filter(x=>String(x?.id||'')!==id);
+      if(next.length!==a.length)setJson('ka_v29_purchasing_notes',next);
+      cloudNoteIds.delete(id);
+    }
     if(r.kind==='acc_obat_purchase'){
       mergeAccObatShift(id,{accessory:[],medicine:[]});
     }
