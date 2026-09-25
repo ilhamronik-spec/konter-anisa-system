@@ -438,7 +438,21 @@ function parseShiftId(id){
   var holderSlug=m[3],emps=accounts('employee'),emp=emps.find(function(a){return slug(a.name)===holderSlug});
   return {id:String(id),date:m[1],shift:titleCase(m[2]),holder:emp?emp.name:titleCase(holderSlug.replace(/-/g,' '))}
 }
+function simulationShift(){
+  try{
+    var q=new URLSearchParams(location.search),date=String(q.get('sim_date')||'').trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return null;
+    var shift=String(q.get('sim_shift')||'Full'),holder=String(q.get('sim_holder')||'Rifda');
+    var sid=date+'-'+slug(shift)+'-'+slug(holder),key=SHIFT_PREFIX+sid,data=read(key,null),p=parseShiftId(sid);
+    if(!p)return null;
+    p.savedAt=Number((data&&data.savedAt)||Date.now());
+    p.live=true;p.simulation=true;
+    p.label=dlabel(p.date)+' • Shift '+p.shift+' • '+p.holder+' • SIMULASI';
+    return p;
+  }catch(_){return null}
+}
 function activeShift(){
+  var sim=simulationShift();if(sim)return sim;
   var idx=read(SHIFT_INDEX,[]);
   if(!Array.isArray(idx))idx=[];
   idx=idx.slice().filter(function(x){return x&&x.key&&String(x.key).indexOf(SHIFT_PREFIX)===0}).sort(function(a,b){return Number(b.ts||0)-Number(a.ts||0)});
@@ -464,7 +478,7 @@ function renderIdentity(){
     $('autoHolder').textContent=s.holder;
     $('autoShiftTime').textContent='Heartbeat terakhir '+new Date(s.savedAt).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     $('autoShiftStatus').className='status '+(s.live?'ok':'bad');
-    $('autoShiftStatus').textContent=s.live?'Shift aktif':'Shift tidak aktif';
+    $('autoShiftStatus').textContent=s.simulation?'SIMULASI AKTIF':(s.live?'Shift aktif':'Shift tidak aktif');
   }else{
     $('autoShift').textContent='Tidak ada shift aktif';
     $('autoHolder').textContent='—';
