@@ -99,7 +99,7 @@
       const stock=endRaw===''?num(p.stock):Math.max(0,num(endRaw));
       const base=num(p.activeBase??p.purchaseBase??p.openingBase??p.base);
       const sell=num(p.activeSell??p.sell);
-      setForm(forms,'pkgCheck'+(ix+1),stock);
+      setForm(forms,'pkgCheck'+(ix+1),'');
       setForm(forms,'pkgReason'+(ix+1),'');
       return {
         key:String(p.key||''),
@@ -117,8 +117,8 @@
       const warehouse=Math.max(0,num(x.warehouse)+num(x.purchaseQty)-moved);
       const base=num(x.activeBase??x.openingBase??x.base);
       const sell=num(x.sell);
-      setForm(forms,'cigDispCheck'+n,display);
-      setForm(forms,'cigWhCheck'+n,warehouse);
+      setForm(forms,'cigDispCheck'+n,'');
+      setForm(forms,'cigWhCheck'+n,'');
       setForm(forms,'cigReason'+n,'');
       setForm(forms,'move'+n,'0');
       return {
@@ -181,7 +181,8 @@
     const money=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 
     // 25 modal penutupan hari sebelumnya = NILAI SISTEM awal hari baru.
-    // Kolom koreksi hanya menjadi verifikasi dan default-nya sama persis dengan sistem.
+    // Untuk stok Paket/Rokok, kolom koreksi sengaja dikosongkan: stok sistem berasal dari closing kemarin,
+    // bukan dari nilai koreksi yang disuntikkan otomatis.
     try{
       if(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal)){
         openingPrevModal.forEach((x,ix)=>{
@@ -222,7 +223,7 @@
 
           const chk=document.getElementById('pkgCheck'+(ix+1));
           if(chk){
-            chk.value=String(stock);
+            chk.value='';
             const row=chk.closest('tr');
             if(row?.cells?.[2])row.cells[2].textContent=money(base);
             if(row?.cells?.[3])row.cells[3].innerHTML='<b>'+stock+'</b>';
@@ -260,13 +261,13 @@
           const dc=document.getElementById('cigDispCheck'+n);
           const wc=document.getElementById('cigWhCheck'+n);
           if(dc){
-            dc.value=String(display);
+            dc.value='';
             const row=dc.closest('tr');
             if(row?.cells?.[1])row.cells[1].textContent=money(base);
             if(row?.cells?.[2])row.cells[2].innerHTML='<b>'+display+'</b>';
             if(row?.cells?.[4])row.cells[4].innerHTML='<b>'+warehouse+'</b>';
           }
-          if(wc)wc.value=String(warehouse);
+          if(wc)wc.value='';
           const rs=document.getElementById('cigReason'+n);if(rs)rs.value='';
           const mv=document.getElementById('move'+n);if(mv)mv.value='0';
         });
