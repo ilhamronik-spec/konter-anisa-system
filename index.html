@@ -1936,13 +1936,20 @@ let openingCigPreviewSignature='';
 let openingPkgHardBlock=false;
 let openingCigHardBlock=false;
 
+function openingEffectiveNumber(id,fallback){
+  const el=document.getElementById(id);
+  const raw=String(el?.value??'').trim();
+  if(raw==='') return Math.max(0,Number(fallback)||0);
+  return Math.max(0,Number(raw)||0);
+}
+
 function getOpeningPkgStockSignature(){
-  return openingPkg.map((p,ix)=>String(Math.max(0,Number(document.getElementById('pkgCheck'+(ix+1)).value||0)))).join('|');
+  return openingPkg.map((p,ix)=>String(openingEffectiveNumber('pkgCheck'+(ix+1),p.stock))).join('|');
 }
 function getOpeningCigStockSignature(){
   return openingCig.map((c,ix)=>{
     const i=ix+1;
-    return Math.max(0,Number(document.getElementById('cigDispCheck'+i).value||0))+','+Math.max(0,Number(document.getElementById('cigWhCheck'+i).value||0));
+    return openingEffectiveNumber('cigDispCheck'+i,c.display)+','+openingEffectiveNumber('cigWhCheck'+i,c.warehouse);
   }).join('|');
 }
 function syncOpeningPreviewConfirmation(){
@@ -1962,7 +1969,7 @@ function previewOpeningPackageStock(){
   let hard=0, changed=0, rows='',shown=0;
   openingPkg.forEach((p,ix)=>{
     const i=ix+1;
-    const val=Math.max(0,Number(document.getElementById('pkgCheck'+i).value||0));
+    const val=openingEffectiveNumber('pkgCheck'+i,p.stock);
     const diff=val-p.stock;
 
     // Preview hanya item yang ada stok / ada perubahan.
@@ -2024,8 +2031,8 @@ function previewOpeningCigaretteStock(){
   let hard=0, changed=0, rows='',shown=0;
   openingCig.forEach((c,ix)=>{
     const i=ix+1;
-    const disp=Math.max(0,Number(document.getElementById('cigDispCheck'+i).value||0));
-    const wh=Math.max(0,Number(document.getElementById('cigWhCheck'+i).value||0));
+    const disp=openingEffectiveNumber('cigDispCheck'+i,c.display);
+    const wh=openingEffectiveNumber('cigWhCheck'+i,c.warehouse);
     const dd=disp-c.display;
     const dw=wh-c.warehouse;
 
@@ -2090,7 +2097,7 @@ function updateOpeningCorrections(){
   syncOpeningPreviewConfirmation();
 
   openingPkg.forEach((p,ix)=>{
-    const i=ix+1,input=document.getElementById('pkgCheck'+i),val=Math.max(0,Number(input.value||0)),diff=val-p.stock,
+    const i=ix+1,input=document.getElementById('pkgCheck'+i),val=openingEffectiveNumber('pkgCheck'+i,p.stock),diff=val-p.stock,
       reason=(document.getElementById('pkgReason'+i).value||'').trim(),row=input.closest('tr'),st=document.getElementById('pkgCheckStatus'+i),diffCell=document.getElementById('pkgDiff'+i);
     diffCell.textContent=(diff>0?'+':'')+diff;
     row.classList.remove('changed','invalid','hard-block-row');input.classList.remove('changed-input','ok-input','hard-block-input');
@@ -2108,7 +2115,7 @@ function updateOpeningCorrections(){
 
   openingCig.forEach((c,ix)=>{
     const i=ix+1,dispInput=document.getElementById('cigDispCheck'+i),whInput=document.getElementById('cigWhCheck'+i),
-      disp=Math.max(0,Number(dispInput.value||0)),wh=Math.max(0,Number(whInput.value||0)),dd=disp-c.display,dw=wh-c.warehouse,
+      disp=openingEffectiveNumber('cigDispCheck'+i,c.display),wh=openingEffectiveNumber('cigWhCheck'+i,c.warehouse),dd=disp-c.display,dw=wh-c.warehouse,
       reason=(document.getElementById('cigReason'+i).value||'').trim(),row=dispInput.closest('tr'),st=document.getElementById('cigCheckStatus'+i),diffCell=document.getElementById('cigDiff'+i);
     diffCell.textContent=(dd>0?'+':'')+dd+' / '+(dw>0?'+':'')+dw;
     row.classList.remove('changed','invalid','hard-block-row');dispInput.classList.remove('changed-input','ok-input','hard-block-input');whInput.classList.remove('changed-input','ok-input','hard-block-input');
@@ -2134,9 +2141,9 @@ function updateOpeningCorrections(){
     else{input.classList.add('ok-input');diffCell.classList.add('diff-zero');st.innerHTML='<span class="status ok">Sesuai</span>';}
   });
 
-  openingPkgHardBlock=openingPkg.some((p,ix)=>Math.max(0,Number(document.getElementById('pkgCheck'+(ix+1)).value||0))<p.stock);
+  openingPkgHardBlock=openingPkg.some((p,ix)=>openingEffectiveNumber('pkgCheck'+(ix+1),p.stock)<p.stock);
   openingCigHardBlock=openingCig.some((c,ix)=>{
-    const i=ix+1;return Math.max(0,Number(document.getElementById('cigDispCheck'+i).value||0))<c.display || Math.max(0,Number(document.getElementById('cigWhCheck'+i).value||0))<c.warehouse;
+    const i=ix+1;return openingEffectiveNumber('cigDispCheck'+i,c.display)<c.display || openingEffectiveNumber('cigWhCheck'+i,c.warehouse)<c.warehouse;
   });
   hardBlock=(openingPkgHardBlock?1:0)+(openingCigHardBlock?1:0);
   const hb=document.getElementById('openingHardBlockCount');if(hb){hb.textContent=hardBlock;hb.style.color=hardBlock?'var(--red)':'var(--green)';}
@@ -2702,7 +2709,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v41.js?build=80&fix=acccloud1"></script>
 <script src="./transactions-v42.js?build=80"></script>
 <script src="./transactions-v43.js?build=80&fix=weighted1"></script>
-<script src="./transactions-v50.js?build=80&fix=weighted1"></script>
+<script src="./transactions-v50.js?build=80&fix=rollover4"></script>
 <script src="./transactions-v51.js?build=80"></script>
 <script>
 /* Konter Anisa Day Rollover V1
@@ -2806,7 +2813,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       const stock=endRaw===''?num(p.stock):Math.max(0,num(endRaw));
       const base=num(p.activeBase??p.purchaseBase??p.openingBase??p.base);
       const sell=num(p.activeSell??p.sell);
-      setForm(forms,'pkgCheck'+(ix+1),stock);
+      setForm(forms,'pkgCheck'+(ix+1),'');
       setForm(forms,'pkgReason'+(ix+1),'');
       return {
         key:String(p.key||''),
@@ -2824,8 +2831,8 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       const warehouse=Math.max(0,num(x.warehouse)+num(x.purchaseQty)-moved);
       const base=num(x.activeBase??x.openingBase??x.base);
       const sell=num(x.sell);
-      setForm(forms,'cigDispCheck'+n,display);
-      setForm(forms,'cigWhCheck'+n,warehouse);
+      setForm(forms,'cigDispCheck'+n,'');
+      setForm(forms,'cigWhCheck'+n,'');
       setForm(forms,'cigReason'+n,'');
       setForm(forms,'move'+n,'0');
       return {
@@ -2888,7 +2895,8 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     const money=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 
     // 25 modal penutupan hari sebelumnya = NILAI SISTEM awal hari baru.
-    // Kolom koreksi hanya menjadi verifikasi dan default-nya sama persis dengan sistem.
+    // Untuk stok Paket/Rokok, kolom koreksi sengaja dikosongkan: stok sistem berasal dari closing kemarin,
+    // bukan dari nilai koreksi yang disuntikkan otomatis.
     try{
       if(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal)){
         openingPrevModal.forEach((x,ix)=>{
@@ -2929,7 +2937,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 
           const chk=document.getElementById('pkgCheck'+(ix+1));
           if(chk){
-            chk.value=String(stock);
+            chk.value='';
             const row=chk.closest('tr');
             if(row?.cells?.[2])row.cells[2].textContent=money(base);
             if(row?.cells?.[3])row.cells[3].innerHTML='<b>'+stock+'</b>';
@@ -2967,13 +2975,13 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
           const dc=document.getElementById('cigDispCheck'+n);
           const wc=document.getElementById('cigWhCheck'+n);
           if(dc){
-            dc.value=String(display);
+            dc.value='';
             const row=dc.closest('tr');
             if(row?.cells?.[1])row.cells[1].textContent=money(base);
             if(row?.cells?.[2])row.cells[2].innerHTML='<b>'+display+'</b>';
             if(row?.cells?.[4])row.cells[4].innerHTML='<b>'+warehouse+'</b>';
           }
-          if(wc)wc.value=String(warehouse);
+          if(wc)wc.value='';
           const rs=document.getElementById('cigReason'+n);if(rs)rs.value='';
           const mv=document.getElementById('move'+n);if(mv)mv.value='0';
         });
@@ -3071,7 +3079,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 })();
 
 </script>
-<script src="./transactions-v53.js?build=80&fix=weighted1"></script>
+<script src="./transactions-v53.js?build=80&fix=rollover4"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80"></script>
 <script src="./ui-clean-v74.js?build=80"></script>
