@@ -476,20 +476,28 @@
 
   function init(){
     const sim=!!window.KADayRolloverV1?.isSimulation?.();
-    if(!sim) syncCanonicalCatalogs();
-    resetDaySpecificDefaults();
+
+    // IMPORTANT: resetDaySpecificDefaults() is only for a genuinely new/non-simulation
+    // day. In simulation/reload mode, Day Rollover + V53 autosave own the state.
+    // Resetting here used to erase Belanja Rokok and every move# Display input
+    // before autosave/cloud recovery had a chance to restore them.
+    if(!sim){
+      syncCanonicalCatalogs();
+      resetDaySpecificDefaults();
+      try{
+        if(typeof openingPkgPreviewConfirmed!=='undefined') openingPkgPreviewConfirmed=false;
+        if(typeof openingCigPreviewConfirmed!=='undefined') openingCigPreviewConfirmed=false;
+        if(typeof openingPkgPreviewSignature!=='undefined') openingPkgPreviewSignature='';
+        if(typeof openingCigPreviewSignature!=='undefined') openingCigPreviewSignature='';
+        if(typeof openingApprovalState!=='undefined') openingApprovalState='none';
+      }catch(_){}
+    }
+
     hydratePackageOpeningUI(!sim);
     hydrateCigOpeningUI(!sim);
-    try{
-      if(typeof openingPkgPreviewConfirmed!=='undefined') openingPkgPreviewConfirmed=false;
-      if(typeof openingCigPreviewConfirmed!=='undefined') openingCigPreviewConfirmed=false;
-      if(typeof openingPkgPreviewSignature!=='undefined') openingPkgPreviewSignature='';
-      if(typeof openingCigPreviewSignature!=='undefined') openingCigPreviewSignature='';
-      if(typeof openingApprovalState!=='undefined') openingApprovalState='none';
-    }catch(_){}
     updateLabels();
     commitOpeningToCatalog();
-    refreshAllDisplay({resetMoves:true});
+    refreshAllDisplay({resetMoves:!sim});
     try{ if(typeof syncPkgBuy==='function') syncPkgBuy(); }catch(_){}
     try{ if(typeof syncCigBuy==='function') syncCigBuy(); }catch(_){}
     try{ if(typeof updateOpeningCorrections==='function') updateOpeningCorrections(); }catch(_){}
