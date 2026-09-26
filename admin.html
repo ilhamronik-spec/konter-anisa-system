@@ -82,7 +82,7 @@
 <section class="view" id="view-margin">
 <div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="minus">Selisih / Minus</button><button data-go="operational">Operasional</button></div>
 <div class="hero"><div><h2>Margin</h2><p>Rincian Margin per hari dan shift. Dashboard hanya menampilkan total keseluruhan.</p></div></div>
-<div class="card table-card"><div class="table-toolbar"><input class="input" id="marginSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="marginDate"><option value="">Semua tanggal</option></select><button class="btn" id="marginRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Margin</th><th>Balance</th><th>Update</th></tr></thead><tbody id="marginBody"></tbody></table></div></div>
+<div class="card table-card"><div class="table-toolbar"><input class="input" id="marginSearch" placeholder="Cari tanggal / pemegang / ID shift"><select class="select" id="marginDate"><option value="">Semua tanggal</option></select><button class="btn" id="marginRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Margin</th><th>Balance</th><th>Status Kirim</th><th>Update</th></tr></thead><tbody id="marginBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-minus">
@@ -254,8 +254,8 @@ function renderDashboard(){
   const attention=neg.slice().sort((x,y)=>Math.abs(Number(y.balance))-Math.abs(Number(x.balance))).slice(0,5);
   $('dashMinusList').innerHTML=attention.length?attention.map(x=>'<div class="summary-row"><span><b>'+esc(dateLabel(x.date))+' • '+esc(x.holder||'—')+'</b><br><small>'+esc(x.shift||'')+'</small></span><b class="red">'+fmt(Math.abs(x.balance))+(Math.abs(x.balance)>=BIG?' • BESAR':'')+'</b></div>').join(''):'<div class="notice green">Tidak ada shift minus pada data yang terekam.</div>';
 }
-function filtered(base,searchId,dateId){const q=String($(searchId)?.value||'').toLowerCase(),d=$(dateId)?.value||'';return base.filter(x=>(!d||x.date===d)&&(!q||[x.date,x.holder,x.shift,x.shiftLabel].join(' ').toLowerCase().includes(q)))}
-function renderMargin(){const s=summaries();fillDates('marginDate',datesFrom(s));const a=filtered(s,'marginSearch','marginDate');$('marginBody').innerHTML=a.length?a.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money green"><b>'+fmt(x.margin)+'</b></td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td><td>'+when(x.savedAt)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'}
+function filtered(base,searchId,dateId){const q=String($(searchId)?.value||'').toLowerCase(),d=$(dateId)?.value||'';return base.filter(x=>(!d||x.date===d)&&(!q||[x.date,x.holder,x.shift,x.shiftLabel,x.shiftId].join(' ').toLowerCase().includes(q)))}
+function renderMargin(){const s=summaries();fillDates('marginDate',datesFrom(s));const a=filtered(s,'marginSearch','marginDate');$('marginBody').innerHTML=a.length?a.map(x=>{const sent=x.submissionStatus==='submitted';const st=sent?'<span class="status ok">TERKIRIM</span><div style="font-size:10px;color:var(--muted);margin-top:4px">'+when(x.submittedAt)+'</div>':'<span class="status info">DRAFT / AUTOSAVE</span>';return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money green"><b>'+fmt(x.margin)+'</b></td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td><td>'+st+'</td><td>'+when(x.savedAt)+'</td></tr>'}).join(''):'<tr><td colspan="7" class="empty">Belum ada data.</td></tr>'}
 function renderMinus(){const s=summaries().filter(x=>Number(x.balance||0)<0);fillDates('minusDate',datesFrom(s));const a=filtered(s,'minusSearch','minusDate');$('minusBody').innerHTML=a.length?a.map(x=>{const c=corrForShift(x.shiftId);return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money red"><b>'+fmt(Math.abs(x.balance))+'</b></td><td>'+(Math.abs(x.balance)>=BIG?'<span class="status bad">MINUS BESAR</span>':'<span class="status warn">Minus</span>')+'</td><td>'+corrBadge(c)+'</td></tr>'}).join(''):'<tr><td colspan="6" class="empty">Tidak ada data minus.</td></tr>'}
 function renderOp(){const s=summaries();fillDates('opDate',datesFrom(s));const a=filtered(s,'opSearch','opDate');$('opBody').innerHTML=a.length?a.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money"><b>'+fmt(x.operational)+'</b></td><td class="money green">'+fmt(x.margin)+'</td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'}
 
@@ -639,14 +639,23 @@ function show(v){
   $('side').classList.remove('mobile-open');
 }
 function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',renderAll);window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
-function init(){bind();renderAll()}
+function init(){
+  bind();renderAll();
+  const q=new URLSearchParams(location.search),view=String(q.get('view')||''),shiftId=String(q.get('shift')||'');
+  const allowed=new Set(['dashboard','margin','minus','operational','capital','debt','purchases','review','attendance','accounts','reports','audit']);
+  if(allowed.has(view))show(view);
+  if(shiftId){
+    if(view==='margin'||!view){$('marginSearch').value=shiftId;renderMargin();if(!view)show('margin')}
+    else if(view==='review'){$('reviewSearch').value=shiftId;renderReview()}
+  }
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
 <script src="./admin-lock-v3.js?build=3&fix=purchase1"></script>
 <script>
 setTimeout(function(){
-  import('./shared-db-v1.js?build=4').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+  import('./shared-db-v1.js?build=7').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
 </body>
