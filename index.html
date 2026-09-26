@@ -3332,6 +3332,7 @@ function snapshot(){
     const op=window.KABalanceV44.piutangBreakdown?.()?.operasional??window.KABalanceV44.operationalTotal?.()??0;
     const debt=coreDebtSnapshot(),modal=modalBreakdown();
     const map=read(SUM,{});
+    const prev=map[s.id]||{};
     map[s.id]={
       shiftId:s.id,shiftLabel:s.label,date:s.date,shift:s.shift,holder:s.holder,
       margin:Number(b.margin||0),balance:Number(b.balance||0),minus:Math.min(0,Number(b.balance||0)),
@@ -3339,7 +3340,11 @@ function snapshot(){
       modalOpening:Number(b.opening||0),modalClosing:Number(b.closing||0),
       modalChange:Number(b.closing||0)-Number(b.opening||0),
       piutangOpening:Number(b.piutangAwal||0),piutangClosing:Number(b.piutangAkhir||0),
-      modalBreakdown:modal,debtEntries:debt.debts,paymentEntries:debt.payments,stockMovement:stockMovementSnapshot(),operationalEntries:operationalSnapshot()
+      modalBreakdown:modal,debtEntries:debt.debts,paymentEntries:debt.payments,stockMovement:stockMovementSnapshot(),operationalEntries:operationalSnapshot(),
+      submissionStatus:String(prev.submissionStatus||'draft'),
+      submittedAt:prev.submittedAt||null,
+      submittedBy:prev.submittedBy||null,
+      submissionRevision:Number(prev.submissionRevision||0)
     };
     write(SUM,map);
   }catch(e){console.warn('Admin summary snapshot skipped',e)}
@@ -3376,9 +3381,10 @@ function install(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
+<script src="./final-submit-v1.js?build=1"></script>
 <script>
 setTimeout(function(){
-  import('./shared-db-v1.js?build=6').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+  import('./shared-db-v1.js?build=7').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
 </body>
