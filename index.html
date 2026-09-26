@@ -1060,12 +1060,23 @@ function calcPkgBuy(){
  syncPkgEndRow(i+1);
 }
 function syncPkgEndRow(i){
- const p=pkgCatalog[i-1],avail=p.stock+(p.purchaseQty||0),end=document.getElementById('pkgEnd'+i),oldAvail=Number(document.getElementById('pkgAvail'+i).textContent||0);
- const wasAtAvail=false;
- document.getElementById('pkgBuyQty'+i).textContent=p.purchaseQty?('+'+p.purchaseQty):'0';document.getElementById('pkgAvail'+i).textContent=avail;
- document.getElementById('pkgBase'+i).textContent=fmt(p.activeBase);document.getElementById('pkgSellOut'+i).textContent=fmt(p.activeSell);
- end.max=avail;if(wasAtAvail)end.value=avail;calcPkgEnd(i);
+ const p=Array.isArray(pkgCatalog)?pkgCatalog[i-1]:null;
+ if(!p)return;
+ const avail=Number(p.stock||0)+Number(p.purchaseQty||0);
+ const end=document.getElementById('pkgEnd'+i);
+ const buyQty=document.getElementById('pkgBuyQty'+i);
+ const availEl=document.getElementById('pkgAvail'+i);
+ const baseEl=document.getElementById('pkgBase'+i);
+ const sellOut=document.getElementById('pkgSellOut'+i);
+ if(buyQty)buyQty.textContent=p.purchaseQty?('+'+p.purchaseQty):'0';
+ if(availEl)availEl.textContent=String(avail);
+ if(baseEl)baseEl.textContent=fmt(Number(p.activeBase??p.base??0));
+ if(sellOut)sellOut.textContent=fmt(Number(p.activeSell??p.sell??0));
+ if(end){end.max=String(avail);if(typeof calcPkgEnd==='function')calcPkgEnd(i);}
 }
+window.syncPkgBuy=syncPkgBuy;
+window.calcPkgBuy=calcPkgBuy;
+
 function calcPkgEnd(i){
   const p=pkgCatalog[i-1],avail=p.stock+(p.purchaseQty||0),el=document.getElementById('pkgEnd'+i);
   const raw=String(el?.value??'').trim();
@@ -2508,7 +2519,7 @@ function dispatchUiAction(action,el){
       console.warn('UI action belum dipetakan:',cmd);
     }catch(err){
       console.error('UI action gagal:',cmd,err);
-      uiToast('Terjadi error pada aksi: '+cmd,'bad');
+      uiToast('Terjadi error pada aksi: '+cmd+(err&&err.message?' • '+err.message:''),'bad');
     }
   }
 }
@@ -3118,7 +3129,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 })();
 
 </script>
-<script src="./transactions-v53.js?build=80&fix=sim24sync1"></script>
+<script src="./transactions-v53.js?build=80&fix=sim24stock2"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80"></script>
 <script src="./ui-clean-v74.js?build=80"></script>
