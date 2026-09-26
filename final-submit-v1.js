@@ -40,8 +40,8 @@
   }
 
   function completeState(){
-    const b=balanceState();
-    return !!(b&&b.complete&&b.pkgComplete&&b.cigComplete);
+    const value=$('v44BalanceValue');
+    return !!(value && !/BELUM\s+BISA\s+DIHITUNG/i.test(String(value.textContent||'')));
   }
 
   function adminUrl(){
@@ -58,13 +58,13 @@
     el.innerHTML=text;
   }
 
-  function markSubmitted(){
+  function markSubmitted(balance){
     const s=shiftContext();
     if(!s.id)throw new Error('ID shift tidak ditemukan.');
     const map=read(SUM,{})||{};
     const rec=map[s.id];
     if(!rec)throw new Error('Snapshot Admin belum terbentuk. Klik Hitung Ulang Balance lalu coba lagi.');
-    const b=balanceState();
+    const b=balance||{};
     const now=new Date().toISOString();
     map[s.id]={
       ...rec,
@@ -84,7 +84,8 @@
   async function submitFinal(){
     const btn=$('kaSubmitFinalBtn');
     try{
-      if(!completeState()){
+      const finalBalance=balanceState();
+      if(!(finalBalance&&finalBalance.complete&&finalBalance.pkgComplete&&finalBalance.cigComplete)){
         setStatus('<b>Belum dapat dikirim.</b> Lengkapi Stok Akhir Paket, Stok Akhir Rokok, dan seluruh 25 Modal Inputan terlebih dahulu.','bad');
         return;
       }
@@ -97,7 +98,7 @@
       // Snapshot bridge memakai DOM live; beri satu tick agar summary lokal sudah tersedia.
       await new Promise(r=>setTimeout(r,80));
       try{window.KAAdminBridgeV1?.snapshot?.()}catch(_){}
-      const rec=markSubmitted();
+      const rec=markSubmitted(finalBalance);
 
       setStatus('<b>TERSIMPAN KE ADMIN.</b> Balance '+fmt(rec.balance)+' • Margin '+fmt(rec.margin)+'. Menyinkronkan database…','ok');
 
