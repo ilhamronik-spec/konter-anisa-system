@@ -1379,6 +1379,7 @@ function confirmPackagePurchase(){
   pkgBuyConfirmed=true;
   setBuyConfirmVisual('pkg',true);
   updateBuyNextState();
+  try{window.KAAutosaveV53?.save?.();}catch(_){}
   box.classList.remove('open');
   box.style.display='none';
   if(location.hash==='#pkgPurchasePreview') history.replaceState(null,'',location.pathname+location.search);
@@ -1481,6 +1482,7 @@ function confirmCigarettePurchase(){
   cigBuyConfirmed=true;
   setBuyConfirmVisual('cig',true);
   updateBuyNextState();
+  try{window.KAAutosaveV53?.save?.();}catch(_){}
   box.classList.remove('open');
   box.style.display='none';
   if(location.hash==='#cigPurchasePreview') history.replaceState(null,'',location.pathname+location.search);
