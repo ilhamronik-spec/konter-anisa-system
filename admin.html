@@ -168,10 +168,10 @@
 <div class="group-tabs" data-tabgroup="people"><button data-go="attendance">Kehadiran</button><button data-go="accounts">Akun & Role</button></div>
 <div class="hero"><div><h2>Akun & Role</h2><p>Role tidak melekat pada nama orang. Admin dapat menambah akun, mengubah role, atau menonaktifkan akun.</p></div></div>
 <div class="grid two">
-<div class="card section-card"><h3>Tambah / Ubah Akun</h3><div class="form-grid"><div class="field"><label>Nama</label><input class="input" id="accName" placeholder="Nama pengguna"></div><div class="field"><label>Role</label><select class="select" id="accRole"><option value="employee">Karyawan</option><option value="purchasing">Purchasing</option><option value="admin">Admin</option><option value="owner">Owner</option></select></div></div><div class="actions" style="margin-top:12px"><button class="btn purple" id="accAdd">Tambah Akun</button></div></div>
+<div class="card section-card"><h3>Tambah Akun Login</h3><div class="form-grid"><div class="field"><label>Nama</label><input class="input" id="accName" placeholder="Contoh: Rifda"></div><div class="field"><label>Username</label><input class="input" id="accUsername" placeholder="contoh: rifda" autocomplete="off"></div><div class="field"><label>Password Sementara</label><input class="input" id="accPassword" type="password" minlength="8" placeholder="Minimal 8 karakter" autocomplete="new-password"></div><div class="field"><label>Role</label><select class="select" id="accRole"><option value="employee">Karyawan</option><option value="purchasing">Purchasing</option><option value="admin">Admin</option><option value="owner">Owner</option></select></div></div><div class="actions" style="margin-top:12px"><button class="btn purple" id="accAdd">Buat Akun Login</button><span class="status info">Password disimpan oleh Supabase Auth</span></div></div>
 <div class="card section-card"><h3>Prinsip Role</h3><div class="summary-list"><div class="summary-row"><span>Karyawan</span><b>Input operasional & shift</b></div><div class="summary-row"><span>Purchasing</span><b>Nota pembelian</b></div><div class="summary-row"><span>Admin</span><b>Monitoring, review, akun</b></div><div class="summary-row"><span>Owner</span><b>Akses pemilik</b></div></div></div>
 </div>
-<div class="card table-card" style="margin-top:15px"><div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Role</th><th>Status</th><th>ID</th><th>Aksi</th></tr></thead><tbody id="accountBody"></tbody></table></div></div>
+<div class="card table-card" style="margin-top:15px"><div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="accountBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-archive">
@@ -533,10 +533,76 @@ function renderReview(){
   document.querySelectorAll('[data-resolve]').forEach(b=>b.onclick=()=>resolveCorrection(b.dataset.resolve));
 }
 function renderAttendance(){const a=activeAttendance();fillDates('attDate',datesFrom(a));const q=String($('attSearch').value||'').toLowerCase(),d=$('attDate').value,rows=a.filter(x=>(!d||x.date===d)&&(!q||String(x.employeeName||'').toLowerCase().includes(q)));$('attBody').innerHTML=rows.length?rows.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td><b>'+esc(x.employeeName||'—')+'</b></td><td>'+esc(x.shiftLabel||'—')+'</td><td>'+time(x.checkIn)+'</td><td>'+time(x.checkOut)+'</td><td>'+(x.checkOut?'<span class="status ok">Selesai</span>':x.checkIn?'<span class="status info">Sudah Masuk</span>':'<span class="status warn">Belum Masuk</span>')+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data absensi.</td></tr>'}
-function renderAccounts(){const a=window.KAAdminAccounts?.list?.()||[];$('accountBody').innerHTML=a.length?a.map(x=>'<tr><td><b>'+esc(x.name)+'</b></td><td><select class="select" data-role-id="'+esc(x.id)+'"><option value="employee"'+(x.role==='employee'?' selected':'')+'>Karyawan</option><option value="purchasing"'+(x.role==='purchasing'?' selected':'')+'>Purchasing</option><option value="admin"'+(x.role==='admin'?' selected':'')+'>Admin</option><option value="owner"'+(x.role==='owner'?' selected':'')+'>Owner</option></select></td><td>'+(x.active?'<span class="status ok">Aktif</span>':'<span class="status bad">Nonaktif</span>')+'</td><td style="font-size:10px">'+esc(x.id)+'</td><td><button class="btn '+(x.active?'danger':'')+'" data-toggle-id="'+esc(x.id)+'" data-active="'+(x.active?'1':'0')+'">'+(x.active?'Nonaktifkan':'Aktifkan')+'</button></td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada akun.</td></tr>';document.querySelectorAll('[data-role-id]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.roleId,sel.value));document.querySelectorAll('[data-toggle-id]').forEach(b=>b.onclick=()=>toggleAccount(b.dataset.toggleId,b.dataset.active==='1'))}
-function changeRole(id,role){const a=window.KAAdminAccounts?.list?.()||[],rec=a.find(x=>x.id===id);if(!rec)return;window.KAAdminAccounts.upsertFromAdmin({...rec,role});renderAccounts();renderIdentity()}
-function toggleAccount(id,active){const a=window.KAAdminAccounts?.list?.()||[],rec=a.find(x=>x.id===id);if(!rec)return;window.KAAdminAccounts.upsertFromAdmin({...rec,active:!active});renderAccounts();renderIdentity()}
-function addAccount(){const name=String($('accName').value||'').trim(),role=$('accRole').value;if(!name)return alert('Nama akun wajib diisi.');window.KAAdminAccounts.upsertFromAdmin({id:'acct-'+role+'-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+Date.now(),name,role,active:true});$('accName').value='';renderAccounts()}
+let serverProfiles=[];
+function mirrorServerProfile(p){
+  if(!p||!window.KAAdminAccounts?.list||!window.KAAdminAccounts?.replaceFromAdmin)return;
+  const list=window.KAAdminAccounts.list(),name=String(p.display_name||p.username||'').trim(),id=String(p.id||'');
+  let ix=list.findIndex(x=>String(x.id)===id);
+  if(ix<0)ix=list.findIndex(x=>String(x.name||'').trim().toLowerCase()===name.toLowerCase());
+  const rec={id,name,role:String(p.role||'employee'),active:p.active!==false,source:'admin'};
+  if(ix>=0)list[ix]=rec;else list.push(rec);
+  window.KAAdminAccounts.replaceFromAdmin(list);
+}
+async function refreshServerAccounts(){
+  if(!window.KAAuthV1?.adminCall)return false;
+  try{
+    const r=await window.KAAuthV1.adminCall('list');
+    serverProfiles=Array.isArray(r?.profiles)?r.profiles:[];
+    serverProfiles.forEach(mirrorServerProfile);
+    renderAccounts();
+    return true;
+  }catch(e){
+    console.warn('Gagal memuat akun login server',e);
+    return false;
+  }
+}
+function renderAccounts(){
+  const a=serverProfiles.length?serverProfiles:(window.KAAdminAccounts?.list?.()||[]).map(x=>({id:x.id,display_name:x.name,username:'legacy',role:x.role,active:x.active,legacy:true}));
+  $('accountBody').innerHTML=a.length?a.map(x=>{
+    const name=x.display_name||x.name||'—',self=String(window.KA_AUTH_PROFILE?.id||'')===String(x.id||'');
+    return '<tr><td><b>'+esc(name)+'</b>'+(self?'<div style="font-size:10px;color:var(--muted)">Akun sedang login</div>':'')+'</td><td><b>'+esc(x.username||'legacy')+'</b></td><td><select class="select" data-role-id="'+esc(x.id)+'"'+(x.legacy?' disabled':'')+'><option value="employee"'+(x.role==='employee'?' selected':'')+'>Karyawan</option><option value="purchasing"'+(x.role==='purchasing'?' selected':'')+'>Purchasing</option><option value="admin"'+(x.role==='admin'?' selected':'')+'>Admin</option><option value="owner"'+(x.role==='owner'?' selected':'')+'>Owner</option></select></td><td>'+(x.active!==false?'<span class="status ok">Aktif</span>':'<span class="status bad">Nonaktif</span>')+(x.legacy?'<div style="font-size:10px;color:var(--muted)">Belum punya login server</div>':'')+'</td><td><div class="actions">'+(x.legacy?'<span class="status warn">Buat akun login</span>':'<button class="btn '+(x.active!==false?'danger':'')+'" data-toggle-id="'+esc(x.id)+'" data-active="'+(x.active!==false?'1':'0')+'"'+(self?' disabled title="Akun yang sedang dipakai tidak dapat dinonaktifkan"':'')+'>'+(x.active!==false?'Nonaktifkan':'Aktifkan')+'</button><button class="btn" data-reset-id="'+esc(x.id)+'">Reset Password</button>')+'</div></td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">Belum ada akun.</td></tr>';
+  document.querySelectorAll('[data-role-id]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.roleId,sel.value));
+  document.querySelectorAll('[data-toggle-id]').forEach(b=>b.onclick=()=>toggleAccount(b.dataset.toggleId,b.dataset.active==='1'));
+  document.querySelectorAll('[data-reset-id]').forEach(b=>b.onclick=()=>resetPassword(b.dataset.resetId));
+}
+async function changeRole(id,role){
+  const old=serverProfiles.find(x=>String(x.id)===String(id));if(!old)return;
+  try{
+    const r=await window.KAAuthV1.adminCall('update',{id,role});
+    const ix=serverProfiles.findIndex(x=>String(x.id)===String(id));if(ix>=0)serverProfiles[ix]={...old,...r.profile};
+    mirrorServerProfile(serverProfiles[ix]);renderAccounts();renderIdentity();
+  }catch(e){alert('Gagal mengubah role: '+String(e?.message||e));renderAccounts()}
+}
+async function toggleAccount(id,active){
+  const old=serverProfiles.find(x=>String(x.id)===String(id));if(!old)return;
+  try{
+    const r=await window.KAAuthV1.adminCall('update',{id,active:!active});
+    const ix=serverProfiles.findIndex(x=>String(x.id)===String(id));if(ix>=0)serverProfiles[ix]={...old,...r.profile};
+    mirrorServerProfile(serverProfiles[ix]);renderAccounts();renderIdentity();
+  }catch(e){alert('Gagal mengubah status akun: '+String(e?.message||e))}
+}
+async function resetPassword(id){
+  const p=prompt('Masukkan password baru minimal 8 karakter. Password tidak akan disimpan di halaman Admin.','');
+  if(p===null)return;
+  if(String(p).length<8)return alert('Password minimal 8 karakter.');
+  try{await window.KAAuthV1.adminCall('reset_password',{id,password:String(p)});alert('Password berhasil diperbarui.')}catch(e){alert('Reset password gagal: '+String(e?.message||e))}
+}
+async function addAccount(){
+  const name=String($('accName').value||'').trim(),username=String($('accUsername').value||'').trim().toLowerCase(),password=String($('accPassword').value||''),role=$('accRole').value;
+  if(!name||!username)return alert('Nama dan username wajib diisi.');
+  if(!/^[a-z0-9][a-z0-9._-]{2,39}$/.test(username))return alert('Username minimal 3 karakter dan hanya boleh huruf kecil, angka, titik, garis bawah, atau strip.');
+  if(password.length<8)return alert('Password sementara minimal 8 karakter.');
+  $('accAdd').disabled=true;
+  try{
+    const r=await window.KAAuthV1.adminCall('create',{username,password,display_name:name,role,must_change_password:false});
+    serverProfiles.push(r.profile);mirrorServerProfile(r.profile);
+    $('accName').value='';$('accUsername').value='';$('accPassword').value='';
+    renderAccounts();
+    alert('Akun login '+name+' berhasil dibuat.');
+  }catch(e){alert('Gagal membuat akun: '+String(e?.message||e))}
+  finally{$('accAdd').disabled=false}
+}
 let returnShiftId='';
 function openReturn(id){const x=summaries().find(s=>s.shiftId===id);if(!x)return;returnShiftId=id;{const bal=Number(x.balance||0),cls=bal<0?'red':'amber',prefix=bal<0?'MINUS':'PLUS / BERLEBIH';$('returnInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'')+' • '+esc(x.holder||'')+'</b><br>'+prefix+': <b class="'+cls+'">'+fmt(Math.abs(bal))+'</b>';}$('returnReason').value='';$('returnModal').classList.add('open')}
 function submitReturn(){const reason=String($('returnReason').value||'').trim();if(!reason)return alert('Alasan/temuan Admin wajib diisi.');const x=summaries().find(s=>s.shiftId===returnShiftId);if(!x)return;const arr=corrections(),id='corr-'+Date.now();arr.push({id,shiftId:x.shiftId,shiftLabel:x.shiftLabel,date:x.date,shift:x.shift,employeeName:x.holder,employeeId:(window.KAAdminAccounts?.activeByRole?.('employee')||[]).find(a=>a.name===x.holder)?.id||'',reason,status:'returned',snapshot:{margin:x.margin,balance:x.balance,operational:x.operational},requestedAt:new Date().toISOString(),requestedBy:adminUser()?.name||'Admin'});write(CORR,arr);$('returnModal').classList.remove('open');renderReview();renderMinus()}
@@ -709,9 +775,9 @@ function show(v){
   $('crumbView').textContent=crumbs[v]||v;
   $('side').classList.remove('mobile-open');
 }
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',renderAll);window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',renderAll);window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',()=>{renderAll();refreshServerAccounts()});window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){
-  bind();renderAll();
+  bind();renderAll();refreshServerAccounts();
   const q=new URLSearchParams(location.search),view=String(q.get('view')||''),shiftId=String(q.get('shift')||'');
   const allowed=new Set(['dashboard','margin','minus','operational','capital','debt','purchases','review','attendance','accounts','archive','reports','audit']);
   if(allowed.has(view))show(view);
