@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" class="ka-auth-pending">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="ka-build" content="83">
-<title>Konter Anisa — Portal Purchasing</title>
+<title>Konter Anisa — Portal Purchasing</title>\n<style>html.ka-auth-pending body{visibility:hidden}</style>
 <style>
 :root{--ink:#17131d;--muted:#746d80;--line:#e9e3ef;--bg:#f8f7fb;--purple:#8b5cf6;--green:#15945f;--amber:#d97706;--red:#d9363e;--shadow:0 12px 34px rgba(67,35,92,.09)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent 28%),#f8f7fb;color:var(--ink)}button,input,select{font:inherit}
@@ -399,6 +399,8 @@ body{
 <div class="toast info" id="toast"></div>
 
 <script src="./account-master-v59.js?build=80"></script>
+<script src="./auth-client-v1.js?build=80"></script>
+<script>window.KAAuthV1.requireRole(['purchasing','admin','owner']);</script>
 <script>
 (function(){
 'use strict';
@@ -418,6 +420,8 @@ function used(){var x=read(USED_KEY,{});return x&&typeof x==='object'?x:{}}
 function accounts(role){try{return window.KAAdminAccounts&&window.KAAdminAccounts.activeByRole?window.KAAdminAccounts.activeByRole(role):[]}catch(_){return []}}
 function sessionRecord(){return read(AUTH_KEY,null)||read(SESSION_KEY,null)||null}
 function currentUser(){
+  var p=window.KA_AUTH_PROFILE;
+  if(p&&p.active!==false&&['purchasing','admin','owner'].includes(String(p.role||'')))return {id:String(p.id),name:String(p.display_name||p.username||'Purchasing'),role:String(p.role)};
   var list=accounts('purchasing'),s=sessionRecord(),id=String((s&&s.accountId)||'');
   var found=list.find(function(a){return a.id===id});
   if(found)return found;
