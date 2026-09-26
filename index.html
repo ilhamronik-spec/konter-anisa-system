@@ -247,7 +247,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <div class="side-foot"><div style="font-size:11px;color:#c9d6e5;font-weight:700">Interactive Preview</div><div style="font-size:10px;color:#8194ad;margin-top:4px">Opening dari stok akhir sheet 17 • input uji tanggal 18 • belum terhubung database</div></div>
 </aside>
 <main class="main">
-<div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn" type="button">☰</button> <span class="crumb">Perhitungan Harian / 18 September 2026 <span class="status info" style="margin-left:8px">UI V28 — LIVE STOCK CALC • ROLLOVER FIX 3</span></span></div><div class="user"><div style="text-align:right"><b style="font-size:12px">Rifda</b><div style="font-size:10px;color:var(--muted)">Karyawan • Full</div></div><div class="avatar">RF</div></div></div>
+<div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn" type="button">☰</button> <span class="crumb">Perhitungan Harian / 18 September 2026 <span class="status info" style="margin-left:8px">UI V28 — LIVE STOCK CALC • ROLLOVER FIX 5</span></span></div><div class="user"><div style="text-align:right"><b style="font-size:12px">Rifda</b><div style="font-size:10px;color:var(--muted)">Karyawan • Full</div></div><div class="avatar">RF</div></div></div>
 <div class="content">
 <div class="hero"><div><h2>Perhitungan Harian</h2><p>Alur operasional karyawan dari data awal sampai Modal Inputan.</p></div><div class="actions"><span class="pill green">● Dalam Jam Kerja</span><span class="pill blue">Pemegang: Rifda</span></div></div>
 <div class="grid kpis"><div class="card kpi"><small>Jadwal</small><strong>Full</strong><div>06:00–23:00</div></div><div class="card kpi"><small>Status Hitungan</small><strong>Sedang Berjalan</strong><div>Dibuka 06:08 WIB</div></div><div class="card kpi"><small>Koreksi Pending</small><strong>0</strong><div>Tidak ada blokir</div></div><div class="card kpi"><small>Progress</small><strong id="progressText">1 / 10</strong><div>Sampai Modal Inputan</div></div></div>
@@ -988,16 +988,60 @@ function renamePkgBuy(){
  if(typeof markPackageDirty==='function')markPackageDirty();
  if(window.KAAutosaveV53?.save)window.KAAutosaveV53.save();
 }
+function renderPkgBuyEditor(i,p,q,purchaseBase,sell,activeBase){
+ const openingStock=Math.max(0,Number(p?.stock||0));
+ const openingBase=Number(p?._openingBase??p?.base??0);
+ const margin=Number(sell||0)-Number(activeBase||0);
+ const basePreview=document.getElementById('pkgBasePreview');
+ const after=document.getElementById('pkgAfter');
+ const cost=document.getElementById('pkgCost');
+ const unitMargin=document.getElementById('pkgUnitMargin');
+ const box=document.getElementById('marginBox');
+ const status=document.getElementById('pkgMarginStatus');
+ const notice=document.getElementById('pkgMarginNotice');
+ if(basePreview)basePreview.value=Math.round(Number(activeBase)||0).toLocaleString('id-ID');
+ if(after)after.textContent=(openingStock+Number(q||0))+' unit';
+ if(cost)cost.textContent=fmt(Number(q||0)*Number(purchaseBase||0));
+ if(unitMargin)unitMargin.textContent=fmt(margin);
+ const bad=Number(q||0)>0&&margin<1000;
+ if(box)box.className='calcbox '+(bad?'bad':'good');
+ if(status){status.textContent=bad?'BLOKIR < Rp1.000':'AMAN ≥ Rp1.000';status.style.color=bad?'var(--red)':'var(--green)';}
+ if(notice){
+   notice.className='notice '+(bad?'red':'amber');
+   notice.textContent=bad
+     ? 'Margin rata-rata per unit kurang dari Rp1.000. Naikkan Harga Jual sebelum konfirmasi.'
+     : 'Weighted average aktif: harga beli baru '+fmt(purchaseBase)+' digabung dengan modal stok lama menjadi modal aktif '+fmt(activeBase)+'.';
+ }
+ const buyQty=document.getElementById('pkgBuyQty'+(i+1));
+ const availEl=document.getElementById('pkgAvail'+(i+1));
+ const baseEl=document.getElementById('pkgBase'+(i+1));
+ const sellOut=document.getElementById('pkgSellOut'+(i+1));
+ const endEl=document.getElementById('pkgEnd'+(i+1));
+ const avail=openingStock+Number(q||0);
+ if(buyQty)buyQty.textContent=Number(q||0)?('+'+Number(q||0)):'0';
+ if(availEl)availEl.textContent=String(avail);
+ if(baseEl)baseEl.textContent=fmt(Number(activeBase)||0);
+ if(sellOut)sellOut.textContent=fmt(Number(sell)||0);
+ if(endEl)endEl.max=String(avail);
+}
+
 function syncPkgBuy(){
- if(syncPkgBuy.__running)return;
- syncPkgBuy.__running=true;
+ if(window.__kaPkgSyncBusy)return;
+ window.__kaPkgSyncBusy=true;
  try{
    const typeEl=document.getElementById('pkgBuyType');
    if(!typeEl||typeof pkgCatalog==='undefined'||!Array.isArray(pkgCatalog))return;
-   const i=Math.max(0,Number(typeEl.value||0)),p=pkgCatalog[i];
+   const i=Math.max(0,Math.min(pkgCatalog.length-1,Number(typeEl.value||0))),p=pkgCatalog[i];
    if(!p)return;
    const openingStock=Math.max(0,Number(p.stock||0));
    const openingBase=Number(p._openingBase??p.base??0);
+   const q=Math.max(0,Number(p.purchaseQty||0));
+   const purchaseBase=Math.max(0,Number(p.purchaseBase??openingBase)||0);
+   const sell=Math.max(0,Number(p.activeSell??p.sell??0)||0);
+   const totalUnits=openingStock+q;
+   const activeBase=totalUnits>0?((openingStock*openingBase)+(q*purchaseBase))/totalUnits:openingBase;
+   p.activeBase=Number.isFinite(activeBase)?activeBase:openingBase;
+
    const nameEdit=document.getElementById('pkgNameEdit');
    const oldStock=document.getElementById('pkgOldStock');
    const oldBase=document.getElementById('pkgOldBase');
@@ -1005,39 +1049,28 @@ function syncPkgBuy(){
    const qtyEl=document.getElementById('pkgQty');
    const buyBaseEl=document.getElementById('pkgNewBase');
    if(nameEdit)nameEdit.value=String(p.name||'');
-   refreshPkgNameRow(i);
    if(oldStock)oldStock.value=String(openingStock);
    if(oldBase)oldBase.value=Math.round(openingBase).toLocaleString('id-ID');
-   if(sellEl){
-     if(typeof setMoneyInput==='function')setMoneyInput(sellEl,Number(p.activeSell??p.sell??0));
-     else sellEl.value=Math.round(Number(p.activeSell??p.sell??0)).toLocaleString('id-ID');
-   }
-   if(qtyEl)qtyEl.value=String(Number(p.purchaseQty||0));
-   if(buyBaseEl){
-     const purchaseBase=Number(p.purchaseBase??openingBase);
-     if(typeof setMoneyInput==='function')setMoneyInput(buyBaseEl,purchaseBase);
-     else buyBaseEl.value=Math.round(purchaseBase).toLocaleString('id-ID');
-   }
-   calcPkgBuy();
+   if(sellEl)setMoneyInput(sellEl,sell);
+   if(qtyEl)qtyEl.value=String(q);
+   if(buyBaseEl)setMoneyInput(buyBaseEl,purchaseBase);
+   renderPkgBuyEditor(i,p,q,purchaseBase,sell,p.activeBase);
  }finally{
-   syncPkgBuy.__running=false;
+   window.__kaPkgSyncBusy=false;
  }
 }
+
 function calcPkgBuy(){
- if(calcPkgBuy.__running)return;
- calcPkgBuy.__running=true;
+ if(window.__kaPkgCalcBusy)return;
+ window.__kaPkgCalcBusy=true;
  try{
    const typeEl=document.getElementById('pkgBuyType');
    if(!typeEl||typeof pkgCatalog==='undefined'||!Array.isArray(pkgCatalog))return;
-   const i=Math.max(0,Number(typeEl.value||0)),p=pkgCatalog[i];
+   const i=Math.max(0,Math.min(pkgCatalog.length-1,Number(typeEl.value||0))),p=pkgCatalog[i];
    if(!p)return;
    const qtyEl=document.getElementById('pkgQty'),buyBaseEl=document.getElementById('pkgNewBase'),sellEl=document.getElementById('pkgSell');
    const q=Math.max(0,Number(qtyEl?.value||0));
-   const readMoney=el=>{
-     if(!el)return 0;
-     if(typeof moneyValue==='function')return Math.max(0,Number(moneyValue(el))||0);
-     return Math.max(0,Number(String(el.value||'').replace(/[^0-9.-]/g,''))||0);
-   };
+   const readMoney=el=>el?(typeof moneyValue==='function'?Math.max(0,Number(moneyValue(el))||0):Math.max(0,Number(String(el.value||'').replace(/[^0-9.-]/g,''))||0)):0;
    const purchaseBase=readMoney(buyBaseEl),sell=readMoney(sellEl);
    const openingStock=Math.max(0,Number(p.stock||0));
    const openingBase=Number(p._openingBase??p.base??0);
@@ -1045,46 +1078,23 @@ function calcPkgBuy(){
    const totalUnits=openingStock+q;
    const weighted=totalUnits>0?((openingStock*openingBase)+(q*purchaseBase))/totalUnits:openingBase;
    const activeBase=Number.isFinite(weighted)?weighted:openingBase;
-   const m=sell-activeBase;
    p.purchaseQty=q;p.purchaseBase=purchaseBase;p.activeBase=activeBase;p.activeSell=sell;
-
-   const basePreview=document.getElementById('pkgBasePreview');
-   const after=document.getElementById('pkgAfter');
-   const cost=document.getElementById('pkgCost');
-   const unitMargin=document.getElementById('pkgUnitMargin');
-   const box=document.getElementById('marginBox');
-   const status=document.getElementById('pkgMarginStatus');
-   const notice=document.getElementById('pkgMarginNotice');
-   if(basePreview)basePreview.value=Math.round(activeBase).toLocaleString('id-ID');
-   if(after)after.textContent=(openingStock+q)+' unit';
-   if(cost)cost.textContent=fmt(q*purchaseBase);
-   if(unitMargin)unitMargin.textContent=fmt(m);
-   const bad=q>0&&m<1000;
-   if(box)box.className='calcbox '+(bad?'bad':'good');
-   if(status){status.textContent=bad?'BLOKIR < Rp1.000':'AMAN ≥ Rp1.000';status.style.color=bad?'var(--red)':'var(--green)';}
-   if(notice){
-     notice.className='notice '+(bad?'red':'amber');
-     notice.textContent=bad?'Margin rata-rata per unit kurang dari Rp1.000. Naikkan Harga Jual sebelum konfirmasi.':'Weighted average aktif: harga beli baru '+fmt(purchaseBase)+' digabung dengan modal stok lama menjadi modal aktif '+fmt(activeBase)+'.';
-   }
-   syncPkgEndRow(i+1);
+   renderPkgBuyEditor(i,p,q,purchaseBase,sell,activeBase);
+   try{if(typeof calcPkgTotals==='function')calcPkgTotals();}catch(_){}
+   try{if(typeof updateBuyNextState==='function')updateBuyNextState();}catch(_){}
  }finally{
-   calcPkgBuy.__running=false;
+   window.__kaPkgCalcBusy=false;
  }
 }
+
 function syncPkgEndRow(i){
  const p=Array.isArray(pkgCatalog)?pkgCatalog[i-1]:null;
  if(!p)return;
- const avail=Number(p.stock||0)+Number(p.purchaseQty||0);
- const end=document.getElementById('pkgEnd'+i);
- const buyQty=document.getElementById('pkgBuyQty'+i);
- const availEl=document.getElementById('pkgAvail'+i);
- const baseEl=document.getElementById('pkgBase'+i);
- const sellOut=document.getElementById('pkgSellOut'+i);
- if(buyQty)buyQty.textContent=p.purchaseQty?('+'+p.purchaseQty):'0';
- if(availEl)availEl.textContent=String(avail);
- if(baseEl)baseEl.textContent=fmt(Number(p.activeBase??p.base??0));
- if(sellOut)sellOut.textContent=fmt(Number(p.activeSell??p.sell??0));
- if(end){end.max=String(avail);if(typeof calcPkgEnd==='function')calcPkgEnd(i);}
+ const openingStock=Math.max(0,Number(p.stock||0)),q=Math.max(0,Number(p.purchaseQty||0));
+ const purchaseBase=Math.max(0,Number(p.purchaseBase??p._openingBase??p.base??0)||0);
+ const sell=Math.max(0,Number(p.activeSell??p.sell??0)||0);
+ const activeBase=Number(p.activeBase??p._openingBase??p.base??0)||0;
+ renderPkgBuyEditor(i-1,p,q,purchaseBase,sell,activeBase);
 }
 window.syncPkgBuy=syncPkgBuy;
 window.calcPkgBuy=calcPkgBuy;
