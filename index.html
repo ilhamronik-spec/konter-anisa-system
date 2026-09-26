@@ -2727,7 +2727,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
   }catch(_){}
 })();
 </script>
-<script src="./rules-v29.js?build=80&fix=weighted1"></script>
+<script src="./rules-v29.js?build=80&fix=sim24notes1"></script>
 <script src="./layout-v31.js?build=80"></script>
 <script src="./transactions-v33.js?build=80"></script>
 <script src="./transactions-v34.js?build=80"></script>
@@ -2979,6 +2979,15 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   }
 
+  function persistSimulation(cfg){
+    try{
+      write('ka_sim_active_shift_v1',{
+        date:cfg.date,shift:cfg.shift,holder:cfg.holder,id:cfg.id,
+        baseDate:cfg.baseDate,updatedAt:Date.now()
+      });
+    }catch(_){}
+  }
+
   function paint(cfg){
     const target=labelDate(cfg.date),base=labelDate(cfg.baseDate);
     const rewrite=root=>{
@@ -3002,6 +3011,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
   function trySeed(){
     const cfg=config();if(!cfg)return false;
     paint(cfg);
+    persistSimulation(cfg);
     const currentKey=PREFIX+cfg.id;
     let current=read(currentKey,null);
 
