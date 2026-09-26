@@ -219,6 +219,8 @@
       rolloverOpeningModal:Array.isArray(saved.rolloverOpeningModal)?saved.rolloverOpeningModal.slice():[]
     };
     try{window.KAStockV50?.refreshOpeningSystem?.();}catch(_){}
+    try{if(typeof syncPkgBuy==='function')syncPkgBuy();}catch(_){}
+    try{if(typeof syncCigBuy==='function')syncCigBuy();}catch(_){}
     try{window.KABalanceV44?.renderBalance?.();}catch(_){}
     return true;
   }
