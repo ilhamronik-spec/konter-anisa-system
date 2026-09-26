@@ -25,6 +25,48 @@ jobs:
         uses: actions/checkout@v4
       - name: Verify locked runtime
         run: node scripts/runtime-integrity-check.mjs
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install smoke browser driver
+        run: npm install --no-save puppeteer-core@24
+
+      - name: Locate Chrome
+        id: chrome
+        shell: bash
+        run: |
+          set -e
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "path=$(command -v google-chrome)" >> "$GITHUB_OUTPUT"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "path=$(command -v chromium)" >> "$GITHUB_OUTPUT"
+          elif command -v chromium-browser >/dev/null 2>&1; then
+            echo "path=$(command -v chromium-browser)" >> "$GITHUB_OUTPUT"
+          else
+            echo "Chrome/Chromium not found" >&2
+            exit 1
+          fi
+
+      - name: Start local smoke server
+        shell: bash
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/ka-http.log 2>&1 &
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/index.html >/dev/null; then exit 0; fi
+            sleep 0.5
+          done
+          cat /tmp/ka-http.log
+          exit 1
+
+      - name: Validate Sep 24 simulation and Paket selector
+        env:
+          KA_BASE_URL: http://127.0.0.1:4173
+          CHROME_PATH: ${{ steps.chrome.outputs.path }}
+        run: node tests/smoke-sim24.js
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload static site
