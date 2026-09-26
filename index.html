@@ -3097,23 +3097,32 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     let current=read(currentKey,null);
 
     if(current&&current.rolloverSimulation===true&&String(current.rolloverFrom||'')===cfg.baseId&&Number(current.rolloverVersion||0)>=3){
-      // V6 khusus simulasi 24/09: reset ulang dari closing 23 yang kanonik.
-      // Ini membuang snapshot simulasi lama yang sempat tercampur nilai kolom koreksi.
+      // V6 khusus simulasi 24/09: koreksi Modal Voucher opening 23/09 TANPA
+      // menghapus input/transaksi 24/09 yang sudah dikerjakan pengguna.
       if(cfg.date==='2026-09-24' && cfg.baseDate==='2026-09-23' && Number(current.rolloverVersion||0)<6){
-        const cleanBase=canonicalBase(cfg.baseDate)||read(PREFIX+cfg.baseId,null);
-        if(cleanBase&&cleanBase.forms&&cleanBase.catalogs){
-          current=buildSeed(cfg,cleanBase);
-          current.rolloverVersion=6;
-          current.reason='migrate-v6-corrected-modal-voucher';
-          applyRuntime(current);
-          current.sourceFingerprint=fingerprint();
-          write(currentKey,current);touchIndex(currentKey,current.savedAt);
-          currentMeta={
-            rolloverSimulation:true,rolloverVersion:6,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
-            rolloverSource:String(current.rolloverSource||''),rolloverOpeningModal:current.rolloverOpeningModal.slice()
-          };
-          return true;
-        }
+        const correctedVoucher=6693400;
+        const opening=Array.isArray(current.rolloverOpeningModal)
+          ? current.rolloverOpeningModal.slice()
+          : [];
+        while(opening.length<25) opening.push(0);
+        opening[19]=correctedVoucher; // modalInput20 = MODAL VOUCHER
+
+        current.rolloverOpeningModal=opening;
+        current.forms=current.forms||{};
+        current.forms.prevModalCheck20=current.forms.prevModalCheck20||{value:'',checked:false,type:'text',tag:'INPUT'};
+        current.forms.prevModalCheck20.value=Math.round(correctedVoucher).toLocaleString('id-ID');
+        current.rolloverVersion=6;
+        current.reason='migrate-v6-corrected-modal-voucher-preserve-shift';
+        current.savedAt=Date.now();
+
+        applyRuntime(current);
+        current.sourceFingerprint=fingerprint();
+        write(currentKey,current);touchIndex(currentKey,current.savedAt);
+        currentMeta={
+          rolloverSimulation:true,rolloverVersion:6,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
+          rolloverSource:String(current.rolloverSource||''),rolloverOpeningModal:current.rolloverOpeningModal.slice()
+        };
+        return true;
       }
       applyRuntime(current);return true;
     }
