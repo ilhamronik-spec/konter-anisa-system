@@ -461,6 +461,43 @@ function visibleInput(el){
   const cs=getComputedStyle(el);
   return cs.display!=='none'&&cs.visibility!=='hidden';
 }
+function persistEnterDraft(){
+  try{
+    if(window.KAAutosaveV53?.save) return window.KAAutosaveV53.save()!==false;
+  }catch(_){}
+  return false;
+}
+function purchaseEnterTarget(el){
+  const id=String(el?.id||'');
+  return /^(pkgNameEdit|pkgSell|pkgQty|pkgNewBase)$/.test(id)&&visibleInput(el)?id:'';
+}
+function installPurchaseEnterSave(){
+  if(document.documentElement.dataset.v80PurchaseEnter==='1')return;
+  document.documentElement.dataset.v80PurchaseEnter='1';
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||e.shiftKey||e.ctrlKey||e.altKey||e.metaKey||e.isComposing||e.repeat)return;
+    const id=purchaseEnterTarget(e.target);
+    if(!id)return;
+    e.preventDefault();
+    e.stopPropagation();
+    if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+    try{
+      if(id==='pkgNameEdit'){
+        if(typeof renamePkgBuy==='function')renamePkgBuy();
+      }else if(typeof calcPkgBuy==='function'){
+        calcPkgBuy();
+      }
+      if(typeof markPackageDirty==='function')markPackageDirty();
+      persistEnterDraft();
+      const i=Math.max(0,Number($('pkgBuyType')?.value||0));
+      const p=(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog))?pkgCatalog[i]:null;
+      toast('Belanja Paket'+(p?.name?' '+p.name:'')+' tersimpan.','ok');
+    }catch(err){
+      console.error('Enter save Paket gagal',err);
+      toast('Input belum dapat disimpan. Coba sekali lagi.','warn');
+    }
+  },true);
+}
 function installStockEnterNavigation(){
   if(document.documentElement.dataset.v64StockEnter==='1')return;
   document.documentElement.dataset.v64StockEnter='1';
@@ -474,6 +511,9 @@ function installStockEnterNavigation(){
     e.preventDefault();
     e.stopPropagation();
     if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+    // Enter berarti nilai saat ini dianggap selesai: simpan snapshot segera
+    // sebelum fokus berpindah ke baris berikutnya.
+    persistEnterDraft();
     const candidates=[...document.querySelectorAll('input[id^="'+info.prefix+'"]')]
       .map(el=>({el,info:stockEnterGroup(el)}))
       .filter(x=>x.info&&x.info.prefix===info.prefix&&x.info.index>info.index&&visibleInput(x.el))
@@ -537,6 +577,7 @@ function selfTest(){
   ok('Paket checkpoint step 10',Number(findSection(/Stok Akhir Paket/i)?.dataset.i)===9);
   ok('Rokok checkpoint step 11',Number(findSection(/Stok Akhir Rokok/i)?.dataset.i)===10);
   ok('Stock Enter navigation installed',document.documentElement.dataset.v64StockEnter==='1');
+  ok('Purchase Enter save installed',document.documentElement.dataset.v80PurchaseEnter==='1');
   const pass=t.every(x=>x[1]);document.documentElement.dataset.v61Selftest=pass?'PASS':'FAIL';
   window.KAFeaturesV61={pass,tests:t,refresh,renderListrik,renderAdmin,listrikMargin,remapSteps,workflowOk,lockWorkflow,stepLabels:STEP_LABELS.slice()};
   if(!pass)console.error('V61 SELFTEST FAIL',t);
@@ -545,6 +586,7 @@ function install(){
   refresh();
   installNavigation();
   installStockEnterNavigation();
+  installPurchaseEnterSave();
   setTimeout(()=>{refresh();selfTest();},0);
   setTimeout(()=>{refresh();enforceStockCheckpoint();lockWorkflow();},1100);
   window.addEventListener('load',()=>setTimeout(()=>{enforceStockCheckpoint();lockWorkflow();},350),{once:true});
