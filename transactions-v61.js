@@ -541,6 +541,82 @@ function installPurchaseEnterSave(){
     }
   },true);
 }
+function cigaretteEnterTarget(el){
+  const id=String(el?.id||'');
+  return /^(cigType|cigQty|cigTotal)$/.test(id)&&visibleInput(el)?id:'';
+}
+function focusCigaretteNext(id){
+  const nextId={
+    cigType:'cigQty',
+    cigQty:'cigTotal',
+    cigTotal:'cigType'
+  }[id];
+  const next=nextId?$(nextId):null;
+  if(!next||!visibleInput(next))return;
+  setTimeout(()=>{
+    try{
+      next.focus({preventScroll:true});
+      if(next.tagName==='INPUT'&&typeof next.select==='function')next.select();
+    }catch(_){}
+  },0);
+}
+function commitCigaretteDraft(id){
+  try{
+    if(id==='cigType'){
+      if(typeof syncCigBuy==='function')syncCigBuy();
+    }else{
+      if(typeof calcCigBuy==='function')calcCigBuy();
+      if(typeof markCigaretteDirty==='function')markCigaretteDirty();
+    }
+  }catch(_){}
+  persistEnterDraft();
+}
+function installCigaretteDraftPersistence(){
+  if(document.documentElement.dataset.v80CigDraft==='1')return;
+  document.documentElement.dataset.v80CigDraft='1';
+  const isCigDraft=el=>/^(cigType|cigQty|cigTotal|cigSell)$/.test(String(el?.id||''));
+  const saveAfterEvent=e=>{
+    if(!isCigDraft(e.target))return;
+    queueMicrotask(()=>{
+      const id=String(e.target.id||'');
+      if(id==='cigSell'){
+        try{
+          if(typeof calcCigBuy==='function')calcCigBuy();
+          if(typeof markCigaretteDirty==='function')markCigaretteDirty();
+        }catch(_){}
+        persistEnterDraft();
+      }else{
+        commitCigaretteDraft(id);
+      }
+    });
+  };
+  document.addEventListener('input',saveAfterEvent,true);
+  document.addEventListener('change',saveAfterEvent,true);
+}
+function installCigaretteEnterFlow(){
+  if(document.documentElement.dataset.v80CigEnter==='1')return;
+  document.documentElement.dataset.v80CigEnter='1';
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||e.shiftKey||e.ctrlKey||e.altKey||e.metaKey||e.isComposing||e.repeat)return;
+    const id=cigaretteEnterTarget(e.target);
+    if(!id)return;
+    e.preventDefault();
+    e.stopPropagation();
+    if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+    try{
+      commitCigaretteDraft(id);
+      focusCigaretteNext(id);
+      if(id==='cigTotal'){
+        const i=Math.max(0,Number($('cigType')?.value||0));
+        const c=(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog))?cigCatalog[i]:null;
+        toast('Belanja Rokok'+(c?.name?' '+c.name:'')+' tersimpan. Pilih rokok berikutnya.','ok');
+      }
+    }catch(err){
+      console.error('Enter save/navigasi Rokok gagal',err);
+      toast('Input Rokok belum dapat disimpan. Coba sekali lagi.','warn');
+    }
+  },true);
+}
 function installStockEnterNavigation(){
   if(document.documentElement.dataset.v64StockEnter==='1')return;
   document.documentElement.dataset.v64StockEnter='1';
@@ -622,6 +698,8 @@ function selfTest(){
   ok('Stock Enter navigation installed',document.documentElement.dataset.v64StockEnter==='1');
   ok('Purchase Enter save installed',document.documentElement.dataset.v80PurchaseEnter==='1');
   ok('Purchase draft persistence installed',document.documentElement.dataset.v80PurchaseDraft==='1');
+  ok('Cigarette draft persistence installed',document.documentElement.dataset.v80CigDraft==='1');
+  ok('Cigarette Enter flow installed',document.documentElement.dataset.v80CigEnter==='1');
   const pass=t.every(x=>x[1]);document.documentElement.dataset.v61Selftest=pass?'PASS':'FAIL';
   window.KAFeaturesV61={pass,tests:t,refresh,renderListrik,renderAdmin,listrikMargin,remapSteps,workflowOk,lockWorkflow,stepLabels:STEP_LABELS.slice()};
   if(!pass)console.error('V61 SELFTEST FAIL',t);
@@ -632,6 +710,8 @@ function install(){
   installStockEnterNavigation();
   installPurchaseDraftPersistence();
   installPurchaseEnterSave();
+  installCigaretteDraftPersistence();
+  installCigaretteEnterFlow();
   setTimeout(()=>{refresh();selfTest();},0);
   setTimeout(()=>{refresh();enforceStockCheckpoint();lockWorkflow();},1100);
   window.addEventListener('load',()=>setTimeout(()=>{enforceStockCheckpoint();lockWorkflow();},350),{once:true});
