@@ -56,6 +56,7 @@
 <button data-view="purchases" data-group="purchases"><span class="dot"></span>Input Belanja</button>
 <button data-view="review" data-group="review"><span class="dot"></span>Cek Inputan</button>
 <button data-view="attendance" data-group="people"><span class="dot"></span>Karyawan & Akses</button>
+<button data-view="archive" data-group="archive"><span class="dot"></span>Arsip</button>
 <button data-view="reports" data-group="reports"><span class="dot"></span>Laporan & Audit</button>
 </div>
 <div class="side-foot"><b>ADMIN SIMULATION V3</b><br>Menu diringkas berdasarkan fungsi. Karyawan V80 dan Purchasing V83 tetap memakai logika yang sudah dikunci.</div>
@@ -64,15 +65,15 @@
 <div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Admin / <span id="crumbView">Dashboard</span></span></div><div class="user"><div style="text-align:right"><b id="adminName" style="font-size:12px">Admin</b><div style="font-size:10px;color:var(--muted)">Administrator</div></div><div class="avatar" id="adminAvatar">AD</div></div></div>
 <div class="content">
 <section class="view active" id="view-dashboard">
-<div class="hero"><div><h2>Dashboard Admin</h2><p>Pusat monitoring usaha: keuangan, modal, hutang, selisih, kehadiran, dan tindak lanjut input Karyawan.</p></div><div class="actions"><span class="pill purple">Monitoring</span><span class="pill green">Tidak Mengubah Rumus V80</span></div></div>
+<div class="hero"><div><h2>Dashboard Admin</h2><p>Pusat monitoring periode aktif. Riwayat bulan sebelumnya dan data simulasi dipindahkan ke Arsip.</p></div><div class="actions"><span class="pill purple" id="activePeriodPill">Periode Aktif</span><span class="pill green">Tidak Mengubah Rumus V80</span></div></div>
 <div id="noAdmin" class="notice red" style="display:none"><b>Sesi Admin tidak ditemukan.</b> Portal ini nanti akan menggunakan akun Admin dari Login sungguhan.</div>
 <div class="grid kpis">
-<div class="card kpi good"><small>Total Margin Keseluruhan</small><strong id="kpiMargin">Rp0</strong><div id="kpiMarginSub">0 shift terekam</div></div>
+<div class="card kpi good"><small>Total Margin Bulan Ini</small><strong id="kpiMargin">Rp0</strong><div id="kpiMarginSub">0 shift terekam</div></div>
 <div class="card kpi purple"><small>Modal Akhir Terbaru</small><strong id="kpiMinus">Rp0</strong><div id="kpiMinusSub">Belum ada shift final</div></div>
-<div class="card kpi warn"><small>Total Operasional</small><strong id="kpiOperational">Rp0</strong><div id="kpiOperationalSub">Seluruh shift terekam</div></div>
+<div class="card kpi warn"><small>Operasional Bulan Ini</small><strong id="kpiOperational">Rp0</strong><div id="kpiOperationalSub">Seluruh shift terekam</div></div>
 <div class="card kpi purple"><small>Absen Hari Ini</small><strong id="kpiAttendance">0</strong><div id="kpiAttendanceSub">Karyawan sudah absen masuk</div></div>
 </div>
-<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="purchases">Input Belanja</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button><button data-go="reports">Laporan & Audit</button></div>
+<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="purchases">Input Belanja</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button><button data-go="archive">Arsip</button><button data-go="reports">Laporan & Audit</button></div>
 <div class="grid two">
 <div class="card section-card"><h3>Kehadiran Hari Ini</h3><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>Karyawan</th><th>Shift</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th></tr></thead><tbody id="dashAttendance"></tbody></table></div></div>
 <div class="card section-card"><h3>Shift Terakhir</h3><div class="notice blue">Ringkasan aktivitas terbaru: tanggal, pemegang shift, margin, dan modal akhir.</div><div id="dashMinusList" class="summary-list"></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-go="margin">Buka Keuangan</button></div></div>
@@ -173,6 +174,25 @@
 <div class="card table-card" style="margin-top:15px"><div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Role</th><th>Status</th><th>ID</th><th>Aksi</th></tr></thead><tbody id="accountBody"></tbody></table></div></div>
 </section>
 
+<section class="view" id="view-archive">
+<div class="hero"><div><h2>Arsip Bulanan</h2><p>Riwayat hitungan yang sudah lewat periode aktif atau sengaja diarsipkan. Data arsip bersifat read only.</p></div><div class="actions"><span class="pill purple">Read Only</span><span class="pill green">Tidak Dihapus</span></div></div>
+<div class="notice blue"><b>Aturan periode:</b> Dashboard dan menu operasional hanya menampilkan bulan berjalan. Saat masuk tanggal 1 bulan baru, periode sebelumnya otomatis berpindah ke Arsip tanpa menghapus stok/modal/hutang berkelanjutan.</div>
+<div class="grid kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+<div class="card kpi purple"><small>Periode Arsip</small><strong id="archivePeriods">0</strong><div>Bulan / kelompok arsip</div></div>
+<div class="card kpi good"><small>Shift Diarsipkan</small><strong id="archiveShifts">0</strong><div>Riwayat tetap tersimpan</div></div>
+<div class="card kpi warn"><small>Modal Akhir Arsip Terbaru</small><strong id="archiveLatestCapital">Rp0</strong><div id="archiveLatestCapitalSub">Belum ada arsip</div></div>
+</div>
+<div class="card table-card">
+<div class="table-toolbar" style="grid-template-columns:1fr .8fr .8fr auto">
+<input class="input" id="archiveSearch" placeholder="Cari tanggal / pemegang / shift">
+<select class="select" id="archivePeriod"><option value="">Semua periode arsip</option></select>
+<select class="select" id="archiveType"><option value="">Semua jenis</option><option value="simulation">Simulasi</option><option value="monthly">Tutup Bulan</option></select>
+<button class="btn" id="archiveRefresh">↻ Refresh</button>
+</div>
+<div class="table-wrap"><table class="table" style="min-width:1100px"><thead><tr><th>Periode</th><th>Tanggal / Shift</th><th>Pemegang</th><th>Jenis Arsip</th><th>Margin</th><th>Operasional</th><th>Modal Akhir</th><th>Balance</th><th>Detail</th></tr></thead><tbody id="archiveBody"></tbody></table></div>
+</div>
+</section>
+
 <section class="view" id="view-reports">
 <div class="group-tabs" data-tabgroup="reports"><button data-go="reports">Laporan</button><button data-go="audit">Audit Aktivitas</button></div>
 <div class="hero"><div><h2>Laporan & Ekspor</h2><p>Buat laporan manajemen dari data yang sudah terekam. Bisa dipreview, diekspor CSV untuk Excel, atau dicetak/disimpan sebagai PDF.</p></div><div class="actions"><span class="pill purple">Read Only</span><span class="pill green">Data Sistem</span></div></div>
@@ -235,6 +255,17 @@ const dateLabel=d=>{const m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(
 const time=v=>{if(!v)return '—';try{return new Date(v).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(_){return '—'}};
 const when=v=>{if(!v)return '—';try{return new Date(v).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})}catch(_){return '—'}};
 function summaries(){const x=read(SUM,{});return Object.values(x&&typeof x==='object'?x:{}).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.savedAt||0)-Number(a.savedAt||0))}
+function periodKey(v){const m=String(v||'').match(/^(\d{4})-(\d{2})/);return m?m[1]+'-'+m[2]:''}
+function currentPeriod(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'}).slice(0,7)}
+function periodLabel(p){const m=String(p||'').match(/^(\d{4})-(\d{2})$/);if(!m)return p||'—';const names=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];return names[Number(m[2])]+' '+m[1]}
+function explicitArchive(x){return x?.archived===true||String(x?.archiveStatus||'')==='archived'}
+function productionSummaries(){return summaries().filter(x=>!explicitArchive(x))}
+function activeSummaries(){const p=currentPeriod();return productionSummaries().filter(x=>periodKey(x.date)===p)}
+function archivedSummaries(){const p=currentPeriod();return summaries().filter(x=>explicitArchive(x)||(periodKey(x.date)&&periodKey(x.date)<p))}
+function archiveShiftIds(){return new Set(archivedSummaries().map(x=>String(x.shiftId||'')).filter(Boolean))}
+function activeAttendance(){const p=currentPeriod();return attendance().filter(x=>periodKey(x.date)===p)}
+function archiveKind(x){return explicitArchive(x)?String(x.archiveType||'simulation'):'monthly'}
+function archiveKindLabel(x){return archiveKind(x)==='simulation'?'SIMULASI':'TUTUP BULAN'}
 function attendance(){const a=read(ATT,[]);return Array.isArray(a)?a.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))):[]}
 function corrections(){const a=read(CORR,[]);return Array.isArray(a)?a:[]}
 function corrForShift(id){return corrections().filter(x=>x.shiftId===id).sort((a,b)=>String(b.requestedAt||'').localeCompare(String(a.requestedAt||'')))[0]||null}
@@ -252,8 +283,9 @@ function today(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ja
 function datesFrom(arr,field='date'){return [...new Set(arr.map(x=>String(x[field]||'')).filter(Boolean))].sort().reverse()}
 function fillDates(id,dates){const el=$(id),cur=el.value;el.innerHTML='<option value="">Semua tanggal</option>'+dates.map(d=>'<option value="'+esc(d)+'">'+esc(dateLabel(d))+'</option>').join('');if(dates.includes(cur))el.value=cur}
 function renderDashboard(){
-  const s=summaries(),a=attendance(),m=s.reduce((x,y)=>x+Number(y.margin||0),0),op=s.reduce((x,y)=>x+Number(y.operational||0),0),todayAtt=a.filter(x=>x.date===today()&&x.checkIn);
-  const capitalRows=s.filter(x=>Number(x.modalClosing||0)>0).sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))||Number(x.savedAt||0)-Number(y.savedAt||0));
+  const s=activeSummaries(),a=activeAttendance(),m=s.reduce((x,y)=>x+Number(y.margin||0),0),op=s.reduce((x,y)=>x+Number(y.operational||0),0),todayAtt=a.filter(x=>x.date===today()&&x.checkIn);
+  const capitalRows=productionSummaries().filter(x=>Number(x.modalClosing||0)>0).sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))||Number(x.savedAt||0)-Number(y.savedAt||0));
+  const periodPill=$('activePeriodPill');if(periodPill)periodPill.textContent='Periode Aktif • '+periodLabel(currentPeriod());
   const latestCapital=capitalRows[capitalRows.length-1]||null;
   $('kpiMargin').textContent=fmt(m);$('kpiMarginSub').textContent=s.length+' shift terekam';
   $('kpiMinus').textContent=fmt(latestCapital?.modalClosing||0);$('kpiMinusSub').textContent=latestCapital?(dateLabel(latestCapital.date)+' • '+(latestCapital.holder||'—')):'Belum ada shift final';
@@ -264,11 +296,11 @@ function renderDashboard(){
   $('dashMinusList').innerHTML=recent.length?recent.map(x=>'<div class="summary-row"><span><b>'+esc(dateLabel(x.date))+' • '+esc(x.holder||'—')+'</b><br><small>'+esc(x.shift||'')+' • Margin '+fmt(x.margin)+'</small></span><b>'+fmt(x.modalClosing||0)+'</b></div>').join(''):'<div class="notice blue">Belum ada shift terekam.</div>';
 }
 function filtered(base,searchId,dateId){const q=String($(searchId)?.value||'').toLowerCase(),d=$(dateId)?.value||'';return base.filter(x=>(!d||x.date===d)&&(!q||[x.date,x.holder,x.shift,x.shiftLabel,x.shiftId].join(' ').toLowerCase().includes(q)))}
-function renderMargin(){const s=summaries();fillDates('marginDate',datesFrom(s));const a=filtered(s,'marginSearch','marginDate');$('marginBody').innerHTML=a.length?a.map(x=>{const sent=x.submissionStatus==='submitted';const st=sent?'<span class="status ok">TERKIRIM</span><div style="font-size:10px;color:var(--muted);margin-top:4px">'+when(x.submittedAt)+'</div>':'<span class="status info">DRAFT / AUTOSAVE</span>';return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money green"><b>'+fmt(x.margin)+'</b></td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td><td>'+st+'</td><td>'+when(x.savedAt)+'</td></tr>'}).join(''):'<tr><td colspan="7" class="empty">Belum ada data.</td></tr>'}
-function renderMinus(){const s=summaries().filter(x=>Number(x.balance||0)<0);fillDates('minusDate',datesFrom(s));const a=filtered(s,'minusSearch','minusDate');$('minusBody').innerHTML=a.length?a.map(x=>{const c=corrForShift(x.shiftId);return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money red"><b>'+fmt(Math.abs(x.balance))+'</b></td><td>'+(Math.abs(x.balance)>=BIG?'<span class="status bad">MINUS BESAR</span>':'<span class="status warn">Minus</span>')+'</td><td>'+corrBadge(c)+'</td></tr>'}).join(''):'<tr><td colspan="6" class="empty">Tidak ada data minus.</td></tr>'}
-function renderOp(){const s=summaries();fillDates('opDate',datesFrom(s));const a=filtered(s,'opSearch','opDate');$('opBody').innerHTML=a.length?a.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money"><b>'+fmt(x.operational)+'</b></td><td class="money green">'+fmt(x.margin)+'</td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'}
+function renderMargin(){const s=activeSummaries();fillDates('marginDate',datesFrom(s));const a=filtered(s,'marginSearch','marginDate');$('marginBody').innerHTML=a.length?a.map(x=>{const sent=x.submissionStatus==='submitted';const st=sent?'<span class="status ok">TERKIRIM</span><div style="font-size:10px;color:var(--muted);margin-top:4px">'+when(x.submittedAt)+'</div>':'<span class="status info">DRAFT / AUTOSAVE</span>';return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money green"><b>'+fmt(x.margin)+'</b></td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td><td>'+st+'</td><td>'+when(x.savedAt)+'</td></tr>'}).join(''):'<tr><td colspan="7" class="empty">Belum ada data.</td></tr>'}
+function renderMinus(){const s=activeSummaries().filter(x=>Number(x.balance||0)<0);fillDates('minusDate',datesFrom(s));const a=filtered(s,'minusSearch','minusDate');$('minusBody').innerHTML=a.length?a.map(x=>{const c=corrForShift(x.shiftId);return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money red"><b>'+fmt(Math.abs(x.balance))+'</b></td><td>'+(Math.abs(x.balance)>=BIG?'<span class="status bad">MINUS BESAR</span>':'<span class="status warn">Minus</span>')+'</td><td>'+corrBadge(c)+'</td></tr>'}).join(''):'<tr><td colspan="6" class="empty">Tidak ada data minus.</td></tr>'}
+function renderOp(){const s=activeSummaries();fillDates('opDate',datesFrom(s));const a=filtered(s,'opSearch','opDate');$('opBody').innerHTML=a.length?a.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money"><b>'+fmt(x.operational)+'</b></td><td class="money green">'+fmt(x.margin)+'</td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'}
 
-function capitalRows(){return summaries().filter(x=>Number.isFinite(Number(x.modalOpening))||Number.isFinite(Number(x.modalClosing))).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0))}
+function capitalRows(){return activeSummaries().filter(x=>Number.isFinite(Number(x.modalOpening))||Number.isFinite(Number(x.modalClosing))).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0))}
 
 function dailyCapitalRows(){
   const byDate=new Map();
@@ -352,7 +384,7 @@ function openCapitalDetail(shiftId){
 }
 function debtLedger(){
   const map=new Map(),events=[];
-  summaries().slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0)).forEach(s=>{
+  productionSummaries().slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0)).forEach(s=>{
     (Array.isArray(s.debtEntries)?s.debtEntries:[]).forEach((d,i)=>{
       const name=String(d.debtor||'').trim();if(!name)return;const key=name.toLowerCase();
       let r=map.get(key);if(!r){r={key,name,types:new Set(),debt:0,paid:0,events:[]};map.set(key,r)}
@@ -448,8 +480,16 @@ function purchaseSummaryForNote(note){
   return {note,usage,shift,summary,input,items,amount,source,state,label,cls};
 }
 function purchaseRows(){return purchasingNotes().map(purchaseSummaryForNote).sort((a,b)=>String(b.note.createdAt||'').localeCompare(String(a.note.createdAt||'')))}
+function activePurchaseRows(){
+  const archived=archiveShiftIds(),p=currentPeriod();
+  return purchaseRows().filter(x=>{
+    const sid=String(x.note?.shiftId||x.summary?.shiftId||'');
+    const d=String(x.note?.date||sid.slice(0,10)||x.summary?.date||'');
+    return !archived.has(sid)&&periodKey(d)===p;
+  });
+}
 function renderPurchases(){
-  const all=purchaseRows(),q=String($('purchaseSearch')?.value||'').toLowerCase(),ty=$('purchaseType')?.value||'',st=$('purchaseStatus')?.value||'';
+  const all=activePurchaseRows(),q=String($('purchaseSearch')?.value||'').toLowerCase(),ty=$('purchaseType')?.value||'',st=$('purchaseStatus')?.value||'';
   const rows=all.filter(x=>(!ty||x.note.type===ty)&&(!st||x.state===st)&&(!q||[x.note.id,x.note.shiftLabel,x.summary?.holder,x.note.createdByName,PURCHASE_TYPES[x.note.type],x.note.description].join(' ').toLowerCase().includes(q)));
   $('purchaseKpiTotal').textContent=String(all.length);
   $('purchaseKpiUsed').textContent=String(all.filter(x=>x.state==='used').length);
@@ -482,7 +522,7 @@ async function openPurchaseDetail(id){
 
 function corrBadge(c){if(!c)return '<span class="status info">Belum Review</span>';if(c.status==='returned')return '<span class="status bad">Dikembalikan</span>';if(c.status==='resubmitted')return '<span class="status warn">Dikirim Ulang</span>';if(c.status==='resolved')return '<span class="status ok">Selesai</span>';return '<span class="status info">'+esc(c.status)+'</span>'}
 function renderReview(){
-  let a=summaries().filter(x=>Number(x.balance||0)!==0),q=String($('reviewSearch').value||'').toLowerCase(),f=$('reviewFilter').value;
+  let a=activeSummaries().filter(x=>Number(x.balance||0)!==0),q=String($('reviewSearch').value||'').toLowerCase(),f=$('reviewFilter').value;
   a=a.filter(x=>!q||[x.date,x.holder,x.shift,x.shiftLabel].join(' ').toLowerCase().includes(q));
   if(f==='big')a=a.filter(x=>Number(x.balance||0)<=-BIG);
   if(f==='plusbig')a=a.filter(x=>Number(x.balance||0)>=BIG);
@@ -492,7 +532,7 @@ function renderReview(){
   document.querySelectorAll('[data-return]').forEach(b=>b.onclick=()=>openReturn(b.dataset.return));
   document.querySelectorAll('[data-resolve]').forEach(b=>b.onclick=()=>resolveCorrection(b.dataset.resolve));
 }
-function renderAttendance(){const a=attendance();fillDates('attDate',datesFrom(a));const q=String($('attSearch').value||'').toLowerCase(),d=$('attDate').value,rows=a.filter(x=>(!d||x.date===d)&&(!q||String(x.employeeName||'').toLowerCase().includes(q)));$('attBody').innerHTML=rows.length?rows.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td><b>'+esc(x.employeeName||'—')+'</b></td><td>'+esc(x.shiftLabel||'—')+'</td><td>'+time(x.checkIn)+'</td><td>'+time(x.checkOut)+'</td><td>'+(x.checkOut?'<span class="status ok">Selesai</span>':x.checkIn?'<span class="status info">Sudah Masuk</span>':'<span class="status warn">Belum Masuk</span>')+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data absensi.</td></tr>'}
+function renderAttendance(){const a=activeAttendance();fillDates('attDate',datesFrom(a));const q=String($('attSearch').value||'').toLowerCase(),d=$('attDate').value,rows=a.filter(x=>(!d||x.date===d)&&(!q||String(x.employeeName||'').toLowerCase().includes(q)));$('attBody').innerHTML=rows.length?rows.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td><b>'+esc(x.employeeName||'—')+'</b></td><td>'+esc(x.shiftLabel||'—')+'</td><td>'+time(x.checkIn)+'</td><td>'+time(x.checkOut)+'</td><td>'+(x.checkOut?'<span class="status ok">Selesai</span>':x.checkIn?'<span class="status info">Sudah Masuk</span>':'<span class="status warn">Belum Masuk</span>')+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data absensi.</td></tr>'}
 function renderAccounts(){const a=window.KAAdminAccounts?.list?.()||[];$('accountBody').innerHTML=a.length?a.map(x=>'<tr><td><b>'+esc(x.name)+'</b></td><td><select class="select" data-role-id="'+esc(x.id)+'"><option value="employee"'+(x.role==='employee'?' selected':'')+'>Karyawan</option><option value="purchasing"'+(x.role==='purchasing'?' selected':'')+'>Purchasing</option><option value="admin"'+(x.role==='admin'?' selected':'')+'>Admin</option><option value="owner"'+(x.role==='owner'?' selected':'')+'>Owner</option></select></td><td>'+(x.active?'<span class="status ok">Aktif</span>':'<span class="status bad">Nonaktif</span>')+'</td><td style="font-size:10px">'+esc(x.id)+'</td><td><button class="btn '+(x.active?'danger':'')+'" data-toggle-id="'+esc(x.id)+'" data-active="'+(x.active?'1':'0')+'">'+(x.active?'Nonaktifkan':'Aktifkan')+'</button></td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada akun.</td></tr>';document.querySelectorAll('[data-role-id]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.roleId,sel.value));document.querySelectorAll('[data-toggle-id]').forEach(b=>b.onclick=()=>toggleAccount(b.dataset.toggleId,b.dataset.active==='1'))}
 function changeRole(id,role){const a=window.KAAdminAccounts?.list?.()||[],rec=a.find(x=>x.id===id);if(!rec)return;window.KAAdminAccounts.upsertFromAdmin({...rec,role});renderAccounts();renderIdentity()}
 function toggleAccount(id,active){const a=window.KAAdminAccounts?.list?.()||[],rec=a.find(x=>x.id===id);if(!rec)return;window.KAAdminAccounts.upsertFromAdmin({...rec,active:!active});renderAccounts();renderIdentity()}
@@ -501,6 +541,28 @@ let returnShiftId='';
 function openReturn(id){const x=summaries().find(s=>s.shiftId===id);if(!x)return;returnShiftId=id;{const bal=Number(x.balance||0),cls=bal<0?'red':'amber',prefix=bal<0?'MINUS':'PLUS / BERLEBIH';$('returnInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'')+' • '+esc(x.holder||'')+'</b><br>'+prefix+': <b class="'+cls+'">'+fmt(Math.abs(bal))+'</b>';}$('returnReason').value='';$('returnModal').classList.add('open')}
 function submitReturn(){const reason=String($('returnReason').value||'').trim();if(!reason)return alert('Alasan/temuan Admin wajib diisi.');const x=summaries().find(s=>s.shiftId===returnShiftId);if(!x)return;const arr=corrections(),id='corr-'+Date.now();arr.push({id,shiftId:x.shiftId,shiftLabel:x.shiftLabel,date:x.date,shift:x.shift,employeeName:x.holder,employeeId:(window.KAAdminAccounts?.activeByRole?.('employee')||[]).find(a=>a.name===x.holder)?.id||'',reason,status:'returned',snapshot:{margin:x.margin,balance:x.balance,operational:x.operational},requestedAt:new Date().toISOString(),requestedBy:adminUser()?.name||'Admin'});write(CORR,arr);$('returnModal').classList.remove('open');renderReview();renderMinus()}
 function resolveCorrection(id){const arr=corrections(),x=arr.find(a=>a.id===id);if(!x)return;x.status='resolved';x.resolvedAt=new Date().toISOString();x.resolvedBy=adminUser()?.name||'Admin';write(CORR,arr);renderReview();renderMinus()}
+
+function renderArchive(){
+  const all=archivedSummaries();
+  const periods=[...new Set(all.map(x=>String(x.archivePeriod||periodKey(x.date))).filter(Boolean))].sort().reverse();
+  const sel=$('archivePeriod'),cur=sel?.value||'';
+  if(sel){sel.innerHTML='<option value="">Semua periode arsip</option>'+periods.map(p=>'<option value="'+esc(p)+'">'+esc(periodLabel(p))+'</option>').join('');if(periods.includes(cur))sel.value=cur}
+  const q=String($('archiveSearch')?.value||'').toLowerCase(),p=$('archivePeriod')?.value||'',ty=$('archiveType')?.value||'';
+  const rows=all.filter(x=>{
+    const ap=String(x.archivePeriod||periodKey(x.date)),kind=archiveKind(x);
+    return (!p||ap===p)&&(!ty||kind===ty)&&(!q||[x.date,x.shift,x.holder,x.shiftLabel,x.shiftId].join(' ').toLowerCase().includes(q));
+  });
+  $('archivePeriods').textContent=String(periods.length);
+  $('archiveShifts').textContent=String(all.length);
+  const cap=all.filter(x=>Number(x.modalClosing||0)>0).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0)).pop();
+  $('archiveLatestCapital').textContent=fmt(cap?.modalClosing||0);
+  $('archiveLatestCapitalSub').textContent=cap?(dateLabel(cap.date)+' • '+(cap.holder||'—')):'Belum ada arsip';
+  $('archiveBody').innerHTML=rows.length?rows.map(x=>{
+    const ap=String(x.archivePeriod||periodKey(x.date)),kind=archiveKind(x),cls=kind==='simulation'?'warn':'info';
+    return '<tr><td><b>'+esc(periodLabel(ap))+'</b></td><td><b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'—')+'</b><div style="font-size:10px;color:var(--muted)">'+esc(x.shiftId||'')+'</div></td><td><b>'+esc(x.holder||'—')+'</b></td><td><span class="status '+cls+'">'+esc(archiveKindLabel(x))+'</span></td><td class="money green">'+fmt(x.margin)+'</td><td class="money">'+fmt(x.operational)+'</td><td class="money"><b>'+fmt(x.modalClosing)+'</b></td><td class="money '+(Number(x.balance||0)<0?'red':Number(x.balance||0)>0?'amber':'green')+'">'+fmt(x.balance)+'</td><td><button class="btn" data-archive-detail="'+esc(x.shiftId)+'">Detail Modal</button></td></tr>';
+  }).join(''):'<tr><td colspan="9" class="empty">Belum ada data arsip sesuai filter.</td></tr>';
+  document.querySelectorAll('[data-archive-detail]').forEach(b=>b.onclick=()=>openCapitalDetail(b.dataset.archiveDetail));
+}
 
 let reportDemo=false;
 function reportDateInRange(date){
@@ -566,7 +628,7 @@ function operationalRowsForReport(s){
 }
 function reportData(){
   if(reportDemo)return demoReportData();
-  const s=summaries().filter(x=>reportDateInRange(x.date)),a=attendance().filter(x=>reportDateInRange(x.date));
+  const s=activeSummaries().filter(x=>reportDateInRange(x.date)),a=activeAttendance().filter(x=>reportDateInRange(x.date));
   const allDebts=debtLedger();
   return {s,a,debts:allDebts,stock:aggregateStockForReport(s),ops:operationalRowsForReport(s)};
 }
@@ -637,21 +699,21 @@ function renderAudit(){
   $('auditList').innerHTML=rows.length?rows.map(x=>'<div class="audit-item"><div class="audit-time">'+esc(new Date(x.ts).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</div><div class="audit-actor">'+esc(x.actor)+'</div><div class="audit-desc">'+esc(x.desc)+'</div><div class="audit-source"><span class="status '+(x.source==='Admin'?'bad':x.source==='Purchasing'?'warn':x.source==='Karyawan'?'ok':'info')+'">'+esc(x.source)+'</span></div></div>').join(''):'<div class="empty">Belum ada aktivitas yang sesuai filter.</div>';
 }
 
-function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderPurchases();renderReview();renderAttendance();renderAccounts();renderReport();renderAudit()}
+function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderPurchases();renderReview();renderAttendance();renderAccounts();renderArchive();renderReport();renderAudit()}
 function show(v){
-  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',purchases:'purchases',review:'review',attendance:'people',accounts:'people',reports:'reports',audit:'reports'};
-  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Keuangan / Selisih & Minus',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',purchases:'Pemantauan Input Belanja',review:'Cek Inputan',attendance:'Karyawan & Akses / Kehadiran',accounts:'Karyawan & Akses / Akun & Role',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
+  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',purchases:'purchases',review:'review',attendance:'people',accounts:'people',archive:'archive',reports:'reports',audit:'reports'};
+  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Keuangan / Selisih & Minus',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',purchases:'Pemantauan Input Belanja',review:'Cek Inputan',attendance:'Karyawan & Akses / Kehadiran',accounts:'Karyawan & Akses / Akun & Role',archive:'Arsip Bulanan',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
   document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.group===groups[v]));
   document.querySelectorAll('.group-tabs [data-go]').forEach(x=>x.classList.toggle('active',x.dataset.go===v));
   $('crumbView').textContent=crumbs[v]||v;
   $('side').classList.remove('mobile-open');
 }
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',renderAll);window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',renderAll);window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',renderAll);window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){
   bind();renderAll();
   const q=new URLSearchParams(location.search),view=String(q.get('view')||''),shiftId=String(q.get('shift')||'');
-  const allowed=new Set(['dashboard','margin','minus','operational','capital','debt','purchases','review','attendance','accounts','reports','audit']);
+  const allowed=new Set(['dashboard','margin','minus','operational','capital','debt','purchases','review','attendance','accounts','archive','reports','audit']);
   if(allowed.has(view))show(view);
   if(shiftId){
     if(view==='margin'||!view){$('marginSearch').value=shiftId;renderMargin();if(!view)show('margin')}
