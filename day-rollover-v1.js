@@ -219,8 +219,6 @@
       rolloverOpeningModal:Array.isArray(saved.rolloverOpeningModal)?saved.rolloverOpeningModal.slice():[]
     };
     try{window.KAStockV50?.refreshOpeningSystem?.();}catch(_){}
-    try{if(typeof syncPkgBuy==='function')syncPkgBuy();}catch(_){}
-    try{if(typeof syncCigBuy==='function')syncCigBuy();}catch(_){}
     try{window.KABalanceV44?.renderBalance?.();}catch(_){}
     return true;
   }
@@ -320,9 +318,8 @@
   function start(){
     if(started)return;started=true;
     const cfg=config();if(!cfg)return;
-    // Selalu re-assert setelah cloud pull agar snapshot simulasi lama tidak mengalahkan baseline yang benar.
-    window.addEventListener('ka:shared-sync',()=>{trySeed();});
-    // Run immediately, before DOMContentLoaded initializers overwrite the opening.
+    // Seed/recover hanya saat halaman simulasi dibuka. Jangan re-apply setiap siklus
+    // shared sync karena itu dapat menimpa editor yang sedang dipakai dan membuat UI berkedip.
     if(trySeed())return;
     timer=setInterval(()=>{if(trySeed()){clearInterval(timer);timer=null;}},500);
     setTimeout(()=>{if(timer){clearInterval(timer);timer=null;}},20000);
