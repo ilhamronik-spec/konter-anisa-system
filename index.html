@@ -2738,7 +2738,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v41.js?build=80&fix=acccloud1"></script>
 <script src="./transactions-v42.js?build=80"></script>
 <script src="./transactions-v43.js?build=80&fix=weighted1"></script>
-<script src="./transactions-v50.js?build=80&fix=sim24b"></script>
+<script src="./transactions-v50.js?build=80&fix=sim24sync1"></script>
 <script src="./transactions-v51.js?build=80"></script>
 <script>
 /* Konter Anisa Day Rollover V2
@@ -2783,7 +2783,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       const modal=(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal))
         ? openingPrevModal.map(x=>[String(x?.name||''),Number(x?.value||0)]) : [];
       const pkg=(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog))
-        ? pkgCatalog.map(x=>[String(x?.group||''),String(x?.name||''),Number(x?.stock||0),Number(x?.base||0),Number(x?.sell||0)]) : [];
+        ? pkgCatalog.map(x=>[String(x?._sourceKey||((x?.group||'')+'|'+(x?.name||''))),Number(x?.stock||0),Number(x?.base||0),Number(x?.sell||0)]) : [];
       const cig=(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog))
         ? cigCatalog.map(x=>[String(x?.name||''),Number(x?.display||0),Number(x?.warehouse||0),Number(x?.base||0),Number(x?.sell||0)]) : [];
       const raw=JSON.stringify({modal,pkg,cig});
@@ -2962,6 +2962,8 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       rolloverOpeningModal:Array.isArray(saved.rolloverOpeningModal)?saved.rolloverOpeningModal.slice():[]
     };
     try{window.KAStockV50?.refreshOpeningSystem?.();}catch(_){}
+    try{if(typeof syncPkgBuy==='function')syncPkgBuy();}catch(_){}
+    try{if(typeof syncCigBuy==='function')syncCigBuy();}catch(_){}
     try{window.KABalanceV44?.renderBalance?.();}catch(_){}
     return true;
   }
@@ -3060,7 +3062,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 })();
 
 </script>
-<script src="./transactions-v53.js?build=80&fix=renamepersist1"></script>
+<script src="./transactions-v53.js?build=80&fix=sim24sync1"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80"></script>
 <script src="./ui-clean-v74.js?build=80"></script>
