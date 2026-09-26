@@ -26,6 +26,39 @@ function hash(v){
   for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}
   return (h>>>0).toString(16);
 }
+function stablePayload(kind,payload){
+  if(!payload||typeof payload!=='object')return payload;
+  if(kind!=='shift'&&kind!=='summary')return payload;
+  const p=JSON.parse(JSON.stringify(payload));
+  delete p.savedAt;delete p.reason;delete p._syncIndexTs;
+  return p;
+}
+function recordHash(r){return hash(stablePayload(String(r?.kind||''),r?.payload))}
+function countArrays(obj){
+  if(!obj||typeof obj!=='object')return 0;
+  let n=0;
+  Object.values(obj).forEach(v=>{if(Array.isArray(v))n+=v.length});
+  return n;
+}
+function shiftQuality(p){
+  if(!p||typeof p!=='object')return -1;
+  const f=p.flags||{},core=p.core||{},cats=p.catalogs||{};
+  const progress=Math.max(Number(f.progressMaxIdx||0),Number(f.idx||0));
+  const confirms=(f.pkgBuyConfirmed?1:0)+(f.cigBuyConfirmed?1:0)+(f?.v51?.displayPreviewConfirmed?1:0);
+  const coreCount=(Array.isArray(core.opEntries)?core.opEntries.length:0)
+    +(Array.isArray(core.debtEntries)?core.debtEntries.length:0)
+    +(Array.isArray(core.paymentEntries)?core.paymentEntries.length:0)
+    +countArrays(core.txEntries);
+  const pkgCount=Array.isArray(cats.pkg)?cats.pkg.filter(x=>Number(x?.purchaseQty||0)>0).length:0;
+  const cigCount=Array.isArray(cats.cig)?cats.cig.filter(x=>Number(x?.purchaseQty||0)>0||Number(x?.purchaseCost||0)>0).length:0;
+  return progress*1000000000+confirms*100000000+coreCount*100000+pkgCount*100+cigCount;
+}
+function shouldApplyShift(local,remote){
+  if(!local)return true;
+  const lq=shiftQuality(local),rq=shiftQuality(remote);
+  if(rq!==lq)return rq>lq;
+  return Number(remote?.savedAt||0)>=Number(local?.savedAt||0);
+}
 function actor(){
   const s=read('ka_auth_session_v81',null)||read('ka_purchasing_session_v81',null)||{};
   const master=read('ka_admin_accounts_v59',null);
@@ -158,10 +191,10 @@ function applyOne(r){
   }else if(r.kind==='shift'){
     const key=SHIFT_PREFIX+id;
     const local=read(key,null);
-    const localTs=Number(local?.savedAt||0),remoteTs=Number(p?.savedAt||0);
-    // Local autosave may be ahead while the employee is typing. Never let an
-    // older cloud snapshot overwrite newer browser work.
-    if(local&&localTs>remoteTs)return;
+    // Never regress an active shift. Progress/data richness wins first; timestamp
+    // only breaks ties. This prevents another tab/device from pushing a newer
+    // timestamp that actually contains an older workflow snapshot.
+    if(local&&!shouldApplyShift(local,p))return;
     setJson(key,p);
     let idx=read(SHIFT_INDEX,[]);if(!Array.isArray(idx))idx=[];
     idx=idx.filter(x=>String(x?.key||'')!==key);
@@ -230,14 +263,14 @@ function setStatus(state,detail=''){
 function loadHashes(){const h=read(HASH_KEY,{});return h&&typeof h==='object'?h:{}}
 function saveHashes(h){write(HASH_KEY,h)}
 function baseline(){
-  const h={};recordsLocal().forEach(r=>h[recKey(r)]=hash(r.payload));saveHashes(h);
+  const h={};recordsLocal().forEach(r=>h[recKey(r)]=recordHash(r));saveHashes(h);
 }
 async function pullAll(){
   const data=await api({action:'pull'});
   const hashes=loadHashes();
   (data.records||[]).forEach(r=>{
     applyOne(r);
-    hashes[recKey(r)]=r.is_deleted?'__deleted__':hash(r.payload);
+    hashes[recKey(r)]=r.is_deleted?'__deleted__':recordHash(r);
     if(r.kind==='note'&&!r.is_deleted)cloudNoteIds.add(String(r.record_id));
   });
   saveHashes(hashes);
@@ -262,7 +295,7 @@ async function pullUsageTombstones(){
 async function pushChanged(){
   const hashes=loadHashes(),local=recordsLocal(),changed=[],localMap=new Map();
   local.forEach(r=>{
-    const k=recKey(r),h=hash(r.payload);
+    const k=recKey(r),h=recordHash(r);
     localMap.set(k,r);
     if(hashes[k]!==h)changed.push(r);
   });
@@ -279,7 +312,7 @@ async function pushChanged(){
     const batch=changed.slice(i,i+100);
     await api({action:'push',actor:actor(),records:batch});
     batch.forEach(r=>{
-      hashes[recKey(r)]=r.is_deleted?'__deleted__':hash(r.payload);
+      hashes[recKey(r)]=r.is_deleted?'__deleted__':recordHash(r);
       if(r.kind==='note'&&!r.is_deleted)cloudNoteIds.add(String(r.record_id));
     });
   }
@@ -325,7 +358,7 @@ async function bootstrap(){
     const acc=recordsLocal().filter(r=>r.kind==='accounts');
     if(acc.length){
       await api({action:'push',actor:actor(),records:acc});
-      const h=loadHashes();acc.forEach(r=>h[recKey(r)]=hash(r.payload));saveHashes(h);
+      const h=loadHashes();acc.forEach(r=>h[recKey(r)]=recordHash(r));saveHashes(h);
     }
   }
   await uploadPendingMedia();
