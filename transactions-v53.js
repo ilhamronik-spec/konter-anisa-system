@@ -186,6 +186,9 @@
 
   function restoreCatalogs(saved,sameSource){
     const cats=saved?.catalogs||{};
+    // Pada mode simulasi, snapshot rollover adalah sumber opening yang sah.
+    // Fingerprint boleh berbeda dari HTML statis; jangan kembali ke stok bawaan lama.
+    const forceOpening=!!(sameSource || saved?.rolloverSimulation===true);
     try{
       if(typeof pkgCatalog!=='undefined' && Array.isArray(cats.pkg)){
         const map=new Map();
@@ -197,7 +200,7 @@
           if(!p._sourceKey)p._sourceKey=String((p.group||'')+'|'+(p.name||''));
           const rec=map.get(String(p._sourceKey||'')) || map.get(String(p.group||'')+'|'+String(p.name||''));
           if(!rec) return;
-          if(sameSource) p.stock=Number(rec.stock||0);
+          if(forceOpening) p.stock=Number(rec.stock||0);
           if(String(rec.name||'').trim())p.name=String(rec.name).trim();
           if(String(rec.group||'').trim())p.group=String(rec.group).trim();
           p.purchaseQty=Number(rec.purchaseQty||0);
@@ -217,7 +220,7 @@
         cigCatalog.forEach(c=>{
           const rec=map.get(String(c.name||''));
           if(!rec) return;
-          if(sameSource){
+          if(forceOpening){
             c.display=Number(rec.display||0);
             c.warehouse=Number(rec.warehouse||0);
             if(Number.isFinite(Number(rec.base))) c.base=Number(rec.base);
@@ -369,9 +372,14 @@
     restoring=true;
     const sameSource=String(saved?.sourceFingerprint||'')===sourceFingerprint();
     restoreCatalogs(saved,sameSource);
-    restoreForms(saved,sameSource);
+    restoreForms(saved,sameSource || saved?.rolloverSimulation===true);
     restoreCore(saved);
     renderRecovered();
+    if(saved?.rolloverSimulation===true){
+      safeCall(()=>window.KAStockV50?.refreshOpeningSystem?.());
+      safeCall(()=>{ if(typeof syncPkgBuy==='function') syncPkgBuy(); });
+      safeCall(()=>{ if(typeof syncCigBuy==='function') syncCigBuy(); });
+    }
     restoreFlags(saved);
     restoreStep(saved);
     lastSavedAt=Number(saved.savedAt||0);
