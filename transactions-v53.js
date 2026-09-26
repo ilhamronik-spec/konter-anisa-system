@@ -485,8 +485,36 @@
     const pkg=usage('package'),cig=usage('cigarette');
     const opUsed=Object.values(used).some(r=>r&&String(r.area||'')==='operational'&&String(r.shiftId||sid)===sid);
     saved.flags=saved.flags||{};
+
+    // Sep 24 cigarette recovery guard:
+    // the corrupted snapshot had purchaseQty > 0 but purchaseCost = 0, which
+    // produced a false weighted modal (e.g. HASTA Rp3.891) and inflated Gudang.
+    // Repair that local snapshot before it can be rendered or re-uploaded.
+    let brokenCigPurchase=false;
+    if(sid==='2026-09-24-full-rifda'&&Array.isArray(saved?.catalogs?.cig)){
+      brokenCigPurchase=saved.catalogs.cig.some(x=>Number(x?.purchaseQty||0)>0&&Number(x?.purchaseCost||0)<=0);
+      if(brokenCigPurchase){
+        saved.catalogs.cig=saved.catalogs.cig.map(x=>({
+          ...x,
+          purchaseQty:0,
+          purchaseCost:0,
+          activeBase:Number(x?.openingBase??x?.base??0)
+        }));
+        if(saved.forms?.cigQty)saved.forms.cigQty.value='0';
+        if(saved.forms?.cigTotal)saved.forms.cigTotal.value='';
+        saved.flags.cigBuyConfirmed=false;
+        saved.flags.buyTab='rokok';
+        saved.flags.recoveryResumeIdx=1;
+        saved.flags.progressMaxIdx=Math.max(Number(saved.flags.progressMaxIdx||0),5);
+        saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),5);
+        saved.recoveryNote='Corrupted cigarette purchase snapshot repaired locally; re-enter Belanja Rokok, Display inputs are preserved.';
+      }
+    }
+
     if(pkg)saved.flags.pkgBuyConfirmed=true;
-    if(cig)saved.flags.cigBuyConfirmed=true;
+    // Never resurrect the old cigarette validation from a stale local note
+    // while the cigarette purchase snapshot is being repaired.
+    if(cig&&!brokenCigPurchase&&saved.recoveryVersion!==5)saved.flags.cigBuyConfirmed=true;
     if(opUsed){
       recoverOperationalFromDurableNotes(saved,used,notes);
       // Operational note usage proves the workflow had already passed Belanja.
@@ -494,20 +522,27 @@
     }
     // One-time recovery for the active 24 Sep simulation: user confirmed in-session
     // that Display, Operasional and Hutang/Piutang had already been completed.
-    if(sid==='2026-09-24-full-rifda'&&pkg&&cig&&opUsed){
+    if(sid==='2026-09-24-full-rifda'&&pkg&&opUsed){
       saved.flags.v51=saved.flags.v51||{};
-      // Exact Display Rokok move values were already overwritten by the bad sync.
-      // Never fake a zero-move confirmation. Keep the historical high-water mark,
-      // but resume specifically at Display so only this lost section must be re-entered.
       const hasRealMove=Object.entries(saved.forms||{}).some(([k,v])=>/^move\d+$/.test(k)&&Number(v?.value||0)!==0);
-      if(!hasRealMove){
+
+      if(brokenCigPurchase || saved.recoveryVersion>=4){
+        // Cigarette purchase item detail must be re-entered first. Keep any
+        // Display values already typed; after Rokok confirmation they will
+        // recalculate against Gudang Awal + Belanja without being erased.
+        saved.flags.cigBuyConfirmed=false;
+        saved.flags.buyTab='rokok';
+        saved.flags.recoveryResumeIdx=1;
+        saved.flags.v51.displayPreviewConfirmed=false;
+        saved.flags.v51.displayPreviewSignature='';
+        saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),5);
+      }else if(!hasRealMove){
         saved.flags.v51.displayPreviewConfirmed=false;
         saved.flags.v51.displayPreviewSignature='';
         saved.flags.recoveryResumeIdx=2;
+        saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),3);
       }
       saved.flags.progressMaxIdx=Math.max(Number(saved.flags.progressMaxIdx||0),5);
-      saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),3);
-      saved.recoveryNote='Recovered durable Paket/Rokok/Operasional progress. Resume at Display because exact move quantities were not recoverable from the overwritten snapshot.';
     }
     return saved;
   }
