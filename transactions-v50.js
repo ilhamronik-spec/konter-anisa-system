@@ -481,6 +481,7 @@
     updateLabels();
     commitOpeningToCatalog();
     refreshAllDisplay({resetMoves:true});
+    try{ if(typeof syncPkgBuy==='function') syncPkgBuy(); }catch(_){}
     try{ if(typeof syncCigBuy==='function') syncCigBuy(); }catch(_){}
     try{ if(typeof updateOpeningCorrections==='function') updateOpeningCorrections(); }catch(_){}
     wrapNavigation();
