@@ -68,14 +68,14 @@
 <div id="noAdmin" class="notice red" style="display:none"><b>Sesi Admin tidak ditemukan.</b> Portal ini nanti akan menggunakan akun Admin dari Login sungguhan.</div>
 <div class="grid kpis">
 <div class="card kpi good"><small>Total Margin Keseluruhan</small><strong id="kpiMargin">Rp0</strong><div id="kpiMarginSub">0 shift terekam</div></div>
-<div class="card kpi bad"><small>Total Minus Keseluruhan</small><strong id="kpiMinus">Rp0</strong><div id="kpiMinusSub">0 shift minus</div></div>
+<div class="card kpi purple"><small>Modal Akhir Terbaru</small><strong id="kpiMinus">Rp0</strong><div id="kpiMinusSub">Belum ada shift final</div></div>
 <div class="card kpi warn"><small>Total Operasional</small><strong id="kpiOperational">Rp0</strong><div id="kpiOperationalSub">Seluruh shift terekam</div></div>
 <div class="card kpi purple"><small>Absen Hari Ini</small><strong id="kpiAttendance">0</strong><div id="kpiAttendanceSub">Karyawan sudah absen masuk</div></div>
 </div>
 <div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="purchases">Input Belanja</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button><button data-go="reports">Laporan & Audit</button></div>
 <div class="grid two">
 <div class="card section-card"><h3>Kehadiran Hari Ini</h3><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>Karyawan</th><th>Shift</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th></tr></thead><tbody id="dashAttendance"></tbody></table></div></div>
-<div class="card section-card"><h3>Minus Perlu Perhatian</h3><div class="notice amber">Semua minus ditampilkan. Nilai ≥ Rp50.000 diberi status <b>MINUS BESAR</b> untuk dikaji pada menu Cek Inputan.</div><div id="dashMinusList" class="summary-list"></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-go="review">Buka Cek Inputan</button></div></div>
+<div class="card section-card"><h3>Shift Terakhir</h3><div class="notice blue">Ringkasan aktivitas terbaru: tanggal, pemegang shift, margin, dan modal akhir.</div><div id="dashMinusList" class="summary-list"></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-go="margin">Buka Keuangan</button></div></div>
 </div>
 </section>
 
@@ -248,11 +248,16 @@ function today(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ja
 function datesFrom(arr,field='date'){return [...new Set(arr.map(x=>String(x[field]||'')).filter(Boolean))].sort().reverse()}
 function fillDates(id,dates){const el=$(id),cur=el.value;el.innerHTML='<option value="">Semua tanggal</option>'+dates.map(d=>'<option value="'+esc(d)+'">'+esc(dateLabel(d))+'</option>').join('');if(dates.includes(cur))el.value=cur}
 function renderDashboard(){
-  const s=summaries(),a=attendance(),m=s.reduce((x,y)=>x+Number(y.margin||0),0),neg=s.filter(x=>Number(x.balance||0)<0),minus=neg.reduce((x,y)=>x+Math.abs(Number(y.balance||0)),0),op=s.reduce((x,y)=>x+Number(y.operational||0),0),todayAtt=a.filter(x=>x.date===today()&&x.checkIn);
-  $('kpiMargin').textContent=fmt(m);$('kpiMarginSub').textContent=s.length+' shift terekam';$('kpiMinus').textContent=fmt(minus);$('kpiMinusSub').textContent=neg.length+' shift minus';$('kpiOperational').textContent=fmt(op);$('kpiOperationalSub').textContent=s.length+' shift terekam';$('kpiAttendance').textContent=String(todayAtt.length);$('kpiAttendanceSub').textContent='Karyawan sudah absen masuk';
+  const s=summaries(),a=attendance(),m=s.reduce((x,y)=>x+Number(y.margin||0),0),op=s.reduce((x,y)=>x+Number(y.operational||0),0),todayAtt=a.filter(x=>x.date===today()&&x.checkIn);
+  const capitalRows=s.filter(x=>Number(x.modalClosing||0)>0).sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))||Number(x.savedAt||0)-Number(y.savedAt||0));
+  const latestCapital=capitalRows[capitalRows.length-1]||null;
+  $('kpiMargin').textContent=fmt(m);$('kpiMarginSub').textContent=s.length+' shift terekam';
+  $('kpiMinus').textContent=fmt(latestCapital?.modalClosing||0);$('kpiMinusSub').textContent=latestCapital?(dateLabel(latestCapital.date)+' • '+(latestCapital.holder||'—')):'Belum ada shift final';
+  $('kpiOperational').textContent=fmt(op);$('kpiOperationalSub').textContent=s.length+' shift terekam';
+  $('kpiAttendance').textContent=String(todayAtt.length);$('kpiAttendanceSub').textContent='Karyawan sudah absen masuk';
   $('dashAttendance').innerHTML=todayAtt.length?todayAtt.map(x=>'<tr><td><b>'+esc(x.employeeName)+'</b></td><td>'+esc(x.shiftLabel||'—')+'</td><td>'+time(x.checkIn)+'</td><td>'+time(x.checkOut)+'</td><td>'+(x.checkOut?'<span class="status ok">Selesai</span>':'<span class="status info">Sudah Masuk</span>')+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada karyawan yang absen hari ini.</td></tr>';
-  const attention=neg.slice().sort((x,y)=>Math.abs(Number(y.balance))-Math.abs(Number(x.balance))).slice(0,5);
-  $('dashMinusList').innerHTML=attention.length?attention.map(x=>'<div class="summary-row"><span><b>'+esc(dateLabel(x.date))+' • '+esc(x.holder||'—')+'</b><br><small>'+esc(x.shift||'')+'</small></span><b class="red">'+fmt(Math.abs(x.balance))+(Math.abs(x.balance)>=BIG?' • BESAR':'')+'</b></div>').join(''):'<div class="notice green">Tidak ada shift minus pada data yang terekam.</div>';
+  const recent=s.slice().sort((x,y)=>String(y.date||'').localeCompare(String(x.date||''))||Number(y.savedAt||0)-Number(x.savedAt||0)).slice(0,5);
+  $('dashMinusList').innerHTML=recent.length?recent.map(x=>'<div class="summary-row"><span><b>'+esc(dateLabel(x.date))+' • '+esc(x.holder||'—')+'</b><br><small>'+esc(x.shift||'')+' • Margin '+fmt(x.margin)+'</small></span><b>'+fmt(x.modalClosing||0)+'</b></div>').join(''):'<div class="notice blue">Belum ada shift terekam.</div>';
 }
 function filtered(base,searchId,dateId){const q=String($(searchId)?.value||'').toLowerCase(),d=$(dateId)?.value||'';return base.filter(x=>(!d||x.date===d)&&(!q||[x.date,x.holder,x.shift,x.shiftLabel,x.shiftId].join(' ').toLowerCase().includes(q)))}
 function renderMargin(){const s=summaries();fillDates('marginDate',datesFrom(s));const a=filtered(s,'marginSearch','marginDate');$('marginBody').innerHTML=a.length?a.map(x=>{const sent=x.submissionStatus==='submitted';const st=sent?'<span class="status ok">TERKIRIM</span><div style="font-size:10px;color:var(--muted);margin-top:4px">'+when(x.submittedAt)+'</div>':'<span class="status info">DRAFT / AUTOSAVE</span>';return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money green"><b>'+fmt(x.margin)+'</b></td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td><td>'+st+'</td><td>'+when(x.savedAt)+'</td></tr>'}).join(''):'<tr><td colspan="7" class="empty">Belum ada data.</td></tr>'}
