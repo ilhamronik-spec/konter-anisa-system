@@ -2822,7 +2822,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       else if(/^move\d+$/.test(id)) setForm(forms,id,'0');
       else if(/^pkgCheck\d+$/.test(id)) setForm(forms,id,'');
       else if(/^cig(?:Disp|Wh)Check\d+$/.test(id)) setForm(forms,id,'');
-      else if(/^prevModalCheck\d+$/.test(id)) setForm(forms,id,'');
+      else if(/^prevModalCheck\d+$/.test(id)) setForm(forms,id,''); // diisi dari modal lama setelah openingModal terbentuk
       else if(/^(?:pkg|cig|prevModal)Reason\d+$/.test(id)) setForm(forms,id,'');
       else if(/^(pkgQty|cigQty)$/.test(id)) setForm(forms,id,'0');
       else if(/^(cigTotal|opAmount|opNote|debtAmount|debtNote|payAmount|oilBuyAmount)$/.test(id)) setForm(forms,id,'');
@@ -2830,6 +2830,9 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 
     const openingModal=[];
     for(let i=1;i<=25;i++) openingModal.push(num(String(val(prevForms,'modalInput'+i,'0')).replace(/[^0-9.-]/g,'')));
+
+    // Modal check default = modal lama. Karyawan hanya mengubah kolom ini bila nilai aktual berbeda.
+    openingModal.forEach((v,i)=>setForm(forms,'prevModalCheck'+(i+1),Math.round(v).toLocaleString('id-ID')));
 
     const pkgPrev=Array.isArray(prevCats.pkg)?prevCats.pkg:[];
     const pkg=pkgPrev.map((p,ix)=>{
@@ -2853,7 +2856,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     return {
       schema:53,shiftId:cfg.id,sourceFingerprint:'pending',savedAt:Date.now(),
       reason:'rollover-from-'+cfg.baseId,
-      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:3,
+      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:4,
       rolloverSource:String(prev?.sourceLabel||'shift '+cfg.baseId),
       rolloverOpeningModal:openingModal,
       forms,catalogs:{pkg,cig},core:emptyTxCore(),
@@ -2909,7 +2912,8 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       }
     }catch(_){}
 
-    // Keep physical/correction inputs empty on a fresh simulated day.
+    // Stok fisik/koreksi tetap kosong pada hari simulasi baru.
+    // Khusus cek modal, nilai default adalah modal lama agar karyawan hanya mengubah jika berbeda.
     try{
       const forms=saved.forms||{};
       Object.entries(forms).forEach(([id,rec])=>{
@@ -2953,7 +2957,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       const host=document.querySelector('.content');
       if(host){
         const b=document.createElement('div');b.id='kaRolloverSimBanner';b.className='notice blue';b.style.cssText='margin:0 0 14px;border-width:2px';
-        b.innerHTML='<b>MODE SIMULASI '+target.toUpperCase()+'</b> • Stok/modal SISTEM berasal dari penutupan '+base+' • kolom koreksi tidak diisi otomatis';
+        b.innerHTML='<b>MODE SIMULASI '+target.toUpperCase()+'</b> • Stok/modal SISTEM berasal dari penutupan '+base+' • cek modal otomatis terisi modal lama; ubah hanya jika berbeda';
         host.prepend(b);
       }
     }
@@ -2966,6 +2970,20 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     let current=read(currentKey,null);
 
     if(current&&current.rolloverSimulation===true&&String(current.rolloverFrom||'')===cfg.baseId&&Number(current.rolloverVersion||0)>=3){
+      // Migrasi V3 -> V4 tanpa menghapus progres simulasi: hanya isi cek modal yang masih kosong.
+      if(Number(current.rolloverVersion||0)<4){
+        current.forms=current.forms||{};
+        const arr=Array.isArray(current.rolloverOpeningModal)?current.rolloverOpeningModal:[];
+        arr.forEach((v,i)=>{
+          const id='prevModalCheck'+(i+1);
+          const existing=String(current.forms?.[id]?.value??'').trim();
+          if(existing==='') setForm(current.forms,id,Math.round(num(v)).toLocaleString('id-ID'));
+        });
+        current.rolloverVersion=4;
+        current.savedAt=Date.now();
+        current.reason='migrate-v4-default-opening-modal';
+        write(currentKey,current);touchIndex(currentKey,current.savedAt);
+      }
       applyRuntime(current);return true;
     }
 
@@ -2977,7 +2995,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     current.sourceFingerprint=fingerprint();
     write(currentKey,current);touchIndex(currentKey,current.savedAt);
     currentMeta={
-      rolloverSimulation:true,rolloverVersion:3,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
+      rolloverSimulation:true,rolloverVersion:4,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
       rolloverSource:String(current.rolloverSource||''),rolloverOpeningModal:current.rolloverOpeningModal.slice()
     };
     sessionStorage.setItem('ka_rollover_last_v2',JSON.stringify({from:cfg.baseId,to:cfg.id,at:current.savedAt}));
