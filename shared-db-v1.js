@@ -156,7 +156,13 @@ function applyOne(r){
       window.KAPurchasingV56?.refreshNotes?.();
     }catch(_){}
   }else if(r.kind==='shift'){
-    const key=SHIFT_PREFIX+id;setJson(key,p);
+    const key=SHIFT_PREFIX+id;
+    const local=read(key,null);
+    const localTs=Number(local?.savedAt||0),remoteTs=Number(p?.savedAt||0);
+    // Local autosave may be ahead while the employee is typing. Never let an
+    // older cloud snapshot overwrite newer browser work.
+    if(local&&localTs>remoteTs)return;
+    setJson(key,p);
     let idx=read(SHIFT_INDEX,[]);if(!Array.isArray(idx))idx=[];
     idx=idx.filter(x=>String(x?.key||'')!==key);
     idx.push({key,ts:Number(p?._syncIndexTs||p?.savedAt||Date.now())});
