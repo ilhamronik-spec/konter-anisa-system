@@ -255,17 +255,42 @@ const dateLabel=d=>{const m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(
 const time=v=>{if(!v)return '—';try{return new Date(v).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(_){return '—'}};
 const when=v=>{if(!v)return '—';try{return new Date(v).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})}catch(_){return '—'}};
 function summaries(){const x=read(SUM,{});return Object.values(x&&typeof x==='object'?x:{}).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.savedAt||0)-Number(a.savedAt||0))}
+const LEGACY_CUTOVER_ARCHIVE_IDS=new Set(['2026-09-18-full-rifda','2026-09-19-full-rifda','2026-09-24-full-rifda']);
 function periodKey(v){const m=String(v||'').match(/^(\d{4})-(\d{2})/);return m?m[1]+'-'+m[2]:''}
 function currentPeriod(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'}).slice(0,7)}
 function periodLabel(p){const m=String(p||'').match(/^(\d{4})-(\d{2})$/);if(!m)return p||'—';const names=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];return names[Number(m[2])]+' '+m[1]}
-function explicitArchive(x){return x?.archived===true||String(x?.archiveStatus||'')==='archived'}
+function isLegacyCutoverArchive(x){return LEGACY_CUTOVER_ARCHIVE_IDS.has(String(x?.shiftId||''))}
+function explicitArchive(x){return isLegacyCutoverArchive(x)||x?.archived===true||String(x?.archiveStatus||'')==='archived'}
 function productionSummaries(){return summaries().filter(x=>!explicitArchive(x))}
 function activeSummaries(){const p=currentPeriod();return productionSummaries().filter(x=>periodKey(x.date)===p)}
 function archivedSummaries(){const p=currentPeriod();return summaries().filter(x=>explicitArchive(x)||(periodKey(x.date)&&periodKey(x.date)<p))}
 function archiveShiftIds(){return new Set(archivedSummaries().map(x=>String(x.shiftId||'')).filter(Boolean))}
 function activeAttendance(){const p=currentPeriod();return attendance().filter(x=>periodKey(x.date)===p)}
-function archiveKind(x){return explicitArchive(x)?String(x.archiveType||'simulation'):'monthly'}
+function archiveKind(x){return isLegacyCutoverArchive(x)?'simulation':(explicitArchive(x)?String(x.archiveType||'simulation'):'monthly')}
 function archiveKindLabel(x){return archiveKind(x)==='simulation'?'SIMULASI':'TUTUP BULAN'}
+function migrateLegacyCutoverArchiveLocal(){
+  const map=read(SUM,{});
+  if(!map||typeof map!=='object')return false;
+  let changed=false;
+  for(const id of LEGACY_CUTOVER_ARCHIVE_IDS){
+    const rec=map[id];
+    if(!rec)continue;
+    if(rec.archived!==true||rec.archiveStatus!=='archived'||rec.archiveType!=='simulation'||rec.archivePeriod!=='2026-09'){
+      map[id]={
+        ...rec,
+        archived:true,
+        archiveStatus:'archived',
+        archiveType:'simulation',
+        archivePeriod:'2026-09',
+        archiveLabel:'Simulasi sebelum produksi',
+        archivedAt:rec.archivedAt||'2026-09-27T02:21:00+07:00'
+      };
+      changed=true;
+    }
+  }
+  if(changed)write(SUM,map);
+  return changed;
+}
 function attendance(){const a=read(ATT,[]);return Array.isArray(a)?a.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))):[]}
 function corrections(){const a=read(CORR,[]);return Array.isArray(a)?a:[]}
 function corrForShift(id){return corrections().filter(x=>x.shiftId===id).sort((a,b)=>String(b.requestedAt||'').localeCompare(String(a.requestedAt||'')))[0]||null}
@@ -775,8 +800,9 @@ function show(v){
   $('crumbView').textContent=crumbs[v]||v;
   $('side').classList.remove('mobile-open');
 }
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',renderAll);window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',()=>{renderAll();refreshServerAccounts()});window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',()=>{migrateLegacyCutoverArchiveLocal();renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',()=>{renderAll();refreshServerAccounts()});window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){
+  migrateLegacyCutoverArchiveLocal();
   bind();renderAll();refreshServerAccounts();
   const q=new URLSearchParams(location.search),view=String(q.get('view')||''),shiftId=String(q.get('shift')||'');
   const allowed=new Set(['dashboard','margin','minus','operational','capital','debt','purchases','review','attendance','accounts','archive','reports','audit']);
