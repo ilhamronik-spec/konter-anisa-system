@@ -126,6 +126,10 @@
     try{
       const prev=readSaved();
       f.progressMaxIdx=Math.max(Number(f.idx||0),Number(prev?.flags?.progressMaxIdx||0),Number(prev?.flags?.idx||0));
+      const recoveryResume=Number(prev?.flags?.recoveryResumeIdx);
+      if(Number.isFinite(recoveryResume) && !f.v51?.displayPreviewConfirmed){
+        f.recoveryResumeIdx=recoveryResume;
+      }
     }catch(_){f.progressMaxIdx=Number(f.idx||0)}
     return f;
   }
@@ -402,7 +406,10 @@
   }
 
   function restoreStep(saved){
-    const raw=Math.max(Number(saved?.flags?.idx||0),Number(saved?.flags?.progressMaxIdx||0));
+    const recoveryResume=Number(saved?.flags?.recoveryResumeIdx);
+    const raw=Number.isFinite(recoveryResume)
+      ? recoveryResume
+      : Math.max(Number(saved?.flags?.idx||0),Number(saved?.flags?.progressMaxIdx||0));
     if(Number.isFinite(raw)) safeCall(()=>{ if(typeof showStep==='function') showStep(raw); });
 
     // Keep the last Belanja sub-tab. Older snapshots did not store it, so when
@@ -489,12 +496,18 @@
     // that Display, Operasional and Hutang/Piutang had already been completed.
     if(sid==='2026-09-24-full-rifda'&&pkg&&cig&&opUsed){
       saved.flags.v51=saved.flags.v51||{};
-      saved.flags.v51.displayPreviewConfirmed=true;
-      saved.flags.v51.displayPreviewSignature=moveSignatureFromSaved(saved);
+      // Exact Display Rokok move values were already overwritten by the bad sync.
+      // Never fake a zero-move confirmation. Keep the historical high-water mark,
+      // but resume specifically at Display so only this lost section must be re-entered.
+      const hasRealMove=Object.entries(saved.forms||{}).some(([k,v])=>/^move\d+$/.test(k)&&Number(v?.value||0)!==0);
+      if(!hasRealMove){
+        saved.flags.v51.displayPreviewConfirmed=false;
+        saved.flags.v51.displayPreviewSignature='';
+        saved.flags.recoveryResumeIdx=2;
+      }
       saved.flags.progressMaxIdx=Math.max(Number(saved.flags.progressMaxIdx||0),5);
-      saved.flags.idx=Math.max(Number(saved.flags.idx||0),5);
-      saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),2);
-      saved.recoveryNote='Recovered workflow through Hutang/Piutang from durable note-usage evidence and user-confirmed progress.';
+      saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),3);
+      saved.recoveryNote='Recovered durable Paket/Rokok/Operasional progress. Resume at Display because exact move quantities were not recoverable from the overwritten snapshot.';
     }
     return saved;
   }
