@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="id" class="ka-auth-pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Konter Anisa — Login</title>
+<style>
+:root{--bg:#f7f5fb;--card:#fff;--ink:#1f1726;--muted:#756b7d;--line:#e9e2ef;--purple:#7c3aed;--purple2:#5b21b6;--green:#14804a;--red:#b42318;--amber:#b54708}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at top right,#efe7ff 0,#f8f6fb 42%,#f4f7fb 100%);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:24px}
+.shell{width:min(980px,100%);display:grid;grid-template-columns:.95fr 1.05fr;background:rgba(255,255,255,.86);backdrop-filter:blur(14px);border:1px solid #eee8f2;border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(54,36,71,.15)}
+.brand{padding:48px;background:linear-gradient(155deg,#1c1124,#34203f 55%,#5b21b6);color:#fff;min-height:590px;display:flex;flex-direction:column;justify-content:space-between}
+.logo{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:#fff;color:#24152e;font-weight:900;font-size:20px}
+.brand h1{font-size:34px;line-height:1.05;margin:18px 0 10px}.brand p{color:#ded4e7;line-height:1.6}.brand small{color:#cbbdd8}
+.panel{padding:42px}.panel h2{margin:0 0 8px;font-size:28px}.sub{color:var(--muted);margin:0 0 26px;line-height:1.55}
+.field{margin:14px 0}.field label{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6c6175;margin-bottom:7px}.input{width:100%;height:48px;border:1px solid #ded6e5;border-radius:12px;padding:0 14px;font-size:14px;background:#fff;outline:none}.input:focus{border-color:#9b6bea;box-shadow:0 0 0 3px rgba(124,58,237,.09)}
+.btn{width:100%;height:48px;border:0;border-radius:12px;font-weight:800;cursor:pointer}.primary{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff}.secondary{background:#f3eef8;color:#3f2a4a}
+.notice{padding:12px 14px;border-radius:12px;font-size:12px;line-height:1.5;margin:14px 0}.info{background:#f2effc;color:#4d3280;border:1px solid #dfd5f4}.ok{background:#ecfdf3;color:#166534;border:1px solid #bbf7d0}.bad{background:#fff1f1;color:#991b1b;border:1px solid #fecaca}.warn{background:#fff8e7;color:#92400e;border:1px solid #fde68a}
+.sep{height:1px;background:var(--line);margin:26px 0}.setup{display:none}.setup.show{display:block}.muted{font-size:11px;color:var(--muted)}.foot{margin-top:20px;text-align:center;font-size:11px;color:var(--muted)}
+@media(max-width:780px){.shell{grid-template-columns:1fr}.brand{min-height:auto;padding:30px}.brand .brand-copy{margin:24px 0}.panel{padding:30px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <section class="brand">
+    <div>
+      <div class="logo">KA</div>
+      <div class="brand-copy">
+        <h1>KONTER ANISA</h1>
+        <p>Business Management System untuk Perhitungan Harian, Purchasing, Admin, stok, modal, hutang, dan laporan.</p>
+      </div>
+    </div>
+    <small>Login berbasis Supabase Auth • role terpisah • session terenkripsi</small>
+  </section>
+
+  <section class="panel">
+    <div id="loginBox">
+      <h2>Masuk</h2>
+      <p class="sub">Gunakan username dan password akun Konter Anisa.</p>
+      <div id="loginNotice" class="notice info">Memeriksa status sistem login…</div>
+      <form id="loginForm">
+        <div class="field"><label>Username</label><input class="input" id="username" autocomplete="username" placeholder="contoh: ilham" required></div>
+        <div class="field"><label>Password</label><input class="input" id="password" type="password" autocomplete="current-password" placeholder="••••••••" required></div>
+        <button class="btn primary" id="loginBtn" type="submit">MASUK KE SISTEM</button>
+      </form>
+    </div>
+
+    <div id="setupBox" class="setup">
+      <div class="sep"></div>
+      <h2 style="font-size:21px">Aktivasi Owner Pertama</h2>
+      <p class="sub" style="margin-bottom:14px">Hanya muncul sebelum login pertama dibuat. Aktivasi memerlukan browser yang sudah <b>DATABASE • TERHUBUNG</b>.</p>
+      <div id="setupNotice" class="notice warn">Belum ada akun login server. Buat akun Owner pertama di sini.</div>
+      <form id="setupForm">
+        <div class="field"><label>Nama</label><input class="input" id="setupName" value="Ilham" required></div>
+        <div class="field"><label>Username</label><input class="input" id="setupUsername" value="ilham" pattern="[A-Za-z0-9._-]{3,40}" required></div>
+        <div class="field"><label>Password Baru</label><input class="input" id="setupPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Minimal 8 karakter" required></div>
+        <div class="field"><label>Ulangi Password</label><input class="input" id="setupPassword2" type="password" minlength="8" autocomplete="new-password" placeholder="Ulangi password" required></div>
+        <button class="btn secondary" id="setupBtn" type="submit">AKTIFKAN OWNER & LOGIN</button>
+      </form>
+      <div class="muted" style="margin-top:10px">Password tidak disimpan di file website. Verifikasi dilakukan oleh Supabase Auth.</div>
+    </div>
+
+    <div class="foot">Konter Anisa System</div>
+  </section>
+</div>
+
+<script src="./auth-client-v1.js?build=80"></script>
+<script>
+(async function(){
+  const $=id=>document.getElementById(id);
+  const notice=(id,msg,cls='info')=>{const e=$(id);e.className='notice '+cls;e.innerHTML=msg};
+  const q=new URLSearchParams(location.search);
+  const reason=q.get('reason')||'';
+  const next=q.get('next')||'';
+
+  function safeNext(){
+    if(next && !/^https?:/i.test(next) && !next.startsWith('//')) return './'+next.replace(/^\.\//,'');
+    return '';
+  }
+  async function redirectByProfile(){
+    const p=await window.KAAuthV1.ownProfile();
+    if(!p||!p.active)throw new Error('Akun tidak aktif.');
+    const target=safeNext()||window.KAAuthV1.homeForRole(p.role);
+    location.replace(target);
+  }
+
+  try{
+    const st=await window.KAAuthV1.status();
+    document.documentElement.classList.remove('ka-auth-pending');
+    if(st.configured===false){
+      $('setupBox').classList.add('show');
+      $('loginForm').style.opacity='.45';$('loginForm').style.pointerEvents='none';
+      const paired=!!String(localStorage.getItem('ka_sync_pairing_token_v1')||'').trim();
+      notice('loginNotice','Login server belum diaktifkan. Aktifkan akun Owner pertama di bawah.','warn');
+      notice('setupNotice',paired
+        ? '<b>Siap aktivasi.</b> Browser ini sudah memiliki pairing Database Konter Anisa.'
+        : '<b>Pairing database belum ditemukan.</b> Buka portal lama di browser ini dan pastikan badge DATABASE • TERHUBUNG terlebih dahulu.','warn');
+      $('setupBtn').disabled=!paired;
+    }else if(st.configured===true){
+      notice('loginNotice',reason==='role_denied'?'Akun Anda tidak memiliki akses ke halaman tersebut. Silakan masuk dengan akun yang sesuai.':'Sistem login aktif.','info');
+      const s=await window.KAAuthV1.session();
+      if(s) await redirectByProfile();
+    }else{
+      notice('loginNotice','Server login tidak dapat dihubungi. Coba muat ulang halaman.','bad');
+    }
+  }catch(e){
+    document.documentElement.classList.remove('ka-auth-pending');
+    notice('loginNotice','Gagal memeriksa login: '+String(e?.message||e),'bad');
+  }
+
+  $('loginForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    $('loginBtn').disabled=true;
+    try{
+      notice('loginNotice','Memverifikasi akun…','info');
+      await window.KAAuthV1.signIn($('username').value,$('password').value);
+      notice('loginNotice','Login berhasil. Membuka portal…','ok');
+      await redirectByProfile();
+    }catch(err){
+      notice('loginNotice','Login gagal. Periksa username/password atau status akun.','bad');
+      $('loginBtn').disabled=false;
+    }
+  });
+
+  $('setupForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const p1=$('setupPassword').value,p2=$('setupPassword2').value;
+    if(p1!==p2){notice('setupNotice','Password tidak sama.','bad');return}
+    if(p1.length<8){notice('setupNotice','Password minimal 8 karakter.','bad');return}
+    $('setupBtn').disabled=true;
+    try{
+      notice('setupNotice','Membuat akun Owner di server…','info');
+      await window.KAAuthV1.bootstrapOwner($('setupUsername').value,p1,$('setupName').value);
+      await window.KAAuthV1.signIn($('setupUsername').value,p1);
+      notice('setupNotice','Owner berhasil dibuat. Membuka Portal Admin…','ok');
+      location.replace('./admin.html');
+    }catch(err){
+      notice('setupNotice','Aktivasi gagal: '+String(err?.message||err),'bad');
+      $('setupBtn').disabled=false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
