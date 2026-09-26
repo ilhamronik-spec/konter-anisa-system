@@ -676,9 +676,9 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <div class="field"><label>Nota Purchasing</label><select class="select"><option>NBJ-0913-02 • Rp850.000</option></select></div>
 <div class="field"><label>Jenis Rokok</label><select class="select" data-ui-change="syncCigBuy()" id="cigType"><option value="0">HASTA</option><option value="1">Sempurna B</option><option value="2">Slava</option><option value="3">LM</option><option value="4">Surya Kecil</option><option value="5">Rasta bluberi</option><option value="6">Harum Manis</option><option value="7">Novem</option><option value="8">Dji Samso hitam</option><option value="9">Surya Besar</option><option value="10">Aspro</option><option value="11">A.O</option><option value="12">Savero</option><option value="13">Sempurna K</option><option value="14">rasta</option><option value="15">Tunggal</option><option value="16">Titan</option><option value="17">Konser</option><option value="18">sempurna A kretek</option><option value="19">Sempurna A 2 +</option><option value="20">Wezz</option><option value="21">Twizz</option><option value="22">EVO</option><option value="23">Luffman</option><option value="24">Clasmid</option><option value="25">sempurna prima</option><option value="26">Sempurna hijau</option><option value="27">duff</option><option value="28">abs</option><option value="29">di jam su kretek 234</option><option value="30">Malboro KECIL</option><option value="31">Esse Double Change</option><option value="32">Chiff</option><option value="33">L.A ice</option><option value="34">malboro besar</option><option value="35">Novem Manggo</option><option value="36">la bold hitam</option><option value="37">esse merah</option><option value="38">gudang garam merah</option><option value="39">Sempurna zetta</option><option value="40">twizz biru</option><option value="41">king garet</option><option value="42">titan biru</option><option value="43">honey pop</option><option value="44">slava klik</option><option value="45">rasta mangga</option><option value="46">aspro 12</option><option value="47">aspro bold</option><option value="48">sempurna 89 edition</option><option value="49">sempurna min</option><option value="50">malboro 16</option><option value="51">sempurna prima kertas</option><option value="52">malboro vista</option><option value="53">sempurna evolution</option><option value="54">oris</option><option value="55">marlong</option><option value="56">sempurna tropizal</option><option value="57">sempurna royal</option><option value="58">slava semangka</option><option value="59">slava ice blast</option></select></div>
 <div class="field"><label>Stok Gudang Sebelum</label><input class="input" disabled="" id="cigOldWarehouse" value="0"/></div>
-<div class="field"><label>Jumlah Beli</label><input class="input" data-ui-input="markCigaretteDirty();calcCigBuy()" id="cigQty" min="0" type="number" value="10"/></div>
-<div class="field"><label>Total Harga Belanja</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);markCigaretteDirty();calcCigBuy()" id="cigTotal" inputmode="numeric" type="text" value="300.000"/></div>
-<div class="field"><label>Modal Aktif Rata-rata / Unit</label><input class="input" disabled="" id="cigUnit" value="30.000"/></div>
+<div class="field"><label>Jumlah Beli</label><input class="input" data-ui-input="markCigaretteDirty();calcCigBuy()" id="cigQty" min="0" type="number" value="0"/></div>
+<div class="field"><label>Total Harga Belanja</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);markCigaretteDirty();calcCigBuy()" id="cigTotal" inputmode="numeric" type="text" value=""/></div>
+<div class="field"><label>Modal Aktif Rata-rata / Unit</label><input class="input" disabled="" id="cigUnit" value="0"/></div>
 <div class="field"><label>Harga Jual Berjalan</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);markCigaretteDirty();calcCigBuy()" id="cigSell" inputmode="numeric" type="text" value="0"/></div>
 <div class="field"><label>Margin / Unit</label><input class="input" disabled="" id="cigMarginUnit" value="0"/></div>
 </div>
@@ -2819,7 +2819,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v41.js?build=80&fix=acccloud1"></script>
 <script src="./transactions-v42.js?build=80"></script>
 <script src="./transactions-v43.js?build=80&fix=weighted1"></script>
-<script src="./transactions-v50.js?build=80&fix=sim24stock3"></script>
+<script src="./transactions-v50.js?build=80&fix=no-reload-reset1"></script>
 <script src="./transactions-v51.js?build=80"></script>
 <script>
 /* Konter Anisa Day Rollover V2
@@ -3157,7 +3157,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 })();
 
 </script>
-<script src="./transactions-v53.js?build=80&fix=progress-restore4"></script>
+<script src="./transactions-v53.js?build=80&fix=progress-restore5"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80&fix=entry-flow2"></script>
 <script src="./ui-clean-v74.js?build=80"></script>
