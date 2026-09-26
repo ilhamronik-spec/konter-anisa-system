@@ -989,75 +989,87 @@ function renamePkgBuy(){
  if(window.KAAutosaveV53?.save)window.KAAutosaveV53.save();
 }
 function syncPkgBuy(){
- const typeEl=document.getElementById('pkgBuyType');
- if(!typeEl||typeof pkgCatalog==='undefined'||!Array.isArray(pkgCatalog))return;
- const i=Math.max(0,Number(typeEl.value||0)),p=pkgCatalog[i];
- if(!p)return;
- const openingStock=Math.max(0,Number(p.stock||0));
- const openingBase=Number(p._openingBase??p.base??0);
- const nameEdit=document.getElementById('pkgNameEdit');
- const oldStock=document.getElementById('pkgOldStock');
- const oldBase=document.getElementById('pkgOldBase');
- const sellEl=document.getElementById('pkgSell');
- const qtyEl=document.getElementById('pkgQty');
- const buyBaseEl=document.getElementById('pkgNewBase');
- if(nameEdit)nameEdit.value=String(p.name||'');
- refreshPkgNameViews(i);
- if(oldStock)oldStock.value=String(openingStock);
- if(oldBase)oldBase.value=Math.round(openingBase).toLocaleString('id-ID');
- if(sellEl){
-   if(typeof setMoneyInput==='function')setMoneyInput(sellEl,Number(p.activeSell??p.sell??0));
-   else sellEl.value=Math.round(Number(p.activeSell??p.sell??0)).toLocaleString('id-ID');
+ if(syncPkgBuy.__running)return;
+ syncPkgBuy.__running=true;
+ try{
+   const typeEl=document.getElementById('pkgBuyType');
+   if(!typeEl||typeof pkgCatalog==='undefined'||!Array.isArray(pkgCatalog))return;
+   const i=Math.max(0,Number(typeEl.value||0)),p=pkgCatalog[i];
+   if(!p)return;
+   const openingStock=Math.max(0,Number(p.stock||0));
+   const openingBase=Number(p._openingBase??p.base??0);
+   const nameEdit=document.getElementById('pkgNameEdit');
+   const oldStock=document.getElementById('pkgOldStock');
+   const oldBase=document.getElementById('pkgOldBase');
+   const sellEl=document.getElementById('pkgSell');
+   const qtyEl=document.getElementById('pkgQty');
+   const buyBaseEl=document.getElementById('pkgNewBase');
+   if(nameEdit)nameEdit.value=String(p.name||'');
+   refreshPkgNameViews(i);
+   if(oldStock)oldStock.value=String(openingStock);
+   if(oldBase)oldBase.value=Math.round(openingBase).toLocaleString('id-ID');
+   if(sellEl){
+     if(typeof setMoneyInput==='function')setMoneyInput(sellEl,Number(p.activeSell??p.sell??0));
+     else sellEl.value=Math.round(Number(p.activeSell??p.sell??0)).toLocaleString('id-ID');
+   }
+   if(qtyEl)qtyEl.value=String(Number(p.purchaseQty||0));
+   if(buyBaseEl){
+     const purchaseBase=Number(p.purchaseBase??openingBase);
+     if(typeof setMoneyInput==='function')setMoneyInput(buyBaseEl,purchaseBase);
+     else buyBaseEl.value=Math.round(purchaseBase).toLocaleString('id-ID');
+   }
+   calcPkgBuy();
+ }finally{
+   syncPkgBuy.__running=false;
  }
- if(qtyEl)qtyEl.value=String(Number(p.purchaseQty||0));
- if(buyBaseEl){
-   const purchaseBase=Number(p.purchaseBase??openingBase);
-   if(typeof setMoneyInput==='function')setMoneyInput(buyBaseEl,purchaseBase);
-   else buyBaseEl.value=Math.round(purchaseBase).toLocaleString('id-ID');
- }
- calcPkgBuy();
 }
 function calcPkgBuy(){
- const typeEl=document.getElementById('pkgBuyType');
- if(!typeEl||typeof pkgCatalog==='undefined'||!Array.isArray(pkgCatalog))return;
- const i=Math.max(0,Number(typeEl.value||0)),p=pkgCatalog[i];
- if(!p)return;
- const qtyEl=document.getElementById('pkgQty'),buyBaseEl=document.getElementById('pkgNewBase'),sellEl=document.getElementById('pkgSell');
- const q=Math.max(0,Number(qtyEl?.value||0));
- const readMoney=el=>{
-   if(!el)return 0;
-   if(typeof moneyValue==='function')return Math.max(0,Number(moneyValue(el))||0);
-   return Math.max(0,Number(String(el.value||'').replace(/[^0-9.-]/g,''))||0);
- };
- const purchaseBase=readMoney(buyBaseEl),sell=readMoney(sellEl);
- const openingStock=Math.max(0,Number(p.stock||0));
- const openingBase=Number(p._openingBase??p.base??0);
- if(p._openingBase==null)p._openingBase=openingBase;
- const totalUnits=openingStock+q;
- const weighted=totalUnits>0?((openingStock*openingBase)+(q*purchaseBase))/totalUnits:openingBase;
- const activeBase=Number.isFinite(weighted)?weighted:openingBase;
- const m=sell-activeBase;
- p.purchaseQty=q;p.purchaseBase=purchaseBase;p.activeBase=activeBase;p.activeSell=sell;
+ if(calcPkgBuy.__running)return;
+ calcPkgBuy.__running=true;
+ try{
+   const typeEl=document.getElementById('pkgBuyType');
+   if(!typeEl||typeof pkgCatalog==='undefined'||!Array.isArray(pkgCatalog))return;
+   const i=Math.max(0,Number(typeEl.value||0)),p=pkgCatalog[i];
+   if(!p)return;
+   const qtyEl=document.getElementById('pkgQty'),buyBaseEl=document.getElementById('pkgNewBase'),sellEl=document.getElementById('pkgSell');
+   const q=Math.max(0,Number(qtyEl?.value||0));
+   const readMoney=el=>{
+     if(!el)return 0;
+     if(typeof moneyValue==='function')return Math.max(0,Number(moneyValue(el))||0);
+     return Math.max(0,Number(String(el.value||'').replace(/[^0-9.-]/g,''))||0);
+   };
+   const purchaseBase=readMoney(buyBaseEl),sell=readMoney(sellEl);
+   const openingStock=Math.max(0,Number(p.stock||0));
+   const openingBase=Number(p._openingBase??p.base??0);
+   if(p._openingBase==null)p._openingBase=openingBase;
+   const totalUnits=openingStock+q;
+   const weighted=totalUnits>0?((openingStock*openingBase)+(q*purchaseBase))/totalUnits:openingBase;
+   const activeBase=Number.isFinite(weighted)?weighted:openingBase;
+   const m=sell-activeBase;
+   p.purchaseQty=q;p.purchaseBase=purchaseBase;p.activeBase=activeBase;p.activeSell=sell;
 
- const basePreview=document.getElementById('pkgBasePreview');
- const after=document.getElementById('pkgAfter');
- const cost=document.getElementById('pkgCost');
- const unitMargin=document.getElementById('pkgUnitMargin');
- const box=document.getElementById('marginBox');
- const status=document.getElementById('pkgMarginStatus');
- const notice=document.getElementById('pkgMarginNotice');
- if(basePreview)basePreview.value=Math.round(activeBase).toLocaleString('id-ID');
- if(after)after.textContent=(openingStock+q)+' unit';
- if(cost)cost.textContent=fmt(q*purchaseBase);
- if(unitMargin)unitMargin.textContent=fmt(m);
- const bad=q>0&&m<1000;
- if(box)box.className='calcbox '+(bad?'bad':'good');
- if(status){status.textContent=bad?'BLOKIR < Rp1.000':'AMAN ≥ Rp1.000';status.style.color=bad?'var(--red)':'var(--green)';}
- if(notice){
-   notice.className='notice '+(bad?'red':'amber');
-   notice.textContent=bad?'Margin rata-rata per unit kurang dari Rp1.000. Naikkan Harga Jual sebelum konfirmasi.':'Weighted average aktif: harga beli baru '+fmt(purchaseBase)+' digabung dengan modal stok lama menjadi modal aktif '+fmt(activeBase)+'.';
+   const basePreview=document.getElementById('pkgBasePreview');
+   const after=document.getElementById('pkgAfter');
+   const cost=document.getElementById('pkgCost');
+   const unitMargin=document.getElementById('pkgUnitMargin');
+   const box=document.getElementById('marginBox');
+   const status=document.getElementById('pkgMarginStatus');
+   const notice=document.getElementById('pkgMarginNotice');
+   if(basePreview)basePreview.value=Math.round(activeBase).toLocaleString('id-ID');
+   if(after)after.textContent=(openingStock+q)+' unit';
+   if(cost)cost.textContent=fmt(q*purchaseBase);
+   if(unitMargin)unitMargin.textContent=fmt(m);
+   const bad=q>0&&m<1000;
+   if(box)box.className='calcbox '+(bad?'bad':'good');
+   if(status){status.textContent=bad?'BLOKIR < Rp1.000':'AMAN ≥ Rp1.000';status.style.color=bad?'var(--red)':'var(--green)';}
+   if(notice){
+     notice.className='notice '+(bad?'red':'amber');
+     notice.textContent=bad?'Margin rata-rata per unit kurang dari Rp1.000. Naikkan Harga Jual sebelum konfirmasi.':'Weighted average aktif: harga beli baru '+fmt(purchaseBase)+' digabung dengan modal stok lama menjadi modal aktif '+fmt(activeBase)+'.';
+   }
+   syncPkgEndRow(i+1);
+ }finally{
+   calcPkgBuy.__running=false;
  }
- syncPkgEndRow(i+1);
 }
 function syncPkgEndRow(i){
  const p=Array.isArray(pkgCatalog)?pkgCatalog[i-1]:null;
@@ -2795,7 +2807,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./transactions-v41.js?build=80&fix=acccloud1"></script>
 <script src="./transactions-v42.js?build=80"></script>
 <script src="./transactions-v43.js?build=80&fix=weighted1"></script>
-<script src="./transactions-v50.js?build=80&fix=sim24sync1"></script>
+<script src="./transactions-v50.js?build=80&fix=sim24stock3"></script>
 <script src="./transactions-v51.js?build=80"></script>
 <script>
 /* Konter Anisa Day Rollover V2
@@ -2942,7 +2954,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     return {
       schema:53,shiftId:cfg.id,sourceFingerprint:'pending',savedAt:Date.now(),
       reason:'rollover-from-'+cfg.baseId,
-      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:4,
+      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:5,
       rolloverSource:String(prev?.sourceLabel||'shift '+cfg.baseId),
       rolloverOpeningModal:openingModal,
       forms,catalogs:{pkg,cig},core:emptyTxCore(),
@@ -3073,19 +3085,23 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     let current=read(currentKey,null);
 
     if(current&&current.rolloverSimulation===true&&String(current.rolloverFrom||'')===cfg.baseId&&Number(current.rolloverVersion||0)>=3){
-      // Migrasi V3 -> V4 tanpa menghapus progres simulasi: hanya isi cek modal yang masih kosong.
-      if(Number(current.rolloverVersion||0)<4){
-        current.forms=current.forms||{};
-        const arr=Array.isArray(current.rolloverOpeningModal)?current.rolloverOpeningModal:[];
-        arr.forEach((v,i)=>{
-          const id='prevModalCheck'+(i+1);
-          const existing=String(current.forms?.[id]?.value??'').trim();
-          if(existing==='') setForm(current.forms,id,Math.round(num(v)).toLocaleString('id-ID'));
-        });
-        current.rolloverVersion=4;
-        current.savedAt=Date.now();
-        current.reason='migrate-v4-default-opening-modal';
-        write(currentKey,current);touchIndex(currentKey,current.savedAt);
+      // V5 khusus simulasi 24/09: reset ulang dari closing 23 yang kanonik.
+      // Ini membuang snapshot simulasi lama yang sempat tercampur nilai kolom koreksi.
+      if(cfg.date==='2026-09-24' && cfg.baseDate==='2026-09-23' && Number(current.rolloverVersion||0)<5){
+        const cleanBase=canonicalBase(cfg.baseDate)||read(PREFIX+cfg.baseId,null);
+        if(cleanBase&&cleanBase.forms&&cleanBase.catalogs){
+          current=buildSeed(cfg,cleanBase);
+          current.rolloverVersion=5;
+          current.reason='migrate-v5-clean-system-opening';
+          applyRuntime(current);
+          current.sourceFingerprint=fingerprint();
+          write(currentKey,current);touchIndex(currentKey,current.savedAt);
+          currentMeta={
+            rolloverSimulation:true,rolloverVersion:5,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
+            rolloverSource:String(current.rolloverSource||''),rolloverOpeningModal:current.rolloverOpeningModal.slice()
+          };
+          return true;
+        }
       }
       applyRuntime(current);return true;
     }
@@ -3098,7 +3114,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
     current.sourceFingerprint=fingerprint();
     write(currentKey,current);touchIndex(currentKey,current.savedAt);
     currentMeta={
-      rolloverSimulation:true,rolloverVersion:4,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
+      rolloverSimulation:true,rolloverVersion:5,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
       rolloverSource:String(current.rolloverSource||''),rolloverOpeningModal:current.rolloverOpeningModal.slice()
     };
     sessionStorage.setItem('ka_rollover_last_v2',JSON.stringify({from:cfg.baseId,to:cfg.id,at:current.savedAt}));
@@ -3129,7 +3145,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 })();
 
 </script>
-<script src="./transactions-v53.js?build=80&fix=sim24stock2"></script>
+<script src="./transactions-v53.js?build=80&fix=sim24stock3"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80"></script>
 <script src="./ui-clean-v74.js?build=80"></script>
