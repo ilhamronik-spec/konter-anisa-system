@@ -162,23 +162,32 @@
   }
 
   function commitOpeningToCatalog(){
+    // Kolom Stok Fisik/Koreksi hanyalah usulan pemeriksaan.
+    // Jangan pernah mengubah Stok Sistem sebelum koreksi benar-benar disetujui Admin.
+    let approved=false;
+    try{ approved=typeof openingApprovalState!=='undefined' && openingApprovalState==='approved'; }catch(_){ approved=false; }
+
     if(typeof pkgCatalog!=='undefined'){
       pkgCatalog.forEach((p,ix)=>{
-        const input=byId('pkgCheck'+(ix+1));
-        const raw=String(input?.value??'').trim();
-        if(input && raw!=='') p.stock=num(raw);
+        if(approved){
+          const input=byId('pkgCheck'+(ix+1));
+          const raw=String(input?.value??'').trim();
+          if(input && raw!=='') p.stock=num(raw);
+        }
         if(typeof openingPkg!=='undefined' && openingPkg[ix]) openingPkg[ix].stock=num(p.stock);
       });
     }
     if(typeof cigCatalog!=='undefined'){
       cigCatalog.forEach((c,ix)=>{
-        const s=openingSnapshot(ix);
-        c.display=s.display;
-        c.warehouse=s.warehouse;
+        if(approved){
+          const s=openingSnapshot(ix);
+          c.display=s.display;
+          c.warehouse=s.warehouse;
+        }
         recalcCigActiveBase(c);
         if(typeof openingCig!=='undefined' && openingCig[ix]){
-          openingCig[ix].display=s.display;
-          openingCig[ix].warehouse=s.warehouse;
+          openingCig[ix].display=num(c.display);
+          openingCig[ix].warehouse=num(c.warehouse);
         }
       });
     }
