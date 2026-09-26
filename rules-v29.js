@@ -102,7 +102,15 @@
     const f = fields.find(x => text(x.querySelector('label')).toLowerCase().includes(labelText.toLowerCase()));
     return f?.querySelector('select,input,textarea') || null;
   }
-  function noteById(id) { return state.notes.find(n => n.id === id) || null; }
+  function syncNotesFromStorage() {
+    const fresh=load(STORE.notes,[]);
+    if(Array.isArray(fresh)) state.notes=fresh;
+    return state.notes;
+  }
+  function noteById(id) {
+    syncNotesFromStorage();
+    return state.notes.find(n => n.id === id) || null;
+  }
   function noteUsable(note, type) {
     return !!note && note.type === type && note.shiftId === ACTIVE_SHIFT.id && note.status !== 'void';
   }
@@ -202,6 +210,7 @@
   }
 
   function refreshNoteSelectors() {
+    syncNotesFromStorage();
     syncUsedNotesFromStorage();
     ensureNoteSelects();
     populateNoteSelect(document.getElementById('pkgNoteV29'), 'package');
@@ -702,6 +711,7 @@
     testNoteId: 'NBO-0918-01',
     activeShift: ACTIVE_SHIFT,
     listNotes(type){
+      syncNotesFromStorage();
       return state.notes
         .filter(n => noteUsable(n,type))
         .map(n => ({...n, used:noteUsed(n.id)}));
