@@ -410,15 +410,25 @@
   }
 
   function updateLabels(){
-    document.querySelectorAll('.crumb').forEach(el=>{
-      el.childNodes.forEach(n=>{
-        if(n.nodeType===Node.TEXT_NODE && /Perhitungan Harian\s*\/\s*13 September 2026/i.test(n.textContent||'')){
-          n.textContent=(n.textContent||'').replace(/13 September 2026/i,'18 September 2026');
-        }
+    const sim=window.KADayRolloverV1?.config?.();
+    if(!sim){
+      document.querySelectorAll('.crumb').forEach(el=>{
+        el.childNodes.forEach(n=>{
+          if(n.nodeType===Node.TEXT_NODE && /Perhitungan Harian\s*\/\s*13 September 2026/i.test(n.textContent||'')){
+            n.textContent=(n.textContent||'').replace(/13 September 2026/i,'18 September 2026');
+          }
+        });
       });
-    });
+    }
     const foot=document.querySelector('.side-foot div:last-child');
-    if(foot) foot.textContent='Opening dari stok akhir sheet 17 • input uji tanggal 18 • belum terhubung database';
+    if(foot){
+      if(sim){
+        const fmtDate=iso=>new Date(iso+'T12:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+        foot.textContent='SIMULASI '+fmtDate(sim.date)+' • stok & modal sistem dari penutupan '+fmtDate(sim.baseDate);
+      }else{
+        foot.textContent='Opening dari stok akhir sheet 17 • input uji tanggal 18 • belum terhubung database';
+      }
+    }
     const tab=byId('stockTabCig');
     if(tab) tab.textContent='Rokok • 60 item aktif';
   }
