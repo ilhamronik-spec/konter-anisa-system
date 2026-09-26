@@ -313,6 +313,10 @@
     safeCall(()=>window.KAStockV50?.refreshOpeningSystem?.());
     safeCall(()=>window.KAStockV50?.sync?.());
     safeCall(()=>window.refreshPkgNameViews?.());
+    // Belanja derives stock/base/name from the restored catalog. Re-sync after
+    // form restore so stale HTML/autosave display values can never win.
+    safeCall(()=>{ if(typeof syncPkgBuy==='function') syncPkgBuy(); });
+    safeCall(()=>{ if(typeof syncCigBuy==='function') syncCigBuy(); });
     safeCall(()=>{
       if(typeof pkgCatalog!=='undefined' && typeof calcPkgEnd==='function'){
         pkgCatalog.forEach((_,ix)=>calcPkgEnd(ix+1));
