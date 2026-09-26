@@ -962,7 +962,7 @@ const cigCatalog=[{"name":"HASTA","base":14700,"sell":16000,"display":8,"warehou
 pkgCatalog.forEach(p=>{p._sourceKey=String(p._sourceKey||((p.group||'')+'|'+(p.name||'')));p.purchaseQty=0;p._openingBase=Number(p.base||0);p.purchaseBase=Number(p.base||0);p.activeBase=Number(p.base||0);p.activeSell=p.sell});
 cigCatalog.forEach(c=>{c.purchaseQty=0;c.purchaseCost=0});
 
-function refreshPkgNameViews(i){
+function refreshPkgNameRow(i){
  const p=pkgCatalog[i];if(!p)return;
  const n=i+1,name=String(p.name||'').trim(),group=String(p.group||'').trim();
  const opt=document.querySelector('#pkgBuyType option[value="'+i+'"]');
@@ -975,7 +975,7 @@ function refreshPkgNameViews(i){
  const endRow=document.getElementById('pkgEnd'+n)?.closest('tr');
  if(endRow){const b=endRow.querySelector('td:nth-child(2) b');if(b)b.textContent=name;}
 }
-function refreshAllPkgNameViews(){pkgCatalog.forEach((_,i)=>refreshPkgNameViews(i));}
+function refreshAllPkgNameViews(){pkgCatalog.forEach((_,i)=>refreshPkgNameRow(i));}
 window.refreshPkgNameViews=refreshAllPkgNameViews;
 function renamePkgBuy(){
  const i=Number(pkgBuyType.value||0),p=pkgCatalog[i],el=document.getElementById('pkgNameEdit');
@@ -984,7 +984,7 @@ function renamePkgBuy(){
  if(!next){el.value=p.name||'';return;}
  if(next===p.name)return;
  p.name=next;
- refreshPkgNameViews(i);
+ refreshPkgNameRow(i);
  if(typeof markPackageDirty==='function')markPackageDirty();
  if(window.KAAutosaveV53?.save)window.KAAutosaveV53.save();
 }
@@ -1005,7 +1005,7 @@ function syncPkgBuy(){
    const qtyEl=document.getElementById('pkgQty');
    const buyBaseEl=document.getElementById('pkgNewBase');
    if(nameEdit)nameEdit.value=String(p.name||'');
-   refreshPkgNameViews(i);
+   refreshPkgNameRow(i);
    if(oldStock)oldStock.value=String(openingStock);
    if(oldBase)oldBase.value=Math.round(openingBase).toLocaleString('id-ID');
    if(sellEl){
