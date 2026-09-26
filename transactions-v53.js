@@ -123,6 +123,10 @@
       if(pane?.id) f.buyTab=String(pane.id).replace(/^buy-/,'');
     }catch(_){}
     if(window.KAUIV51?.getPersistentState) f.v51=window.KAUIV51.getPersistentState();
+    try{
+      const prev=readSaved();
+      f.progressMaxIdx=Math.max(Number(f.idx||0),Number(prev?.flags?.progressMaxIdx||0),Number(prev?.flags?.idx||0));
+    }catch(_){f.progressMaxIdx=Number(f.idx||0)}
     return f;
   }
 
@@ -398,7 +402,7 @@
   }
 
   function restoreStep(saved){
-    const raw=Number(saved?.flags?.idx);
+    const raw=Math.max(Number(saved?.flags?.idx||0),Number(saved?.flags?.progressMaxIdx||0));
     if(Number.isFinite(raw)) safeCall(()=>{ if(typeof showStep==='function') showStep(raw); });
 
     // Keep the last Belanja sub-tab. Older snapshots did not store it, so when
@@ -429,8 +433,75 @@
     }catch(_){return null;}
   }
 
+  function durableUsedNotes(){
+    try{
+      const raw=JSON.parse(localStorage.getItem('ka_v29_used_notes')||'{}');
+      return raw&&typeof raw==='object'?raw:{};
+    }catch(_){return {}}
+  }
+  function durableNotes(){
+    try{
+      const raw=JSON.parse(localStorage.getItem('ka_v29_purchasing_notes')||'[]');
+      return Array.isArray(raw)?raw:[];
+    }catch(_){return []}
+  }
+  function moveSignatureFromSaved(saved){
+    const forms=saved?.forms||{},parts=[];
+    for(let i=1;i<=60;i++)parts.push(String(forms?.['move'+i]?.value??'0').replace(/[^0-9.-]/g,'')||'0');
+    return parts.join('|');
+  }
+  function recoverOperationalFromDurableNotes(saved,used,notes){
+    const sid=shiftId();
+    const usages=Object.entries(used)
+      .filter(([,r])=>r&&String(r.area||'')==='operational'&&String(r.shiftId||sid)===sid)
+      .sort((a,b)=>String(a[1]?.at||'').localeCompare(String(b[1]?.at||'')));
+    if(!usages.length)return false;
+    saved.core=saved.core||{};
+    if(Array.isArray(saved.core.opEntries)&&saved.core.opEntries.length)return false;
+    const baseMap={transport:[210000,300000],sedekah:[150000,500000],alat:[320000,750000],repair:[1250000,1000000],routine:[869000,869000]};
+    const added={};
+    saved.core.opEntries=usages.map(([id])=>{
+      const n=notes.find(x=>String(x?.id||'')===String(id))||{};
+      const cat=String(n.category||'routine');
+      const amount=Math.max(0,Number(n.amount||0));
+      const [baseUsed,limit]=baseMap[cat]||[0,Number.MAX_SAFE_INTEGER];
+      const before=baseUsed+Number(added[cat]||0);
+      const after=before+amount;added[cat]=Number(added[cat]||0)+amount;
+      return {receipt:String(id),cat,amount,note:String(n.label||n.description||''),before,limit,after,over:after>limit};
+    });
+    return true;
+  }
+  function repairKnownShiftProgress(saved){
+    if(!saved||String(saved.shiftId||'')!==shiftId())return saved;
+    const used=durableUsedNotes(),notes=durableNotes(),sid=shiftId();
+    const usage=(area)=>Object.entries(used).find(([,r])=>r&&String(r.area||'')===area&&String(r.shiftId||sid)===sid);
+    const pkg=usage('package'),cig=usage('cigarette');
+    const opUsed=Object.values(used).some(r=>r&&String(r.area||'')==='operational'&&String(r.shiftId||sid)===sid);
+    saved.flags=saved.flags||{};
+    if(pkg)saved.flags.pkgBuyConfirmed=true;
+    if(cig)saved.flags.cigBuyConfirmed=true;
+    if(opUsed){
+      recoverOperationalFromDurableNotes(saved,used,notes);
+      // Operational note usage proves the workflow had already passed Belanja.
+      saved.flags.progressMaxIdx=Math.max(Number(saved.flags.progressMaxIdx||0),4);
+    }
+    // One-time recovery for the active 24 Sep simulation: user confirmed in-session
+    // that Display, Operasional and Hutang/Piutang had already been completed.
+    if(sid==='2026-09-24-full-rifda'&&pkg&&cig&&opUsed){
+      saved.flags.v51=saved.flags.v51||{};
+      saved.flags.v51.displayPreviewConfirmed=true;
+      saved.flags.v51.displayPreviewSignature=moveSignatureFromSaved(saved);
+      saved.flags.progressMaxIdx=Math.max(Number(saved.flags.progressMaxIdx||0),5);
+      saved.flags.idx=Math.max(Number(saved.flags.idx||0),5);
+      saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),2);
+      saved.recoveryNote='Recovered workflow through Hutang/Piutang from durable note-usage evidence and user-confirmed progress.';
+    }
+    return saved;
+  }
+
   function restoreNow(source='dom'){
-    const saved=readSaved();
+    let saved=readSaved();
+    saved=repairKnownShiftProgress(saved);
     if(!saved){ updateStatus(0,false); return false; }
     restoring=true;
     const sameSource=String(saved?.sourceFingerprint||'')===sourceFingerprint();
@@ -496,7 +567,8 @@
       lastInteractionAt=Date.now();
       setTimeout(()=>queueSave('action'),40);
     },false);
-    window.addEventListener('ka:shared-sync',()=>setTimeout(maybeRestoreNewerCloud,0));
+    // Cloud sync may update notes/accounts, but active shift UI is local-first.
+    // Full shift restore only happens on page load/manual restore, never mid-entry.
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='hidden') saveNow('hidden');
     });
