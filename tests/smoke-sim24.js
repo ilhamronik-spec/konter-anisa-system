@@ -75,6 +75,47 @@ const assert=(cond,msg)=>{if(!cond)throw new Error(msg)};
       }catch(_){}
       const savedPkg0=savedAfterEnter?.catalogs?.pkg?.[0]||null;
 
+      // Regression: two different Rokok purchases must remain independent,
+      // and Gudang Display must use Gudang Awal + Qty Belanja before move-out.
+      const cigSel=document.getElementById('cigType');
+      const cigQty=document.getElementById('cigQty');
+      const cigTotal=document.getElementById('cigTotal');
+      const cig0Before=Number(cigCatalog?.[0]?.warehouse||0);
+      const cig1Before=Number(cigCatalog?.[1]?.warehouse||0);
+
+      const enter=el=>el?.dispatchEvent(new KeyboardEvent('keydown',{
+        key:'Enter',code:'Enter',bubbles:true,cancelable:true
+      }));
+      const input= (el,value)=>{
+        if(!el)return;
+        el.value=String(value);
+        el.dispatchEvent(new Event('input',{bubbles:true}));
+      };
+
+      if(cigSel){
+        cigSel.value='0';
+        cigSel.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      input(cigQty,'7'); enter(cigQty);
+      input(cigTotal,'102900'); enter(cigTotal);
+
+      if(cigSel){
+        cigSel.value='1';
+        cigSel.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      input(cigQty,'4'); enter(cigQty);
+      input(cigTotal,'140400'); enter(cigTotal);
+
+      window.calcMove?.(1);
+      window.calcMove?.(2);
+      window.KAAutosaveV53?.save?.();
+
+      let savedAfterCig=null;
+      try{
+        const key=window.KAAutosaveV53?.key?.();
+        savedAfterCig=key?JSON.parse(localStorage.getItem(key)||'null'):null;
+      }catch(_){}
+
       return {
         ...firstBefore,
         stockAfterCorrection:Number(pkgCatalog?.[0]?.stock),
@@ -85,6 +126,19 @@ const assert=(cond,msg)=>{if(!cond)throw new Error(msg)};
         qtyAfterShared,
         purchaseQtyAfterEnter:Number(pkgCatalog?.[0]?.purchaseQty||0),
         savedPurchaseQtyAfterEnter:Number(savedPkg0?.purchaseQty||0),
+        cig0Before,
+        cig1Before,
+        cig0Qty:Number(cigCatalog?.[0]?.purchaseQty||0),
+        cig0Cost:Number(cigCatalog?.[0]?.purchaseCost||0),
+        cig1Qty:Number(cigCatalog?.[1]?.purchaseQty||0),
+        cig1Cost:Number(cigCatalog?.[1]?.purchaseCost||0),
+        cig0WarehouseDisplay:Number(document.getElementById('wh1')?.textContent||0),
+        cig1WarehouseDisplay:Number(document.getElementById('wh2')?.textContent||0),
+        savedCig0Qty:Number(savedAfterCig?.catalogs?.cig?.[0]?.purchaseQty||0),
+        savedCig0Cost:Number(savedAfterCig?.catalogs?.cig?.[0]?.purchaseCost||0),
+        savedCig1Qty:Number(savedAfterCig?.catalogs?.cig?.[1]?.purchaseQty||0),
+        savedCig1Cost:Number(savedAfterCig?.catalogs?.cig?.[1]?.purchaseCost||0),
+        cigEnterInstalled:String(document.documentElement.dataset.v80CigEnter||''),
         enterSaveInstalled:String(document.documentElement.dataset.v80PurchaseEnter||''),
         runtimeLock:String(document.documentElement.dataset.kaRuntimeLock||''),
         rollover:window.KADayRolloverV1?.metadata?.()||{},
@@ -105,6 +159,15 @@ const assert=(cond,msg)=>{if(!cond)throw new Error(msg)};
     assert(result.qtyAfterShared==='2','Shared sync erased Paket qty input: '+result.qtyAfterShared);
     assert(result.purchaseQtyAfterEnter===2,'Enter did not commit Paket qty to runtime catalog: '+result.purchaseQtyAfterEnter);
     assert(result.savedPurchaseQtyAfterEnter===2,'Enter did not save Paket qty immediately: '+result.savedPurchaseQtyAfterEnter);
+    assert(result.cig0Qty===7,'HASTA qty was not retained: '+result.cig0Qty);
+    assert(result.cig0Cost===102900,'HASTA cost was not retained: '+result.cig0Cost);
+    assert(result.cig1Qty===4,'Sempurna B qty was not retained: '+result.cig1Qty);
+    assert(result.cig1Cost===140400,'Sempurna B cost was not retained: '+result.cig1Cost);
+    assert(result.cig0WarehouseDisplay===result.cig0Before+7,'HASTA Gudang did not include purchase: '+result.cig0WarehouseDisplay+' vs '+(result.cig0Before+7));
+    assert(result.cig1WarehouseDisplay===result.cig1Before+4,'Sempurna B Gudang did not include purchase: '+result.cig1WarehouseDisplay+' vs '+(result.cig1Before+4));
+    assert(result.savedCig0Qty===7&&result.savedCig0Cost===102900,'HASTA purchase not autosaved');
+    assert(result.savedCig1Qty===4&&result.savedCig1Cost===140400,'Sempurna B purchase not autosaved');
+    assert(result.cigEnterInstalled==='1','Cigarette Enter flow not installed');
     assert(result.enterSaveInstalled==='1','Purchase Enter save handler not installed');
     assert(!/Maximum call stack/i.test(result.toast),'syncPkgBuy stack overflow detected');
     assert(!/Maximum call stack/i.test(result.toastAfter),'syncPkgBuy stack overflow detected after correction');
