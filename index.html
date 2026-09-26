@@ -3346,6 +3346,8 @@ function snapshot(){
     const debt=coreDebtSnapshot(),modal=modalBreakdown();
     const map=read(SUM,{});
     const prev=map[s.id]||{};
+    const legacyArchiveIds=new Set(['2026-09-18-full-rifda','2026-09-19-full-rifda','2026-09-24-full-rifda']);
+    const legacyArchive=legacyArchiveIds.has(String(s.id));
     map[s.id]={
       shiftId:s.id,shiftLabel:s.label,date:s.date,shift:s.shift,holder:s.holder,
       margin:Number(b.margin||0),balance:Number(b.balance||0),minus:Math.min(0,Number(b.balance||0)),
@@ -3357,7 +3359,13 @@ function snapshot(){
       submissionStatus:String(prev.submissionStatus||'draft'),
       submittedAt:prev.submittedAt||null,
       submittedBy:prev.submittedBy||null,
-      submissionRevision:Number(prev.submissionRevision||0)
+      submissionRevision:Number(prev.submissionRevision||0),
+      archived:legacyArchive||prev.archived===true,
+      archiveStatus:(legacyArchive||prev.archived===true)?'archived':String(prev.archiveStatus||''),
+      archiveType:legacyArchive?'simulation':(prev.archiveType||null),
+      archivePeriod:legacyArchive?'2026-09':(prev.archivePeriod||null),
+      archiveLabel:legacyArchive?'Simulasi sebelum produksi':(prev.archiveLabel||null),
+      archivedAt:legacyArchive?(prev.archivedAt||'2026-09-27T02:21:00+07:00'):(prev.archivedAt||null)
     };
     write(SUM,map);
   }catch(e){console.warn('Admin summary snapshot skipped',e)}
