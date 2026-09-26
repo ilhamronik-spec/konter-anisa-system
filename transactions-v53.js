@@ -293,6 +293,11 @@
     try{ if(typeof pkgBuyConfirmed!=='undefined') pkgBuyConfirmed=!!f.pkgBuyConfirmed; }catch(_){}
     try{ if(typeof cigBuyConfirmed!=='undefined') cigBuyConfirmed=!!f.cigBuyConfirmed; }catch(_){}
     if(window.KAUIV51?.restorePersistentState) safeCall(()=>window.KAUIV51.restorePersistentState(f.v51||{}));
+    // Confirmation flags are restored after renderRecovered(). Repaint the badges
+    // now so the UI cannot show "Belum Dikonfirmasi" while runtime is already confirmed.
+    safeCall(()=>{ if(typeof setBuyConfirmVisual==='function') setBuyConfirmVisual('pkg',!!f.pkgBuyConfirmed); });
+    safeCall(()=>{ if(typeof setBuyConfirmVisual==='function') setBuyConfirmVisual('cig',!!f.cigBuyConfirmed); });
+    safeCall(()=>{ if(typeof updateBuyNextState==='function') updateBuyNextState(); });
   }
 
   function renderRecovered(){
