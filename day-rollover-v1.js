@@ -126,7 +126,7 @@
       const stock=endRaw===''?num(p.stock):Math.max(0,num(endRaw));
       const base=num(p.activeBase??p.purchaseBase??p.openingBase??p.base);
       const sell=num(p.activeSell??p.sell);
-      return {key:String(p.key||''),stock,purchaseQty:0,base,openingBase:base,purchaseBase:base,activeBase:base,activeSell:sell};
+      return {key:String(p.key||''),sourceKey:String(p.sourceKey||p.key||''),group:String(p.group||''),name:String(p.name||String(p.key||'').split('|').slice(1).join('|')),stock,purchaseQty:0,base,openingBase:base,purchaseBase:base,activeBase:base,activeSell:sell};
     });
 
     const cigPrev=Array.isArray(prevCats.cig)?prevCats.cig:[];
@@ -170,10 +170,14 @@
 
     try{
       if(typeof pkgCatalog!=='undefined'&&Array.isArray(cats.pkg)){
-        const map=new Map(cats.pkg.map(x=>[String(x.key||''),x]));
+        const map=new Map();
+        cats.pkg.forEach(x=>{const stable=String(x.sourceKey||x.key||'');if(stable)map.set(stable,x);});
         pkgCatalog.forEach((p,i)=>{
-          const rec=map.get(String(p.group||'')+'|'+String(p.name||''));if(!rec)return;
+          if(!p._sourceKey)p._sourceKey=String((p.group||'')+'|'+(p.name||''));
+          const rec=map.get(String(p._sourceKey||''))||map.get(String(p.group||'')+'|'+String(p.name||''));if(!rec)return;
           p.stock=num(rec.stock);p.purchaseQty=num(rec.purchaseQty);
+          if(String(rec.name||'').trim())p.name=String(rec.name).trim();
+          if(String(rec.group||'').trim())p.group=String(rec.group).trim();
           p.base=num(rec.base??rec.openingBase);p._openingBase=num(rec.openingBase??rec.base);
           p.purchaseBase=num(rec.purchaseBase??p._openingBase);p.activeBase=num(rec.activeBase??p._openingBase);
           p.activeSell=num(rec.activeSell??p.sell);
@@ -181,6 +185,7 @@
             openingPkg[i].stock=p.stock;openingPkg[i].base=p._openingBase;openingPkg[i].sell=p.activeSell;
           }
         });
+        try{window.refreshPkgNameViews?.()}catch(_){}
       }
     }catch(_){}
 
