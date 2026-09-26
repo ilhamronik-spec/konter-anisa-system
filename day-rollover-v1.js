@@ -15,6 +15,7 @@
   const num=v=>Number(v)||0;
   const slug=v=>String(v||'unknown').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'unknown';
   const val=(forms,id,f='')=>String(forms?.[id]?.value??f);
+  const BASE23={"modal":[22391759,13309271,0,8193765,0,2898345,0,0,0,689247,1835000,274000,4182836,0,711100,0,10521,0,0,6632804,2204510,27032800,4690768,7419883.333333334,11061640],"pkg":[["AXIS","1.5 GB/1H",7050,8000,38],["AXIS","5gb/2H",9600,10000,5],["AXIS","5 gb/5 H",13950,15000,11],["AXIS","5,5 GB/3 H",11950,13000,40],["AXIS","6 gb/5H",14550,16000,21],["AXIS","8,5 GB/3H",13500,15000,0],["AXIS","16 GB/5H",23000,24000,12],["AXIS","12,5/3h",15950,17000,7],["AXIS","10GB/7H",24000,25000,2],["AXIS","24/5H",26000,29000,4],["AXIS","5gb\\15h",23100,25000,0],["AXIS","11GB/7H",31800,33000,0],["AXIS","24gb/15H",44000,48000,4],["SMARTFREEN","1GB/3H",6800,7000,12],["SMARTFREEN","2GB/3H",8900,10000,0],["SMARTFREEN","3GB/5H",13750,15000,35],["SMARTFREEN","4GB/7H",16000,17000,11],["SMARTFREEN","4GB/14H",19500,21000,3],["SMARTFREEN","4gb/3h",9750,11000,18],["SMARTFREEN","UNLI 1GB/7H",16700,19000,9],["SMARTFREEN","UNLI 2GB/7H",22300,25000,17],["SMARTFREEN","UNLI 3 GB/7H",30000,32000,0],["SMARTFREEN","UNLI 700MB/28H",64500,76000,3],["SMARTFREEN","UNLI 2GB/28H",86750,95000,1],["TELKOMSEL","1,5GB/3H",8400,10000,0],["TELKOMSEL","6gb/2h",10300,12000,5],["TELKOMSEL","2GB/3H",9900,12000,0],["TELKOMSEL","2GB/5H",11850,13000,4],["TELKOMSEL","7GB/3H",14550,16000,0],["TELKOMSEL","6GB/5H",14700,16000,0],["TELKOMSEL","9GB/5H",22200,24000,1],["TELKOMSEL","9GB/7H",27300,29000,3],["TELKOMSEL","4GB/5H",13500,14000,0],["IM3","1,5GB/1H",7800,8000,20],["IM3","5/2h",9150,11000,7],["IM3","2,5GB/5H",13250,15000,2],["IM3","3,5GB/5H",15150,17000,4],["IM3","5GB/5H",17100,18000,19],["IM3","7GB/7H",23100,25000,13],["IM3","3GB/30H",20100,22000,0],["IM3","7GB/30H",34750,34000,2],["TRI","6gb/2h",9600,11000,0],["TRI","5gb 1hri",7750,8000,9],["TRI","4GB/3H",12500,13000,11],["TRI","12GB/7H",22800,24000,40],["TRI","3GB/30H",22500,25000,0],["XL","2,5GB",12100,13000,0],["XL","3,5GB",16500,18000,3],["XL","5,5GB",15750,22000,1],["XL","9GB",26800,28000,10],["PERDANA","TELS 0",19500,25000,3],["PERDANA","TELS 4",28500,36000,5],["PERDANA","AXIS 0",8750,17000,0],["PERDANA","AXIS 3GB",15000,27000,0],["PERDANA","IM3 3GB",16000,38000,2],["PERDANA","TRI 3GB",15000,42000,1],["PERDANA","SMARTFREEN 12GB",11000,25000,0],["PERDANA","SMARTFREEN 3GB",18500,32000,2]],"cig":[["HASTA",14700,16000,6,30],["Sempurna B",35100,37000,0,10],["Slava",16500,20000,4,20],["LM",7900,9000,0,20],["Surya Kecil",25900,27000,0,0],["Rasta bluberi",15200,17000,0,10],["Harum Manis",7200,8000,7,0],["Novem",16000,18000,0,0],["Dji Samso hitam",21300,23000,5,0],["Surya Besar",34900,36000,5,0],["Aspro",22400,24000,9,0],["A.O",15500,18000,5,6],["Savero",16000,17000,2,10],["Sempurna K",25600,27000,6,10],["rasta",13200,15000,0,10],["Tunggal",14000,15000,1,0],["Titan",15700,18000,4,0],["Konser",14700,16000,0,0],["sempurna A kretek",15400,17000,9,10],["Sempurna A 2 +",15400,20000,0,0],["Wezz",12900,15000,8,10],["Twizz",21350,23000,0,0],["EVO",25100,26000,4,10],["Luffman",11600,14000,4,0],["Clasmid",29500,30000,9,0],["sempurna prima",15300,16000,8,0],["Sempurna hijau",15350,16000,0,0],["duff",24000,25000,0,0],["abs",16500,18000,3,10],["di jam su kretek 234",19500,21000,1,0],["Malboro KECIL",24000,25000,8,10],["Esse Double Change",42388.88888888889,45000,6,0],["Chiff",15000,17000,0,0],["L.A ice",34000,35000,0,0],["malboro besar",38950,40000,7,0],["Novem Manggo",16300,18000,8,0],["la bold hitam",37100,40000,0,0],["esse merah",39400,42000,0,0],["gudang garam merah",18000,19000,0,0],["Sempurna zetta",23000,24000,0,0],["twizz biru",23500,25000,0,0],["king garet",17500,19000,0,0],["titan biru",16700,18000,0,0],["honey pop",32000,33000,0,0],["slava klik",17900,20000,3,10],["rasta mangga",15200,17000,0,10],["aspro 12",16800,18000,1,0],["aspro bold",26500,28000,0,0],["sempurna 89 edition",32600,34000,1,0],["sempurna min",34000,36000,0,0],["malboro 16",31000,32000,2,0],["sempurna prima kertas",13450,15000,0,0],["malboro vista",33000,35000,0,0],["sempurna evolution",41900,44000,0,0],["oris",13700,15000,4,10],["marlong",10500,15000,8,70],["sempurna tropizal",30000,35000,0,0],["sempurna royal",30000,35000,0,0],["slava semangka",17900,20000,0,10],["slava ice blast",17000,20000,0,0]]};
 
   function config(){
     const q=new URLSearchParams(location.search);
@@ -71,6 +72,23 @@
     return {debtEntries:[],paymentEntries:[],opEntries:[],txEntries:tx,adminState:{}};
   }
 
+  function canonicalBase(date){
+    if(String(date)!=='2026-09-23') return null;
+    const forms={};
+    BASE23.modal.forEach((v,i)=>{forms['modalInput'+(i+1)]={value:String(v),checked:false,type:'text',tag:'INPUT'};});
+    return {
+      schema:53,
+      shiftId:'2026-09-23-full-rifda',
+      savedAt:Date.now(),
+      sourceLabel:'worksheet september benar(6).xlsx • sheet 23 september',
+      forms,
+      catalogs:{
+        pkg:BASE23.pkg.map(x=>({key:x[0]+'|'+x[1],stock:x[4],purchaseQty:0,base:x[2],openingBase:x[2],purchaseBase:x[2],activeBase:x[2],activeSell:x[3]})),
+        cig:BASE23.cig.map(x=>({key:x[0],display:x[3],warehouse:x[4],purchaseQty:0,purchaseCost:0,base:x[1],openingBase:x[1],activeBase:x[1],sell:x[2]}))
+      }
+    };
+  }
+
   function endingWarehouse(prev,ix,x){
     const n=ix+1;
     const moved=Math.max(0,num(val(prev.forms,'move'+n,'0')));
@@ -121,7 +139,8 @@
     return {
       schema:53,shiftId:cfg.id,sourceFingerprint:'pending',savedAt:Date.now(),
       reason:'rollover-from-'+cfg.baseId,
-      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:2,
+      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:3,
+      rolloverSource:String(prev?.sourceLabel||'shift '+cfg.baseId),
       rolloverOpeningModal:openingModal,
       forms,catalogs:{pkg,cig},core:emptyTxCore(),
       flags:{idx:0,openingPkgPreviewConfirmed:false,openingCigPreviewConfirmed:false,openingPkgPreviewSignature:'',openingCigPreviewSignature:'',openingPkgHardBlock:false,openingCigHardBlock:false,openingApprovalState:'none',openingCorrectionsSubmitted:false,pkgBuyConfirmed:false,cigBuyConfirmed:false,v51:{displayPreviewConfirmed:false,displayPreviewSignature:''}}
@@ -186,9 +205,12 @@
     }catch(_){}
 
     currentMeta={
-      rolloverSimulation:true,rolloverVersion:2,rolloverFrom:String(saved.rolloverFrom||''),
-      rolloverBaseDate:String(saved.rolloverBaseDate||''),rolloverOpeningModal:Array.isArray(saved.rolloverOpeningModal)?saved.rolloverOpeningModal.slice():[]
+      rolloverSimulation:true,rolloverVersion:Number(saved.rolloverVersion||3),rolloverFrom:String(saved.rolloverFrom||''),
+      rolloverBaseDate:String(saved.rolloverBaseDate||''),rolloverSource:String(saved.rolloverSource||''),
+      rolloverOpeningModal:Array.isArray(saved.rolloverOpeningModal)?saved.rolloverOpeningModal.slice():[]
     };
+    try{window.KAStockV50?.refreshOpeningSystem?.();}catch(_){}
+    try{window.KABalanceV44?.renderBalance?.();}catch(_){}
     return true;
   }
 
@@ -229,11 +251,11 @@
     const currentKey=PREFIX+cfg.id;
     let current=read(currentKey,null);
 
-    if(current&&current.rolloverSimulation===true&&String(current.rolloverFrom||'')===cfg.baseId){
+    if(current&&current.rolloverSimulation===true&&String(current.rolloverFrom||'')===cfg.baseId&&Number(current.rolloverVersion||0)>=3){
       applyRuntime(current);return true;
     }
 
-    const base=read(PREFIX+cfg.baseId,null);
+    const base=canonicalBase(cfg.baseDate)||read(PREFIX+cfg.baseId,null);
     if(!base||!base.forms||!base.catalogs)return false;
 
     current=buildSeed(cfg,base);
@@ -241,8 +263,8 @@
     current.sourceFingerprint=fingerprint();
     write(currentKey,current);touchIndex(currentKey,current.savedAt);
     currentMeta={
-      rolloverSimulation:true,rolloverVersion:2,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
-      rolloverOpeningModal:current.rolloverOpeningModal.slice()
+      rolloverSimulation:true,rolloverVersion:3,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
+      rolloverSource:String(current.rolloverSource||''),rolloverOpeningModal:current.rolloverOpeningModal.slice()
     };
     sessionStorage.setItem('ka_rollover_last_v2',JSON.stringify({from:cfg.baseId,to:cfg.id,at:current.savedAt}));
     return true;
@@ -259,9 +281,10 @@
   function start(){
     if(started)return;started=true;
     const cfg=config();if(!cfg)return;
+    // Selalu re-assert setelah cloud pull agar snapshot simulasi lama tidak mengalahkan baseline yang benar.
+    window.addEventListener('ka:shared-sync',()=>{trySeed();});
     // Run immediately, before DOMContentLoaded initializers overwrite the opening.
     if(trySeed())return;
-    window.addEventListener('ka:shared-sync',()=>{if(trySeed()&&timer){clearInterval(timer);timer=null;}});
     timer=setInterval(()=>{if(trySeed()){clearInterval(timer);timer=null;}},500);
     setTimeout(()=>{if(timer){clearInterval(timer);timer=null;}},20000);
   }
