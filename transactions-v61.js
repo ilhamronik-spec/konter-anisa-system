@@ -512,9 +512,9 @@ function installPurchaseDraftPersistence(){
   document.addEventListener('input',saveAfterEvent,true);
   document.addEventListener('change',saveAfterEvent,true);
   window.addEventListener('beforeunload',()=>{
-    const active=document.activeElement;
-    if(isPkgDraft(active))commitPackageDraft(String(active.id||''));
-    else persistEnterDraft();
+    // Input/change handlers already committed real edits. On refresh only persist
+    // the current snapshot; do NOT call markPackageDirty or confirmation would be lost.
+    persistEnterDraft();
   },true);
 }
 function installPurchaseEnterSave(){
