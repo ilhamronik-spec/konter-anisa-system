@@ -469,7 +469,53 @@ function persistEnterDraft(){
 }
 function purchaseEnterTarget(el){
   const id=String(el?.id||'');
-  return /^(pkgNameEdit|pkgSell|pkgQty|pkgNewBase)$/.test(id)&&visibleInput(el)?id:'';
+  return /^(pkgBuyType|pkgNameEdit|pkgQty|pkgNewBase|pkgSell)$/.test(id)&&visibleInput(el)?id:'';
+}
+function focusPurchaseNext(id){
+  const nextId={
+    pkgBuyType:'pkgNameEdit',
+    pkgNameEdit:'pkgQty',
+    pkgQty:'pkgNewBase',
+    pkgNewBase:'pkgSell',
+    pkgSell:'pkgBuyType'
+  }[id];
+  const next=nextId?$(nextId):null;
+  if(!next||!visibleInput(next))return;
+  setTimeout(()=>{
+    try{
+      next.focus({preventScroll:true});
+      if(next.tagName==='INPUT'&&typeof next.select==='function')next.select();
+    }catch(_){}
+  },0);
+}
+function commitPackageDraft(id){
+  try{
+    if(id==='pkgBuyType'){
+      if(typeof syncPkgBuy==='function')syncPkgBuy();
+    }else if(id==='pkgNameEdit'){
+      if(typeof renamePkgBuy==='function')renamePkgBuy();
+    }else if(typeof calcPkgBuy==='function'){
+      calcPkgBuy();
+    }
+    if(id!=='pkgBuyType'&&typeof markPackageDirty==='function')markPackageDirty();
+  }catch(_){}
+  persistEnterDraft();
+}
+function installPurchaseDraftPersistence(){
+  if(document.documentElement.dataset.v80PurchaseDraft==='1')return;
+  document.documentElement.dataset.v80PurchaseDraft='1';
+  const isPkgDraft=el=>/^(pkgBuyType|pkgNameEdit|pkgQty|pkgNewBase|pkgSell)$/.test(String(el?.id||''));
+  const saveAfterEvent=e=>{
+    if(!isPkgDraft(e.target))return;
+    queueMicrotask(()=>commitPackageDraft(String(e.target.id||'')));
+  };
+  document.addEventListener('input',saveAfterEvent,true);
+  document.addEventListener('change',saveAfterEvent,true);
+  window.addEventListener('beforeunload',()=>{
+    const active=document.activeElement;
+    if(isPkgDraft(active))commitPackageDraft(String(active.id||''));
+    else persistEnterDraft();
+  },true);
 }
 function installPurchaseEnterSave(){
   if(document.documentElement.dataset.v80PurchaseEnter==='1')return;
@@ -482,18 +528,15 @@ function installPurchaseEnterSave(){
     e.stopPropagation();
     if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
     try{
-      if(id==='pkgNameEdit'){
-        if(typeof renamePkgBuy==='function')renamePkgBuy();
-      }else if(typeof calcPkgBuy==='function'){
-        calcPkgBuy();
+      commitPackageDraft(id);
+      focusPurchaseNext(id);
+      if(id==='pkgSell'){
+        const i=Math.max(0,Number($('pkgBuyType')?.value||0));
+        const p=(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog))?pkgCatalog[i]:null;
+        toast('Belanja Paket'+(p?.name?' '+p.name:'')+' tersimpan. Pilih paket berikutnya.','ok');
       }
-      if(typeof markPackageDirty==='function')markPackageDirty();
-      persistEnterDraft();
-      const i=Math.max(0,Number($('pkgBuyType')?.value||0));
-      const p=(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog))?pkgCatalog[i]:null;
-      toast('Belanja Paket'+(p?.name?' '+p.name:'')+' tersimpan.','ok');
     }catch(err){
-      console.error('Enter save Paket gagal',err);
+      console.error('Enter save/navigasi Paket gagal',err);
       toast('Input belum dapat disimpan. Coba sekali lagi.','warn');
     }
   },true);
@@ -578,6 +621,7 @@ function selfTest(){
   ok('Rokok checkpoint step 11',Number(findSection(/Stok Akhir Rokok/i)?.dataset.i)===10);
   ok('Stock Enter navigation installed',document.documentElement.dataset.v64StockEnter==='1');
   ok('Purchase Enter save installed',document.documentElement.dataset.v80PurchaseEnter==='1');
+  ok('Purchase draft persistence installed',document.documentElement.dataset.v80PurchaseDraft==='1');
   const pass=t.every(x=>x[1]);document.documentElement.dataset.v61Selftest=pass?'PASS':'FAIL';
   window.KAFeaturesV61={pass,tests:t,refresh,renderListrik,renderAdmin,listrikMargin,remapSteps,workflowOk,lockWorkflow,stepLabels:STEP_LABELS.slice()};
   if(!pass)console.error('V61 SELFTEST FAIL',t);
@@ -586,6 +630,7 @@ function install(){
   refresh();
   installNavigation();
   installStockEnterNavigation();
+  installPurchaseDraftPersistence();
   installPurchaseEnterSave();
   setTimeout(()=>{refresh();selfTest();},0);
   setTimeout(()=>{refresh();enforceStockCheckpoint();lockWorkflow();},1100);
