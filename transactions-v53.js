@@ -407,9 +407,24 @@
 
   function restoreStep(saved){
     const recoveryResume=Number(saved?.flags?.recoveryResumeIdx);
-    const raw=Number.isFinite(recoveryResume)
+    let raw=Number.isFinite(recoveryResume)
       ? recoveryResume
       : Math.max(Number(saved?.flags?.idx||0),Number(saved?.flags?.progressMaxIdx||0));
+
+    // Hard prerequisite guard for the Sep 24 recovery. The page must not show
+    // Display while the cigarette purchase note still has no valid detail rows.
+    if(shiftId()==='2026-09-24-full-rifda'){
+      const validCigRows=Array.isArray(saved?.catalogs?.cig)
+        ? saved.catalogs.cig.filter(x=>Number(x?.purchaseQty||0)>0&&Number(x?.purchaseCost||0)>0).length
+        : 0;
+      if(validCigRows===0 || !saved?.flags?.cigBuyConfirmed){
+        raw=1;
+        saved.flags=saved.flags||{};
+        saved.flags.buyTab='rokok';
+        saved.flags.recoveryResumeIdx=1;
+      }
+    }
+
     if(Number.isFinite(raw)) safeCall(()=>{ if(typeof showStep==='function') showStep(raw); });
 
     // Keep the last Belanja sub-tab. Older snapshots did not store it, so when
@@ -525,17 +540,21 @@
     if(sid==='2026-09-24-full-rifda'&&pkg&&opUsed){
       saved.flags.v51=saved.flags.v51||{};
       const hasRealMove=Object.entries(saved.forms||{}).some(([k,v])=>/^move\d+$/.test(k)&&Number(v?.value||0)!==0);
+      const cigPurchaseRows=Array.isArray(saved?.catalogs?.cig)
+        ? saved.catalogs.cig.filter(x=>Number(x?.purchaseQty||0)>0&&Number(x?.purchaseCost||0)>0).length
+        : 0;
 
-      if(brokenCigPurchase || saved.recoveryVersion>=4){
-        // Cigarette purchase item detail must be re-entered first. Keep any
-        // Display values already typed; after Rokok confirmation they will
-        // recalculate against Gudang Awal + Belanja without being erased.
+      // This shift has a real Rp7.113.000 cigarette note. Until valid per-item
+      // cigarette purchase rows exist and are confirmed, never allow recovery
+      // to skip ahead to Display/Operational. Display move inputs are preserved.
+      if(brokenCigPurchase || saved.recoveryVersion>=4 || cigPurchaseRows===0 || !saved.flags.cigBuyConfirmed){
         saved.flags.cigBuyConfirmed=false;
         saved.flags.buyTab='rokok';
         saved.flags.recoveryResumeIdx=1;
         saved.flags.v51.displayPreviewConfirmed=false;
         saved.flags.v51.displayPreviewSignature='';
-        saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),5);
+        saved.recoveryVersion=Math.max(Number(saved.recoveryVersion||0),6);
+        saved.recoveryNote='Belanja Rokok must be re-entered and confirmed before Display. Existing Display move inputs are preserved.';
       }else if(!hasRealMove){
         saved.flags.v51.displayPreviewConfirmed=false;
         saved.flags.v51.displayPreviewSignature='';
