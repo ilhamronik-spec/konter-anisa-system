@@ -27,7 +27,7 @@
       const modal=(typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal))
         ? openingPrevModal.map(x=>[String(x?.name||''),Number(x?.value||0)]) : [];
       const pkg=(typeof pkgCatalog!=='undefined'&&Array.isArray(pkgCatalog))
-        ? pkgCatalog.map(x=>[String(x?.group||''),String(x?.name||''),Number(x?.stock||0),Number(x?.base||0),Number(x?.sell||0)]) : [];
+        ? pkgCatalog.map(x=>[String(x?._sourceKey||((x?.group||'')+'|'+(x?.name||''))),Number(x?.stock||0),Number(x?.base||0),Number(x?.sell||0)]) : [];
       const cig=(typeof cigCatalog!=='undefined'&&Array.isArray(cigCatalog))
         ? cigCatalog.map(x=>[String(x?.name||''),Number(x?.display||0),Number(x?.warehouse||0),Number(x?.base||0),Number(x?.sell||0)]) : [];
       const raw=JSON.stringify({modal,pkg,cig});
