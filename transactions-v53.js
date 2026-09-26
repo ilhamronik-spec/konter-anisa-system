@@ -62,6 +62,9 @@
       if(typeof pkgCatalog!=='undefined'){
         out.pkg=pkgCatalog.map(p=>({
           key:String(p.group||'')+'|'+String(p.name||''),
+          sourceKey:String(p._sourceKey||((p.group||'')+'|'+(p.name||''))),
+          group:String(p.group||''),
+          name:String(p.name||''),
           stock:Number(p.stock||0),
           purchaseQty:Number(p.purchaseQty||0),
           base:Number(p.base||0),
@@ -185,11 +188,18 @@
     const cats=saved?.catalogs||{};
     try{
       if(typeof pkgCatalog!=='undefined' && Array.isArray(cats.pkg)){
-        const map=new Map(cats.pkg.map(x=>[String(x.key||''),x]));
+        const map=new Map();
+        cats.pkg.forEach(x=>{
+          const stable=String(x.sourceKey||x.key||'');
+          if(stable)map.set(stable,x);
+        });
         pkgCatalog.forEach(p=>{
-          const rec=map.get(String(p.group||'')+'|'+String(p.name||''));
+          if(!p._sourceKey)p._sourceKey=String((p.group||'')+'|'+(p.name||''));
+          const rec=map.get(String(p._sourceKey||'')) || map.get(String(p.group||'')+'|'+String(p.name||''));
           if(!rec) return;
           if(sameSource) p.stock=Number(rec.stock||0);
+          if(String(rec.name||'').trim())p.name=String(rec.name).trim();
+          if(String(rec.group||'').trim())p.group=String(rec.group).trim();
           p.purchaseQty=Number(rec.purchaseQty||0);
           p._openingBase=Number(rec.openingBase??rec.base??p.base??0);
           p.purchaseBase=Number(rec.purchaseBase??rec.activeBase??p._openingBase??0);
@@ -302,6 +312,7 @@
     // Propagate restored opening/catalog values through stock flow.
     safeCall(()=>window.KAStockV50?.refreshOpeningSystem?.());
     safeCall(()=>window.KAStockV50?.sync?.());
+    safeCall(()=>window.refreshPkgNameViews?.());
     safeCall(()=>{
       if(typeof pkgCatalog!=='undefined' && typeof calcPkgEnd==='function'){
         pkgCatalog.forEach((_,ix)=>calcPkgEnd(ix+1));
