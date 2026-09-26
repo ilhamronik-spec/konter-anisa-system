@@ -8,6 +8,8 @@
   let restoring=true;
   let saveTimer=null;
   let lastSavedAt=0;
+  let lastInteractionAt=0;
+  let recoveredBuyConfirmation=false;
 
   const byId=id=>document.getElementById(id);
   const clone=v=>JSON.parse(JSON.stringify(v));
@@ -116,6 +118,10 @@
     try{ if(typeof openingCorrectionsSubmitted!=='undefined') f.openingCorrectionsSubmitted=!!openingCorrectionsSubmitted; }catch(_){}
     try{ if(typeof pkgBuyConfirmed!=='undefined') f.pkgBuyConfirmed=!!pkgBuyConfirmed; }catch(_){}
     try{ if(typeof cigBuyConfirmed!=='undefined') f.cigBuyConfirmed=!!cigBuyConfirmed; }catch(_){}
+    try{
+      const pane=[...document.querySelectorAll('.subpane[id^="buy-"]')].find(x=>x.classList.contains('active'));
+      if(pane?.id) f.buyTab=String(pane.id).replace(/^buy-/,'');
+    }catch(_){}
     if(window.KAUIV51?.getPersistentState) f.v51=window.KAUIV51.getPersistentState();
     return f;
   }
@@ -280,6 +286,36 @@
     }catch(_){}
   }
 
+  function purchaseTotal(kind){
+    try{
+      if(kind==='pkg' && typeof pkgCatalog!=='undefined'){
+        return Math.round(pkgCatalog.reduce((s,p)=>s+(Number(p.purchaseQty||0)*Number(p.purchaseBase??p._openingBase??p.base??0)),0));
+      }
+      if(kind==='cig' && typeof cigCatalog!=='undefined'){
+        return Math.round(cigCatalog.reduce((s,c)=>s+Number(c.purchaseCost||0),0));
+      }
+    }catch(_){}
+    return 0;
+  }
+
+  function confirmationFromUsedNote(kind){
+    try{
+      const raw=JSON.parse(localStorage.getItem('ka_v29_used_notes')||'{}');
+      const area=kind==='pkg'?'package':'cigarette';
+      const total=purchaseTotal(kind);
+      if(total<=0||!raw||typeof raw!=='object')return null;
+      const sid=shiftId();
+      for(const [id,rec] of Object.entries(raw)){
+        if(!rec||String(rec.area||'')!==area)continue;
+        if(rec.shiftId&&String(rec.shiftId)!==sid)continue;
+        if(Math.round(Number(rec.validatedTotal||0))!==total)continue;
+        if(rec.noteAmount!=null&&Math.round(Number(rec.noteAmount||0))!==total)continue;
+        return {id,total};
+      }
+    }catch(_){}
+    return null;
+  }
+
   function restoreFlags(saved){
     const f=saved?.flags||{};
     try{ if(typeof openingPkgPreviewConfirmed!=='undefined') openingPkgPreviewConfirmed=!!f.openingPkgPreviewConfirmed; }catch(_){}
@@ -290,13 +326,19 @@
     try{ if(typeof openingCigHardBlock!=='undefined') openingCigHardBlock=!!f.openingCigHardBlock; }catch(_){}
     try{ if(typeof openingApprovalState!=='undefined' && f.openingApprovalState) openingApprovalState=String(f.openingApprovalState); }catch(_){}
     try{ if(typeof openingCorrectionsSubmitted!=='undefined') openingCorrectionsSubmitted=!!f.openingCorrectionsSubmitted; }catch(_){}
-    try{ if(typeof pkgBuyConfirmed!=='undefined') pkgBuyConfirmed=!!f.pkgBuyConfirmed; }catch(_){}
-    try{ if(typeof cigBuyConfirmed!=='undefined') cigBuyConfirmed=!!f.cigBuyConfirmed; }catch(_){}
+    const usedPkg=confirmationFromUsedNote('pkg');
+    const usedCig=confirmationFromUsedNote('cig');
+    const pkgConfirmed=!!f.pkgBuyConfirmed || !!usedPkg;
+    const cigConfirmed=!!f.cigBuyConfirmed || !!usedCig;
+    if(!f.pkgBuyConfirmed&&usedPkg) recoveredBuyConfirmation=true;
+    if(!f.cigBuyConfirmed&&usedCig) recoveredBuyConfirmation=true;
+    try{ if(typeof pkgBuyConfirmed!=='undefined') pkgBuyConfirmed=pkgConfirmed; }catch(_){}
+    try{ if(typeof cigBuyConfirmed!=='undefined') cigBuyConfirmed=cigConfirmed; }catch(_){}
     if(window.KAUIV51?.restorePersistentState) safeCall(()=>window.KAUIV51.restorePersistentState(f.v51||{}));
     // Confirmation flags are restored after renderRecovered(). Repaint the badges
     // now so the UI cannot show "Belum Dikonfirmasi" while runtime is already confirmed.
-    safeCall(()=>{ if(typeof setBuyConfirmVisual==='function') setBuyConfirmVisual('pkg',!!f.pkgBuyConfirmed); });
-    safeCall(()=>{ if(typeof setBuyConfirmVisual==='function') setBuyConfirmVisual('cig',!!f.cigBuyConfirmed); });
+    safeCall(()=>{ if(typeof setBuyConfirmVisual==='function') setBuyConfirmVisual('pkg',pkgConfirmed); });
+    safeCall(()=>{ if(typeof setBuyConfirmVisual==='function') setBuyConfirmVisual('cig',cigConfirmed); });
     safeCall(()=>{ if(typeof updateBuyNextState==='function') updateBuyNextState(); });
   }
 
@@ -357,8 +399,24 @@
 
   function restoreStep(saved){
     const raw=Number(saved?.flags?.idx);
-    if(!Number.isFinite(raw)) return;
-    safeCall(()=>{ if(typeof showStep==='function') showStep(raw); });
+    if(Number.isFinite(raw)) safeCall(()=>{ if(typeof showStep==='function') showStep(raw); });
+
+    // Keep the last Belanja sub-tab. Older snapshots did not store it, so when
+    // Paket is already validated continue naturally on Rokok instead of Paket.
+    let tab=String(saved?.flags?.buyTab||'');
+    if(!tab && raw===1){
+      try{
+        if(typeof pkgBuyConfirmed!=='undefined' && pkgBuyConfirmed &&
+           (typeof cigBuyConfirmed==='undefined' || !cigBuyConfirmed)) tab='rokok';
+      }catch(_){}
+    }
+    if(tab){
+      safeCall(()=>{
+        const buttons=[...document.querySelectorAll('.subtab')];
+        const btn=buttons.find(b=>String(b.dataset.uiClick||'').includes("showBuy('"+tab+"'"));
+        if(btn&&typeof showBuy==='function') showBuy(tab,btn);
+      });
+    }
   }
 
   function readSaved(){
@@ -393,7 +451,26 @@
       console.info('V79 opening source changed: canonical opening retained; operational autosave restored.');
     }
     restoring=false;
+    if(recoveredBuyConfirmation){
+      recoveredBuyConfirmation=false;
+      setTimeout(()=>saveNow('recover-buy-confirmation'),0);
+    }
     return true;
+  }
+
+  function maybeRestoreNewerCloud(){
+    const saved=readSaved();
+    if(!saved)return false;
+    const ts=Number(saved.savedAt||0);
+    if(!ts||ts<=lastSavedAt)return false;
+    const active=document.activeElement;
+    const editing=!!active&&/^(INPUT|SELECT|TEXTAREA)$/.test(String(active.tagName||''))&&
+      !active.disabled&&!active.readOnly;
+    if(editing||Date.now()-lastInteractionAt<1200){
+      setTimeout(maybeRestoreNewerCloud,1400);
+      return false;
+    }
+    return restoreNow('cloud-newer');
   }
 
   function bindAutosave(){
@@ -401,12 +478,25 @@
     document.documentElement.dataset.v53AutosaveBound='1';
 
     document.addEventListener('input',e=>{
-      if(e.target?.matches?.('input,select,textarea')) queueSave('input');
+      if(e.target?.matches?.('input,select,textarea')){
+        lastInteractionAt=Date.now();
+        queueSave('input');
+      }
     },true);
     document.addEventListener('change',e=>{
-      if(e.target?.matches?.('input,select,textarea')) queueSave('change');
+      if(e.target?.matches?.('input,select,textarea')){
+        lastInteractionAt=Date.now();
+        queueSave('change');
+      }
     },true);
-    document.addEventListener('click',()=>setTimeout(()=>queueSave('action'),40),false);
+    document.addEventListener('keydown',e=>{
+      if(e.target?.matches?.('input,select,textarea')) lastInteractionAt=Date.now();
+    },true);
+    document.addEventListener('click',()=>{
+      lastInteractionAt=Date.now();
+      setTimeout(()=>queueSave('action'),40);
+    },false);
+    window.addEventListener('ka:shared-sync',()=>setTimeout(maybeRestoreNewerCloud,0));
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='hidden') saveNow('hidden');
     });
@@ -445,7 +535,9 @@
         return true;
       }catch(_){return false;}
     },
-    key:()=>storageKey()
+    key:()=>storageKey(),
+    restoreNewerCloud:()=>maybeRestoreNewerCloud(),
+    lastSavedAt:()=>lastSavedAt
   };
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initDom,{once:true});
