@@ -142,7 +142,7 @@
     return {
       schema:53,shiftId:cfg.id,sourceFingerprint:'pending',savedAt:Date.now(),
       reason:'rollover-from-'+cfg.baseId,
-      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:4,
+      rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,rolloverSimulation:true,rolloverVersion:5,
       rolloverSource:String(prev?.sourceLabel||'shift '+cfg.baseId),
       rolloverOpeningModal:openingModal,
       forms,catalogs:{pkg,cig},core:emptyTxCore(),
@@ -273,19 +273,23 @@
     let current=read(currentKey,null);
 
     if(current&&current.rolloverSimulation===true&&String(current.rolloverFrom||'')===cfg.baseId&&Number(current.rolloverVersion||0)>=3){
-      // Migrasi V3 -> V4 tanpa menghapus progres simulasi: hanya isi cek modal yang masih kosong.
-      if(Number(current.rolloverVersion||0)<4){
-        current.forms=current.forms||{};
-        const arr=Array.isArray(current.rolloverOpeningModal)?current.rolloverOpeningModal:[];
-        arr.forEach((v,i)=>{
-          const id='prevModalCheck'+(i+1);
-          const existing=String(current.forms?.[id]?.value??'').trim();
-          if(existing==='') setForm(current.forms,id,Math.round(num(v)).toLocaleString('id-ID'));
-        });
-        current.rolloverVersion=4;
-        current.savedAt=Date.now();
-        current.reason='migrate-v4-default-opening-modal';
-        write(currentKey,current);touchIndex(currentKey,current.savedAt);
+      // V5 khusus simulasi 24/09: reset ulang dari closing 23 yang kanonik.
+      // Ini membuang snapshot simulasi lama yang sempat tercampur nilai kolom koreksi.
+      if(cfg.date==='2026-09-24' && cfg.baseDate==='2026-09-23' && Number(current.rolloverVersion||0)<5){
+        const cleanBase=canonicalBase(cfg.baseDate)||read(PREFIX+cfg.baseId,null);
+        if(cleanBase&&cleanBase.forms&&cleanBase.catalogs){
+          current=buildSeed(cfg,cleanBase);
+          current.rolloverVersion=5;
+          current.reason='migrate-v5-clean-system-opening';
+          applyRuntime(current);
+          current.sourceFingerprint=fingerprint();
+          write(currentKey,current);touchIndex(currentKey,current.savedAt);
+          currentMeta={
+            rolloverSimulation:true,rolloverVersion:5,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
+            rolloverSource:String(current.rolloverSource||''),rolloverOpeningModal:current.rolloverOpeningModal.slice()
+          };
+          return true;
+        }
       }
       applyRuntime(current);return true;
     }
@@ -298,7 +302,7 @@
     current.sourceFingerprint=fingerprint();
     write(currentKey,current);touchIndex(currentKey,current.savedAt);
     currentMeta={
-      rolloverSimulation:true,rolloverVersion:4,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
+      rolloverSimulation:true,rolloverVersion:5,rolloverFrom:cfg.baseId,rolloverBaseDate:cfg.baseDate,
       rolloverSource:String(current.rolloverSource||''),rolloverOpeningModal:current.rolloverOpeningModal.slice()
     };
     sessionStorage.setItem('ka_rollover_last_v2',JSON.stringify({from:cfg.baseId,to:cfg.id,at:current.savedAt}));
