@@ -236,6 +236,15 @@
     return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   }
 
+  function persistSimulation(cfg){
+    try{
+      write('ka_sim_active_shift_v1',{
+        date:cfg.date,shift:cfg.shift,holder:cfg.holder,id:cfg.id,
+        baseDate:cfg.baseDate,updatedAt:Date.now()
+      });
+    }catch(_){}
+  }
+
   function paint(cfg){
     const target=labelDate(cfg.date),base=labelDate(cfg.baseDate);
     const rewrite=root=>{
@@ -259,6 +268,7 @@
   function trySeed(){
     const cfg=config();if(!cfg)return false;
     paint(cfg);
+    persistSimulation(cfg);
     const currentKey=PREFIX+cfg.id;
     let current=read(currentKey,null);
 
