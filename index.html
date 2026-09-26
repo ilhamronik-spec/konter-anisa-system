@@ -3041,8 +3041,8 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
       rolloverOpeningModal:Array.isArray(saved.rolloverOpeningModal)?saved.rolloverOpeningModal.slice():[]
     };
     try{window.KAStockV50?.refreshOpeningSystem?.();}catch(_){}
-    try{if(typeof syncPkgBuy==='function')syncPkgBuy();}catch(_){}
-    try{if(typeof syncCigBuy==='function')syncCigBuy();}catch(_){}
+    // Jangan sentuh editor Belanja yang sedang aktif. syncPkgBuy/syncCigBuy hanya
+    // boleh dijalankan oleh inisialisasi/form selector, bukan oleh re-apply rollover.
     try{window.KABalanceV44?.renderBalance?.();}catch(_){}
     return true;
   }
@@ -3142,9 +3142,9 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
   function start(){
     if(started)return;started=true;
     const cfg=config();if(!cfg)return;
-    // Selalu re-assert setelah cloud pull agar snapshot simulasi lama tidak mengalahkan baseline yang benar.
-    window.addEventListener('ka:shared-sync',()=>{trySeed();});
-    // Run immediately, before DOMContentLoaded initializers overwrite the opening.
+    // Seed/recover hanya sekali saat halaman simulasi dibuka. Shared DB melakukan
+    // pull tiap beberapa detik; re-apply rollover pada setiap ka:shared-sync akan
+    // mengembalikan form ke snapshot awal saat karyawan sedang mengetik.
     if(trySeed())return;
     timer=setInterval(()=>{if(trySeed()){clearInterval(timer);timer=null;}},500);
     setTimeout(()=>{if(timer){clearInterval(timer);timer=null;}},20000);
