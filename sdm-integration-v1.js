@@ -248,14 +248,16 @@
     return r;
   }
   function bootEmployeeShadow(){
-    let tries=0;
-    const t=setInterval(()=>{
-      tries++;
-      const found=bindShiftSessionShadow();
-      if(found||tries>60)clearInterval(t);
-    },200);
+    bindShiftSessionShadow();
+    if(!window.__KA_SDM_SHIFT_DELEGATE_BOUND){
+      window.__KA_SDM_SHIFT_DELEGATE_BOUND=true;
+      document.addEventListener('click',e=>{
+        const id=String(e.target?.closest?.('button')?.id||'');
+        if(['openingPkgPreviewBtn','openingCigPreviewBtn','openingNextBtn'].includes(id))startShiftShadowOnce();
+      },true);
+    }
 
-    // Gate tidak dipolling periodik lagi. Status diperbarui saat portal dibuka,
+    // Gate tidak dipolling periodik. Status diperbarui saat portal dibuka,
     // saat tab kembali aktif/focus, dan setelah begin/complete handover.
     setTimeout(refreshEmployeeGateShadow,0);
     if(!window.__KA_SDM_LIVE_GATE_BOUND){
