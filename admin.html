@@ -392,7 +392,7 @@
 </main>
 </div>
 
-<div class="modal" id="sdmAdjustmentModal"><div class="modal-card" style="width:min(760px,100%)"><div class="modal-head"><h3 id="sdmAdjustmentTitle">Review Balance SDMsmart</h3><button class="btn" id="sdmAdjustmentClose">Tutup ✕</button></div><div class="notice blue" id="sdmAdjustmentInfo">—</div><div class="grid two"><div class="card section-card"><h4>Nilai Perhitungan</h4><div class="summary-list"><div class="summary-row"><span>Balance Asli 🔒</span><b id="sdmOriginalValue">Rp0</b></div><div class="summary-row"><span>Koreksi Admin</span><b id="sdmAdjustmentPreview">Rp0</b></div><div class="summary-row"><span>Balance Final</span><b id="sdmFinalPreview">Rp0</b></div></div></div><div class="card section-card"><h4>Koreksi Admin</h4><div class="field"><label>Koreksi (+/−)</label><input class="input" id="sdmAdjustmentInput" type="number" step="1" placeholder="Contoh: 20000 atau -10000"></div><div style="font-size:10px;color:var(--muted);margin-top:6px">+ mengurangi efek minus / menaikkan final. − menambah minus / menurunkan final.</div></div></div><div class="field" style="margin-top:14px"><label>Alasan / Hasil Review Admin — Wajib</label><textarea class="textarea" id="sdmAdjustmentReason" placeholder="Contoh: Rp20.000 bukan tanggung jawab karyawan karena koreksi stok telah diverifikasi."></textarea></div><div class="actions" style="margin-top:14px"><button class="btn" id="sdmSaveDraft">Simpan Draft</button><button class="btn purple" id="sdmApprove">Sahkan untuk SDMsmart</button></div><div class="notice amber" style="margin-top:14px;margin-bottom:0"><b>Belum ada write ke aplikasi SDMsmart.</b> Tombol Sahkan hanya mengunci nilai final di Integration Ledger Konter sampai adapter STAGING diaktifkan.</div></div></div>
+<div class="modal" id="sdmAdjustmentModal"><div class="modal-card" style="width:min(760px,100%)"><div class="modal-head"><h3 id="sdmAdjustmentTitle">Review Balance SDMsmart</h3><button class="btn" id="sdmAdjustmentClose">Tutup ✕</button></div><div class="notice blue" id="sdmAdjustmentInfo">—</div><div class="grid two"><div class="card section-card"><h4>Nilai Perhitungan</h4><div class="summary-list"><div class="summary-row"><span>Balance Asli 🔒</span><b id="sdmOriginalValue">Rp0</b></div><div class="summary-row"><span>Koreksi Admin</span><b id="sdmAdjustmentPreview">Rp0</b></div><div class="summary-row"><span>Balance Final</span><b id="sdmFinalPreview">Rp0</b></div></div></div><div class="card section-card"><h4>Koreksi Admin</h4><div class="field"><label>Koreksi (+/−)</label><input class="input" id="sdmAdjustmentInput" type="number" step="1" placeholder="Contoh: 20000 atau -10000"></div><div style="font-size:10px;color:var(--muted);margin-top:6px">+ mengurangi efek minus / menaikkan final. − menambah minus / menurunkan final.</div></div></div><div class="field" style="margin-top:14px"><label>Alasan / Hasil Review Admin — Wajib</label><textarea class="textarea" id="sdmAdjustmentReason" placeholder="Contoh: Rp20.000 bukan tanggung jawab karyawan karena koreksi stok telah diverifikasi."></textarea></div><div class="actions" style="margin-top:14px"><button class="btn" id="sdmSaveDraft">Simpan Draft</button><button class="btn purple" id="sdmApprove">Sahkan untuk SDMsmart</button></div><div class="notice amber" style="margin-top:14px;margin-bottom:0"><b>Belum ada write ke aplikasi SDMsmart.</b> Tombol Sahkan sekarang memasukkan nilai final ke <b>STAGING OUTBOX</b> Konter. Firebase/SDMsmart Production tetap tidak disentuh sampai kontrak target dan adapter produksi disahkan.</div></div></div>
 <div class="modal" id="opsBudgetModal"><div class="modal-card" style="width:min(760px,100%)"><div class="modal-head"><div><h3>Atur Anggaran Operasional</h3><div id="opsBudgetModalPeriod" style="font-size:11px;color:var(--muted);margin-top:4px">—</div></div><button class="btn" id="opsBudgetClose">Tutup ✕</button></div><div class="notice blue" style="margin-top:14px"><b>Admin authority.</b> Nilai di bawah adalah batas bulanan yang akan dipakai oleh dashboard Admin dan peringatan Operasional Karyawan. Bulan baru otomatis mulai dari Rp0 sampai Admin menetapkan anggaran.</div><div class="form-grid">
 <div class="field"><label>Transportasi</label><input class="input money-entry" id="opsBudget_transport" inputmode="numeric" value="0"></div>
 <div class="field"><label>Sedekah</label><input class="input money-entry" id="opsBudget_sedekah" inputmode="numeric" value="0"></div>
@@ -407,7 +407,7 @@
 
 <script src="./account-master-v59.js?build=80"></script>
 <script src="./auth-client-v1.js?build=81&fix=tabauth1"></script>
-<script src="./sdm-integration-v1.js?build=2"></script>
+<script src="./sdm-integration-v1.js?build=3&fix=writeback1"></script>
 <script>window.KAAuthV1.requireRole(['admin','owner']);</script>
 <script>
 (function(){
@@ -1197,7 +1197,13 @@ function renderSdm(){
   $('sdmAdjustmentBody').innerHTML=filtered.length?filtered.map(x=>{
     const a=map[x.shiftId],state=sdmAdjState(x,a),final=sdmFinal(x,a);
     const status=state==='approved'?'<span class="status ok">DISAHKAN</span>':state==='draft'?'<span class="status info">DRAFT</span>':state==='stale'?'<span class="status bad">SUMBER BERUBAH</span>':'<span class="status warn">BELUM REVIEW</span>';
-    const sync=state==='approved'?'<span class="status warn">MENUNGGU ADAPTER</span>':'<span class="status info">BELUM DIKIRIM</span>';
+    const sync=state!=='approved'
+      ?'<span class="status info">BELUM DIKIRIM</span>'
+      :a?.syncStatus==='staged_outbox'
+        ?'<span class="status info">STAGING OUTBOX</span>'
+        :a?.syncStatus==='stage_failed'
+          ?'<span class="status bad">STAGING GAGAL</span>'
+          :'<span class="status warn">MENUNGGU STAGING</span>';
     return '<tr><td><b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'—')+'</b><div style="font-size:10px;color:var(--muted)">'+esc(x.shiftId||'')+'</div></td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money '+(Number(x.balance)<0?'red':Number(x.balance)>0?'amber':'green')+'"><b>'+fmtSigned(x.balance)+'</b></td><td class="money"><b>'+fmtSigned(a?.adjustment||0)+'</b></td><td class="money '+(final<0?'red':final>0?'amber':'green')+'"><b>'+fmtSigned(final)+'</b></td><td>'+esc(a?.reason||'—')+'</td><td>'+status+(a?.revision?'<div style="font-size:10px;color:var(--muted)">Rev '+Number(a.revision)+'</div>':'')+'</td><td>'+sync+'</td><td><button class="btn '+(state==='approved'?'':'purple')+'" data-sdm-edit="'+esc(x.shiftId)+'">'+(state==='approved'?'Review Ulang':'Review')+'</button></td></tr>';
   }).join(''):'<tr><td colspan="9" class="empty">Belum ada data sesuai filter.</td></tr>';
   document.querySelectorAll('[data-sdm-edit]').forEach(b=>b.onclick=()=>openSdmAdjustment(b.dataset.sdmEdit));
@@ -1225,7 +1231,7 @@ function openSdmAdjustment(id){
   updateSdmPreview();
   $('sdmAdjustmentModal').classList.add('open');
 }
-function saveSdmAdjustment(approve){
+async function saveSdmAdjustment(approve){
   const x=activeSummaries().find(r=>String(r.shiftId)===String(activeSdmShiftId));if(!x)return;
   const adjustment=Math.round(Number($('sdmAdjustmentInput').value||0)),reason=String($('sdmAdjustmentReason').value||'').trim();
   if(!reason)return alert('Alasan / hasil review Admin wajib diisi.');
@@ -1233,14 +1239,54 @@ function saveSdmAdjustment(approve){
   const rec={
     id:x.shiftId,shiftId:x.shiftId,date:x.date,shift:x.shift,employeeName:x.holder,
     originalBalance:Number(x.balance||0),adjustment,finalBalance:Number(x.balance||0)+adjustment,
+    margin:Number(x.margin||0),
     reason,status:approve?'approved':'draft',revision:Number(prev.revision||0)+1,
     updatedAt:now,updatedBy:actor,approvedAt:approve?now:null,approvedBy:approve?actor:null,
-    syncStatus:approve?'pending_adapter':'not_ready',source:'konter-anisa'
+    syncStatus:approve?'staging_pending':'not_ready',source:'konter-anisa'
   };
   map[x.shiftId]=rec;write(SDMADJ,map);
   $('sdmAdjustmentModal').classList.remove('open');
   renderSdm();renderDashboard();renderAudit();
-  try{window.KASharedDBV1?.syncNow?.(true)}catch(_){}
+
+  if(approve){
+    try{
+      const staged=await window.KASDMV1?.stageWriteback?.({
+        shift_id:rec.shiftId,
+        date:rec.date,
+        employee_name:rec.employeeName,
+        schedule_code:rec.shift,
+        original_balance:rec.originalBalance,
+        adjustment:rec.adjustment,
+        final_balance:rec.finalBalance,
+        margin:rec.margin,
+        source_revision:rec.revision,
+        reason:rec.reason,
+        approved_at:rec.approvedAt
+      });
+      const latest=sdmAdjustments(),saved=latest[x.shiftId]||rec;
+      latest[x.shiftId]={
+        ...saved,
+        syncStatus:'staged_outbox',
+        writebackId:String(staged?.writeback?.id||''),
+        writebackKey:String(staged?.writeback?.idempotency_key||''),
+        sdmUserId:String(staged?.writeback?.sdm_user_id||''),
+        stagedAt:String(staged?.writeback?.created_at||new Date().toISOString()),
+        stageError:null
+      };
+      write(SDMADJ,latest);
+    }catch(e){
+      const latest=sdmAdjustments(),saved=latest[x.shiftId]||rec;
+      latest[x.shiftId]={
+        ...saved,
+        syncStatus:'stage_failed',
+        stageError:String(e?.message||e),
+        stageFailedAt:new Date().toISOString()
+      };
+      write(SDMADJ,latest);
+    }
+    renderSdm();renderDashboard();renderAudit();
+  }
+  try{await window.KASharedDBV1?.syncNow?.(true)}catch(_){}
 }
 function renderArchive(){
   const all=archivedSummaries();
