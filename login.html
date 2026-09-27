@@ -100,7 +100,10 @@
     }else{
       try{sessionStorage.removeItem('ka_runtime_shift_context_v1')}catch(_){}
     }
-    const target=safeNext()||window.KAAuthV1.homeForRole(p.role);
+    const home=window.KAAuthV1.homeForRole(p.role);
+    const requested=safeNext();
+    const pageOf=v=>String(v||'').split('?')[0].split('#')[0].split('/').pop()||'';
+    const target=(requested&&pageOf(requested)===pageOf(home))?requested:home;
     location.replace(target);
   }
 
