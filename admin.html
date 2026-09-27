@@ -1245,9 +1245,13 @@ function renderSdm(){
       ?'<span class="status info">BELUM DIKIRIM</span>'
       :a?.syncStatus==='staged_outbox'
         ?'<span class="status info">STAGING OUTBOX</span>'
-        :a?.syncStatus==='stage_failed'
-          ?'<span class="status bad">STAGING GAGAL</span>'
-          :'<span class="status warn">MENUNGGU STAGING</span>';
+        :a?.syncStatus==='source_sync_failed'
+          ?'<span class="status bad">DATABASE BELUM SINKRON</span>'
+          :a?.syncStatus==='stage_failed'
+            ?'<span class="status bad">STAGING GAGAL</span>'
+            :a?.syncStatus==='source_sync_pending'
+              ?'<span class="status warn">SINKRON SUMBER…</span>'
+              :'<span class="status warn">MENUNGGU STAGING</span>';
     return '<tr><td><b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'—')+'</b><div style="font-size:10px;color:var(--muted)">'+esc(x.shiftId||'')+'</div></td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money '+(Number(x.balance)<0?'red':Number(x.balance)>0?'amber':'green')+'"><b>'+fmtSigned(x.balance)+'</b></td><td class="money"><b>'+fmtSigned(a?.adjustment||0)+'</b></td><td class="money '+(final<0?'red':final>0?'amber':'green')+'"><b>'+fmtSigned(final)+'</b></td><td>'+esc(a?.reason||'—')+'</td><td>'+status+(a?.revision?'<div style="font-size:10px;color:var(--muted)">Rev '+Number(a.revision)+'</div>':'')+'</td><td>'+sync+'</td><td><button class="btn '+(state==='approved'?'':'purple')+'" data-sdm-edit="'+esc(x.shiftId)+'">'+(state==='approved'?'Review Ulang':'Review')+'</button></td></tr>';
   }).join(''):'<tr><td colspan="9" class="empty">Belum ada data sesuai filter.</td></tr>';
   document.querySelectorAll('[data-sdm-edit]').forEach(b=>b.onclick=()=>openSdmAdjustment(b.dataset.sdmEdit));
@@ -1286,27 +1290,33 @@ async function saveSdmAdjustment(approve){
     margin:Number(x.margin||0),
     reason,status:approve?'approved':'draft',revision:Number(prev.revision||0)+1,
     updatedAt:now,updatedBy:actor,approvedAt:approve?now:null,approvedBy:approve?actor:null,
-    syncStatus:approve?'staging_pending':'not_ready',source:'konter-anisa'
+    syncStatus:approve?'source_sync_pending':'not_ready',source:'konter-anisa'
   };
   map[x.shiftId]=rec;write(SDMADJ,map);
   $('sdmAdjustmentModal').classList.remove('open');
   renderSdm();renderDashboard();renderAudit();
 
   if(approve){
+    let sourceSynced=false;
+    try{sourceSynced=!!(await window.KASharedDBV1?.syncNow?.(true))}catch(_){sourceSynced=false}
+    if(!sourceSynced){
+      const latest=sdmAdjustments(),saved=latest[x.shiftId]||rec;
+      latest[x.shiftId]={
+        ...saved,
+        syncStatus:'source_sync_failed',
+        stageError:'Approval belum masuk staging karena database bersama belum berhasil disinkronkan.',
+        stageFailedAt:new Date().toISOString()
+      };
+      write(SDMADJ,latest);
+      renderSdm();renderDashboard();renderAudit();
+      return;
+    }
+
     try{
-      const staged=await window.KASDMV1?.stageWriteback?.({
-        shift_id:rec.shiftId,
-        date:rec.date,
-        employee_name:rec.employeeName,
-        schedule_code:rec.shift,
-        original_balance:rec.originalBalance,
-        adjustment:rec.adjustment,
-        final_balance:rec.finalBalance,
-        margin:rec.margin,
-        source_revision:rec.revision,
-        reason:rec.reason,
-        approved_at:rec.approvedAt
-      });
+      // Gateway menyusun angka writeback dari ka_sync_records server-side.
+      // Browser hanya mengirim ID shift sehingga nilai finansial tidak bisa dipalsukan
+      // atau berbeda dari summary + approval yang sudah tersinkron.
+      const staged=await window.KASDMV1?.stageWriteback?.({shift_id:rec.shiftId});
       const latest=sdmAdjustments(),saved=latest[x.shiftId]||rec;
       latest[x.shiftId]={
         ...saved,
@@ -1329,7 +1339,10 @@ async function saveSdmAdjustment(approve){
       write(SDMADJ,latest);
     }
     renderSdm();renderDashboard();renderAudit();
+    try{await window.KASharedDBV1?.syncNow?.(true)}catch(_){}
+    return;
   }
+
   try{await window.KASharedDBV1?.syncNow?.(true)}catch(_){}
 }
 function renderArchive(){
