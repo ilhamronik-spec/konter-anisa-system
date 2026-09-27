@@ -100,6 +100,18 @@
       try{window.KAAdminBridgeV1?.snapshot?.()}catch(_){}
       const rec=markSubmitted(finalBalance);
 
+      // Catat handover ke Shift Session bila mapping/jadwal SDMsmart sudah tersedia.
+      // Dalam mode SHADOW, kegagalan/ketiadaan session tidak pernah membatalkan submit produksi.
+      try{
+        await window.KASDMV1?.completeHandover?.({
+          shiftId:rec.shiftId||shiftContext().id,
+          balance:Number(rec.balance||0),
+          margin:Number(rec.margin||0),
+          modalClosing:Number(rec.modalClosing||0),
+          submissionRevision:Number(rec.submissionRevision||0)
+        },shiftContext().date||undefined);
+      }catch(_){}
+
       setStatus('<b>TERSIMPAN KE ADMIN.</b> Balance '+fmt(rec.balance)+' • Margin '+fmt(rec.margin)+'. Menyinkronkan database…','ok');
 
       // Buka Admin segera setelah simpan lokal. Karena origin sama, Admin langsung
