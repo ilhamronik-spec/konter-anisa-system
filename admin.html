@@ -1201,6 +1201,19 @@ async function refreshWritebackOutbox(){
   }
   renderWritebackOutbox();
 }
+const SDM_ADAPTER_BLOCKER_LABELS={
+  employee_mapping_missing:'Mapping karyawan belum ada',
+  salary_run_alias_missing:'Alias payroll belum diisi',
+  work_date_invalid:'Tanggal kerja tidak valid',
+  shift_id_missing:'Shift ID tidak tersedia',
+  outbox_status_invalid:'Status outbox tidak valid',
+  legacy_margin_cutover_not_confirmed:'Cutover dari sumber margin lama belum dikonfirmasi',
+  positive_balance_semantics_unresolved:'Kebijakan Balance plus belum ditetapkan',
+  negative_margin_semantics_unresolved:'Margin negatif belum memiliki kebijakan',
+  remote_read_failed:'Firebase SDMsmart tidak dapat dibaca',
+  target_collision:'Target salaryRuns bertabrakan dengan sumber lain',
+  legacy_salaryrun_overlap:'Sudah ada salaryRun lama untuk tanggal + karyawan yang sama'
+};
 async function previewSdmAdapter(outboxId){
   const box=$('sdmRemoteSchemaInfo');
   if(box){box.className='notice blue';box.innerHTML='<b>Menyusun preview adapter salaryRuns…</b>'}
@@ -1214,9 +1227,11 @@ async function previewSdmAdapter(outboxId){
         '<br>Alias payroll: <b>'+esc(p.responsible||'—')+'</b>'+
         '<br>Margin: <b>'+fmt(p.margin||0)+'</b> • Mines: <b>'+fmt(p.mines||0)+'</b>'+
         '<br>Balance final audit: <b>'+fmtSigned(p.konterBalanceFinal||0)+'</b>'+
+        '<br>Cutover margin lama: <b>'+(a.cutover_confirmed?'SUDAH DIKONFIRMASI':'BELUM')+'</b>'+
+        '<br>Overlap salaryRun lama: <b>'+Number(a.legacy_overlap_count||0)+'</b>'+
         '<br>Firebase target: '+(a.target_exists?'SUDAH ADA':'BELUM ADA')+
         '<br>WRITE Production: <b>'+(a.write_enabled?'ON':'OFF / TERKUNCI')+'</b>'+
-        (blockers.length?'<br>Blocker: <b>'+esc(blockers.join(', '))+'</b>':'');
+        (blockers.length?'<br><br><b>Yang masih menahan:</b><br>'+blockers.map(x=>'• '+esc(SDM_ADAPTER_BLOCKER_LABELS[x]||x)).join('<br>'):'');
     }
   }catch(e){
     if(box){box.className='notice red';box.innerHTML='<b>Preview adapter gagal:</b> '+esc(String(e?.message||e))}
