@@ -10,6 +10,7 @@ const SHIFT_INDEX='ka_shift_autosave_v53_index';
 const SHIFT_PREFIX='ka_shift_autosave_v53_';
 const OIL_PREFIX='ka_oil_purchase_v75_';
 const ACC_OBAT_KEY='ka_v41_acc_obat_purchases';
+const OP_BUDGET_KEY='ka_operational_budget_v1';
 const SEED_NOTES=new Set(['NBJ-0913-01','NBJ-0913-02','NBO-0913-01','NBO-0918-01']);
 let started=false,busy=false,timer=null,cloudNoteIds=new Set(),lastError='';
 
@@ -117,6 +118,9 @@ function recordsLocal(){
   const sdmAdj=read('ka_sdm_adjustments_v1',{});
   if(sdmAdj&&typeof sdmAdj==='object')Object.entries(sdmAdj).forEach(([id,p])=>p&&out.push(record('integration_adjustment',id,p)));
 
+  const opBudget=read(OP_BUDGET_KEY,null);
+  if(opBudget&&typeof opBudget==='object')out.push(record('operational_budget','master',opBudget));
+
   const accounts=read('ka_admin_accounts_v59',null);
   if(accounts)out.push(record('accounts','master',accounts));
 
@@ -213,6 +217,9 @@ function applyOne(r){
     setJson('ka_admin_correction_requests_v1',a);
   }else if(r.kind==='integration_adjustment'){
     const m=read('ka_sdm_adjustments_v1',{})||{};m[id]=p;setJson('ka_sdm_adjustments_v1',m);
+  }else if(r.kind==='operational_budget'){
+    setJson(OP_BUDGET_KEY,p);
+    try{window.dispatchEvent(new CustomEvent('ka:operational-budget-updated',{detail:p}))}catch(_){}
   }else if(r.kind==='accounts'){
     setJson('ka_admin_accounts_v59',p);
     try{window.dispatchEvent(new CustomEvent('ka:admin-accounts-updated'))}catch(_){}
