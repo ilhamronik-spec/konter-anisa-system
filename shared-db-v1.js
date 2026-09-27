@@ -313,7 +313,9 @@ async function pullAll(){
   if(changed>0){
     try{$('refreshHistory')?.click()}catch(_){}
   }
-  try{window.dispatchEvent(new CustomEvent('ka:shared-sync',{detail:{direction:'pull',count:rows.length,changed}}))}catch(_){}
+  if(changed>0){
+    try{window.dispatchEvent(new CustomEvent('ka:shared-sync',{detail:{direction:'pull',count:rows.length,changed}}))}catch(_){}
+  }
   return rows;
 }
 async function pullUsageTombstones(){
