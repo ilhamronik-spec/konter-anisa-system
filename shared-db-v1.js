@@ -114,6 +114,9 @@ function recordsLocal(){
     if(id)out.push(record('correction',id,x));
   });
 
+  const sdmAdj=read('ka_sdm_adjustments_v1',{});
+  if(sdmAdj&&typeof sdmAdj==='object')Object.entries(sdmAdj).forEach(([id,p])=>p&&out.push(record('integration_adjustment',id,p)));
+
   const accounts=read('ka_admin_accounts_v59',null);
   if(accounts)out.push(record('accounts','master',accounts));
 
@@ -208,6 +211,8 @@ function applyOne(r){
     const ix=a.findIndex(x=>String(x?.id||'')===id);
     if(ix>=0)a[ix]=p;else a.push(p);
     setJson('ka_admin_correction_requests_v1',a);
+  }else if(r.kind==='integration_adjustment'){
+    const m=read('ka_sdm_adjustments_v1',{})||{};m[id]=p;setJson('ka_sdm_adjustments_v1',m);
   }else if(r.kind==='accounts'){
     setJson('ka_admin_accounts_v59',p);
     try{window.dispatchEvent(new CustomEvent('ka:admin-accounts-updated'))}catch(_){}
