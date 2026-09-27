@@ -10,19 +10,20 @@
     'marginBody','minusBody','opBody',
     'capitalBody','capitalChart','debtBody',
     'purchaseBody','reviewBody','attBody','accountBody',
+    'sdmAdjustmentBody','sdmMarginBody','archiveBody',
     'reportPaper','reportBody','auditList',
-    'returnConfirm','accAdd'
+    'returnConfirm','accAdd','sdmSaveDraft','sdmApprove'
   ];
   const REQUIRED_VIEWS=[
     'dashboard','margin','minus','operational','capital','debt',
-    'purchases','review','attendance','accounts','reports','audit'
+    'purchases','review','attendance','accounts','sdm','archive','reports','audit'
   ];
-  const REQUIRED_GROUPS=['dashboard','finance','capitaldebt','purchases','review','people','reports'];
+  const REQUIRED_GROUPS=['dashboard','finance','capitaldebt','purchases','review','accounts','sdm','archive','reports'];
   const REQUIRED_TOKENS=[
     'renderDashboard','renderMargin','renderMinus','renderOp',
     'renderCapital','renderCapitalChart','renderDebt','renderPurchases','renderReview',
-    'renderAttendance','renderAccounts','renderReport','renderAudit',
-    'submitReturn','resolveCorrection','addAccount','changeRole','toggleAccount',
+    'renderAttendance','renderAccounts','renderSdm','renderArchive','renderReport','renderAudit',
+    'submitReturn','resolveCorrection','addAccount','changeRole','toggleAccount','saveSdmAdjustment',
     'exportReportCsv','printReport'
   ];
 
@@ -56,7 +57,7 @@
 
   function gate(pass){
     const selectors=[
-      '#returnConfirm','#accAdd',
+      '#returnConfirm','#accAdd','#sdmSaveDraft','#sdmApprove',
       '[data-role-id]','[data-toggle-id]','[data-resolve]','[data-return]'
     ];
     document.querySelectorAll(selectors.join(',')).forEach(el=>{
@@ -133,7 +134,7 @@
   window.addEventListener('load',run,{once:true});
   window.addEventListener('pageshow',run);
   window.addEventListener('storage',e=>{
-    if(['ka_admin_accounts_v59','ka_admin_correction_requests_v1'].includes(String(e.key||'')))run();
+    if(['ka_admin_accounts_v59','ka_admin_correction_requests_v1','ka_sdm_adjustments_v1'].includes(String(e.key||'')))run();
   });
   setInterval(audit,5000);
 })();
