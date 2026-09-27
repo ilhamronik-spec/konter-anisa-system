@@ -554,7 +554,7 @@ function bind(){
   $('refreshHistory').onclick=render;$('closePhotoModal').onclick=function(){$('photoModal').classList.remove('open')};$('photoModal').onclick=function(e){if(e.target===$('photoModal'))$('photoModal').classList.remove('open')};
   window.addEventListener('storage',render);
   window.addEventListener('ka:admin-accounts-updated',render);
-  setInterval(function(){renderIdentity();summary()},5000)
+  window.addEventListener('ka:shared-sync',function(e){if(Number(e&&e.detail&&e.detail.changed||0)>0)render()})
 }
 function migrateAccidental18NotesTo24(){
   var map={
