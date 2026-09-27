@@ -3270,7 +3270,7 @@ function currentShift(){
 function currentEmployee(){
   try{
     const p=window.KA_AUTH_PROFILE;
-    if(p&&['employee','admin','owner'].includes(String(p.role||'')))return {id:String(p.id),name:String(p.display_name||p.username||'Karyawan')};
+    if(p&&String(p.role||'')==='employee')return {id:String(p.id),name:String(p.display_name||p.username||'Karyawan')};
     const ses=read(AUTH,null),id=String(ses?.accountId||'');
     if(id&&window.KAAdminAccounts?.list){
       const a=window.KAAdminAccounts.list().find(x=>x.id===id&&x.role==='employee');
