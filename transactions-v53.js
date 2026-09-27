@@ -168,6 +168,7 @@
       const x=JSON.parse(JSON.stringify(v||{}));
       delete x.savedAt;
       delete x.reason;
+      delete x._syncIndexTs;
       return JSON.stringify(x);
     }catch(_){return ''}
   }
