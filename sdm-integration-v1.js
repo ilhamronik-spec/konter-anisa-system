@@ -67,26 +67,15 @@
     const q=new URLSearchParams(location.search);
     if(q.get('sim_date'))return false;
     const ctx=runtimeContext(profile,sc);
-    const loadedFromRuntime=String(document.documentElement.dataset.kaRuntimeShiftReady||'')==='1';
-    const wasCorrect=contextMatches(ctx);
-    const reloadKey='ka_runtime_shift_reload_done_v1';
-    let reloadDone='';
     try{
       sessionStorage.setItem('ka_runtime_shift_context_v1',JSON.stringify(ctx));
-      reloadDone=String(sessionStorage.getItem(reloadKey)||'');
+      sessionStorage.removeItem('ka_runtime_shift_reload_done_v1');
     }catch(_){}
 
-    // Maksimal SATU reload per shift-context. Query ?ctx=sdm dan session marker
-    // menjadi circuit-breaker agar halaman tidak pernah masuk refresh loop.
-    if(!loadedFromRuntime && !wasCorrect && q.get('ctx')!=='sdm' && reloadDone!==ctx.id){
-      try{sessionStorage.setItem(reloadKey,ctx.id)}catch(_){}
-      const u=new URL(location.href);
-      u.searchParams.set('ctx','sdm');
-      location.replace(u.href);
-      return true;
-    }
-
-    // Setelah reload pertama, jangan reload lagi. Sinkronkan context live sebagai fallback.
+    // IMPORTANT: tidak pernah reload/replace otomatis dari integration client.
+    // Context utama sudah disiapkan di halaman login sebelum portal dibuka.
+    // Bila ada perubahan jadwal saat portal sedang terbuka, shell/gate diperbarui
+    // tanpa refresh sehingga tidak menimbulkan kedap-kedip.
     window.KA_SHIFT_CONTEXT=ctx;
     document.documentElement.dataset.kaRuntimeShiftReady='1';
     if(window.KARegulationsV29?.activeShift){
@@ -94,6 +83,22 @@
       a.id=ctx.id;a.date=ctx.date;a.shift=ctx.shift;a.holder=ctx.holder;a.label=ctx.label;
     }
     return false;
+  }
+
+  async function prepareEmployeeRuntime(profile){
+    if(!profile||String(profile.role||'')!=='employee')return null;
+    const r=await call('my_schedule',{date:todayJakarta()});
+    if(r?.schedule){
+      const ctx=runtimeContext(r.profile||profile,r.schedule);
+      try{
+        sessionStorage.setItem('ka_runtime_shift_context_v1',JSON.stringify(ctx));
+        sessionStorage.removeItem('ka_runtime_shift_reload_done_v1');
+      }catch(_){}
+      window.KA_SHIFT_CONTEXT=ctx;
+      return {context:ctx,result:r};
+    }
+    try{sessionStorage.removeItem('ka_runtime_shift_context_v1')}catch(_){}
+    return {context:null,result:r};
   }
   function updateEmployeeShell(r){
     const p=r?.profile||window.KA_AUTH_PROFILE||{},sc=r?.schedule||null,g=r?.gate||{},session=r?.session||null;
@@ -239,6 +244,7 @@
     completeHandover:(summary={},date=todayJakarta())=>call('complete_handover',{date,summary}),
     gateOverview:(date=todayJakarta())=>call('gate_overview',{date}),
     forceHandover:(session_id,reason)=>call('force_handover',{session_id,reason}),
+    prepareEmployeeRuntime,
     renderEmployeeGateShadow,
     todayJakarta,
     endpoint:ENDPOINT
