@@ -2823,8 +2823,8 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 })();
 </script>
 <script src="./account-master-v59.js?build=80"></script>
-<script src="./auth-client-v1.js?build=80"></script>
-<script src="./sdm-integration-v1.js?build=80"></script>
+<script src="./auth-client-v1.js?build=80&fix=shiftctx1"></script>
+<script src="./sdm-integration-v1.js?build=80&fix=shiftctx1"></script>
 <script>
 window.KAAuthV1.requireRole(['employee','admin','owner']).then(function(p){
   if(!p||p.bootstrap||p.bypass)return;
@@ -2850,6 +2850,7 @@ window.KAAuthV1.requireRole(['employee','admin','owner']).then(function(p){
         const runtime=JSON.parse(sessionStorage.getItem('ka_runtime_shift_context_v1')||'null');
         if(runtime && /^\d{4}-\d{2}-\d{2}$/.test(String(runtime.date||'')) && runtime.holder){
           window.KA_SHIFT_CONTEXT=runtime;
+          document.documentElement.dataset.kaRuntimeShiftReady='1';
           return;
         }
       }catch(_){}
