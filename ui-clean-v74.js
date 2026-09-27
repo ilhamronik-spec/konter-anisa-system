@@ -62,17 +62,8 @@
   function install(){
     addStyle();
     cleanNode();
-
-    const observer=new MutationObserver(mutations=>{
-      for(const m of mutations){
-        for(const node of m.addedNodes){
-          if(node.nodeType===1) cleanNode(node);
-        }
-      }
-      cleanNode();
-    });
-    observer.observe(document.body,{childList:true,subtree:true});
-
+    // Tidak mengawasi seluruh BODY lagi. Observer global sebelumnya ikut aktif
+    // setiap ada node dinamis dan dapat memicu reflow besar pada portal karyawan.
     window.KACleanUIV74={refresh:()=>cleanNode()};
   }
 
