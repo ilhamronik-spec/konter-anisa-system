@@ -143,7 +143,7 @@
 
   async function renderEmployeeGateShadow(){
     const content=document.querySelector('.content');
-    if(!content||!window.KA_AUTH_PROFILE||!['employee','admin','owner'].includes(String(window.KA_AUTH_PROFILE.role||'')))return;
+    if(!content||!window.KA_AUTH_PROFILE||String(window.KA_AUTH_PROFILE.role||'')!=='employee')return;
     let box=document.getElementById('kaSdmGateShadow');
     if(!box){
       box=document.createElement('div');
