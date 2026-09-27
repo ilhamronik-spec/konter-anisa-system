@@ -4,6 +4,7 @@
 const ENDPOINT='https://nrvmaijxrwaxsoaeogud.supabase.co/functions/v1/ka-sync';
 const TOKEN_KEY='ka_sync_pairing_token_v1';
 const HASH_KEY='ka_sync_hashes_v1';
+const LOCAL_HASH_KEY='ka_sync_local_hashes_v2';
 const BOOT_KEY='ka_sync_bootstrapped_v1';
 const MEDIA_DONE_KEY='ka_sync_media_done_v1';
 const SHIFT_INDEX='ka_shift_autosave_v53_index';
@@ -301,8 +302,15 @@ function setStatus(state,detail=''){
 }
 function loadHashes(){const h=read(HASH_KEY,{});return h&&typeof h==='object'?h:{}}
 function saveHashes(h){write(HASH_KEY,h)}
+function loadLocalHashes(){const h=read(LOCAL_HASH_KEY,{});return h&&typeof h==='object'?h:{}}
+function saveLocalHashes(h){write(LOCAL_HASH_KEY,h)}
+function currentLocalHashes(){
+  const h={};recordsLocal().forEach(r=>h[recKey(r)]=recordHash(r));return h;
+}
 function baseline(){
-  const h={};recordsLocal().forEach(r=>h[recKey(r)]=recordHash(r));saveHashes(h);
+  const h=currentLocalHashes();
+  saveHashes(h);
+  saveLocalHashes(h);
 }
 async function pullAll(){
   const data=await api({action:'pull'});
@@ -315,6 +323,9 @@ async function pullAll(){
   });
   saveHashes(hashes);
   if(changed>0){
+    // Remote data that was actually applied becomes the new clean local baseline,
+    // so the next auto-sync never echoes it straight back to the server.
+    saveLocalHashes(currentLocalHashes());
     try{$('refreshHistory')?.click()}catch(_){}
   }
   if(changed>0){
@@ -336,16 +347,25 @@ async function pullUsageTombstones(){
   return count;
 }
 async function pushChanged(){
-  const hashes=loadHashes(),local=recordsLocal(),changed=[],localMap=new Map();
+  const remoteHashes=loadHashes(),localBase=loadLocalHashes(),local=recordsLocal(),changed=[],localMap=new Map();
   local.forEach(r=>{
     const k=recKey(r),h=recordHash(r);
     localMap.set(k,r);
-    if(hashes[k]!==h)changed.push(r);
+    // Push hanya jika isi lokal berubah sejak baseline lokal terakhir.
+    // Beda terhadap cloud saja bukan alasan untuk push karena itu menciptakan ping-pong.
+    if(localBase[k]!==undefined && localBase[k]!==h)changed.push(r);
   });
 
-  Object.keys(hashes).forEach(k=>{
+  // First run of this client version: adopt the current browser state as the
+  // local baseline. Future user edits will be detected normally.
+  if(!Object.keys(localBase).length){
+    saveLocalHashes(currentLocalHashes());
+    return 0;
+  }
+
+  Object.keys(localBase).forEach(k=>{
     if(!k.startsWith('note_usage::'))return;
-    if(hashes[k]==='__deleted__'||localMap.has(k))return;
+    if(localBase[k]==='__deleted__'||localMap.has(k))return;
     const id=k.slice('note_usage::'.length);
     if(id)changed.push({kind:'note_usage',record_id:id,payload:{},updated_by:actor(),is_deleted:true});
   });
@@ -355,11 +375,14 @@ async function pushChanged(){
     const batch=changed.slice(i,i+100);
     await api({action:'push',actor:actor(),records:batch});
     batch.forEach(r=>{
-      hashes[recKey(r)]=r.is_deleted?'__deleted__':recordHash(r);
+      const k=recKey(r),h=r.is_deleted?'__deleted__':recordHash(r);
+      remoteHashes[k]=h;
+      localBase[k]=h;
       if(r.kind==='note'&&!r.is_deleted)cloudNoteIds.add(String(r.record_id));
     });
   }
-  saveHashes(hashes);
+  saveHashes(remoteHashes);
+  saveLocalHashes(localBase);
   return changed.length;
 }
 async function localPhoto(id){
@@ -433,7 +456,7 @@ async function syncNow(manual=false){
 }
 async function pair(token){
   localStorage.setItem(TOKEN_KEY,String(token||'').trim());
-  localStorage.removeItem(BOOT_KEY);localStorage.removeItem(HASH_KEY);cloudNoteIds=new Set();
+  localStorage.removeItem(BOOT_KEY);localStorage.removeItem(HASH_KEY);localStorage.removeItem(LOCAL_HASH_KEY);cloudNoteIds=new Set();
   setStatus('sync');
   try{
     await api({action:'health'});
@@ -448,7 +471,7 @@ async function pair(token){
   }
 }
 function unpair(){
-  localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(BOOT_KEY);localStorage.removeItem(HASH_KEY);
+  localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(BOOT_KEY);localStorage.removeItem(HASH_KEY);localStorage.removeItem(LOCAL_HASH_KEY);
   cloudNoteIds=new Set();setStatus('idle');
 }
 async function getMediaUrl(noteId){
