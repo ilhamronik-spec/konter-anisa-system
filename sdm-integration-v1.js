@@ -221,6 +221,20 @@
     });
     return found;
   }
+  let gateRefreshTimer=null,gateRefreshBusy=false;
+  async function refreshEmployeeGateShadow(){
+    const p=window.KA_AUTH_PROFILE;
+    if(document.hidden||gateRefreshBusy||!p||String(p.role||'')!=='employee')return;
+    gateRefreshBusy=true;
+    try{await renderEmployeeGateShadow()}catch(_){}
+    finally{gateRefreshBusy=false}
+  }
+  async function completeHandover(summary={},date=todayJakarta()){
+    const r=await call('complete_handover',{date,summary});
+    // Setelah submit final, ubah status shell menjadi HANDOVER SELESAI tanpa reload.
+    try{await renderEmployeeGateShadow()}catch(_){}
+    return r;
+  }
   function bootEmployeeShadow(){
     let tries=0;
     const t=setInterval(()=>{
@@ -228,6 +242,17 @@
       const found=bindShiftSessionShadow();
       if(found||tries>60)clearInterval(t);
     },200);
+
+    // Polling ringan hanya memperbarui status gate di DOM. Tidak ada reload/replace.
+    // Ini membuat tab karyawan berikutnya otomatis berubah dari "menunggu" menjadi
+    // "siap" beberapa detik setelah pemegang sebelumnya menyelesaikan handover.
+    if(!gateRefreshTimer)gateRefreshTimer=setInterval(refreshEmployeeGateShadow,15000);
+    setTimeout(refreshEmployeeGateShadow,0);
+    if(!window.__KA_SDM_LIVE_GATE_BOUND){
+      window.__KA_SDM_LIVE_GATE_BOUND=true;
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshEmployeeGateShadow()});
+      window.addEventListener('focus',refreshEmployeeGateShadow);
+    }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootEmployeeShadow,{once:true});else bootEmployeeShadow();
 
@@ -241,11 +266,12 @@
     syncSchedules:(from,to)=>call('sync_schedules',{from,to}),
     gateStatus:(date=todayJakarta())=>call('gate_status',{date}),
     beginShift:(date=todayJakarta())=>call('begin_shift',{date}),
-    completeHandover:(summary={},date=todayJakarta())=>call('complete_handover',{date,summary}),
+    completeHandover,
     gateOverview:(date=todayJakarta())=>call('gate_overview',{date}),
     forceHandover:(session_id,reason)=>call('force_handover',{session_id,reason}),
     prepareEmployeeRuntime,
     renderEmployeeGateShadow,
+    refreshEmployeeGateShadow,
     todayJakarta,
     endpoint:ENDPOINT
   };
