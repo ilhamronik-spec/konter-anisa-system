@@ -31,7 +31,13 @@
     if(!clientPromise)clientPromise=(async()=>{
       const lib=await sdk();
       return lib.createClient(SUPABASE_URL,PUBLISHABLE_KEY,{
-        auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+        auth:{
+          persistSession:true,
+          autoRefreshToken:true,
+          detectSessionInUrl:true,
+          storage:window.sessionStorage,
+          storageKey:'ka_supabase_auth_tab_v1'
+        }
       });
     })();
     return clientPromise;
@@ -64,7 +70,7 @@
   }
   async function signOut(){
     try{sessionStorage.removeItem('ka_runtime_shift_context_v1')}catch(_){}
-    try{const c=await client();await c.auth.signOut()}catch(_){}
+    try{const c=await client();await c.auth.signOut({scope:'local'})}catch(_){}
     location.replace('./login.html');
   }
   async function session(){
