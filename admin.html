@@ -985,12 +985,13 @@ function renderSdmFoundation(){
   const opts=sdmFoundation.sdmUsers.filter(u=>u.active!==false).map(u=>'<option value="'+esc(u.sdm_user_id)+'">'+esc(u.display_name||u.username||u.sdm_user_id)+' • '+esc(u.sdm_user_id)+'</option>').join('');
   $('sdmMappingBody').innerHTML=eligible.length?eligible.map(p=>{
     const m=p.sdm_mapping||{},linked=!!m.sdm_user_id;
-    return '<tr><td><b>'+esc(p.display_name||p.username)+'</b><div style="font-size:10px;color:var(--muted)">'+esc(p.username||'')+'</div></td><td><select class="select" data-map-role="'+esc(p.id)+'"><option value="employee"'+(p.role==='employee'?' selected':'')+'>Karyawan</option><option value="purchasing"'+(p.role==='purchasing'?' selected':'')+'>Purchasing</option></select></td><td><input class="input" list="sdmUserChoices" data-map-id="'+esc(p.id)+'" data-map-field="id" value="'+esc(m.sdm_user_id||'')+'" placeholder="users.id SDMsmart"></td><td><input class="input" data-map-id="'+esc(p.id)+'" data-map-field="name" value="'+esc(m.sdm_display_name||'')+'" placeholder="Nama di SDMsmart"></td><td>'+(linked?'<span class="status ok">TERHUBUNG</span>':'<span class="status warn">BELUM</span>')+'</td><td><button class="btn purple" data-map-save="'+esc(p.id)+'">Simpan Mapping</button></td></tr>';
+    return '<tr><td><b>'+esc(p.display_name||p.username)+'</b><div style="font-size:10px;color:var(--muted)">'+esc(p.username||'')+'</div></td><td><select class="select" data-map-role="'+esc(p.id)+'"><option value="employee"'+(p.role==='employee'?' selected':'')+'>Karyawan</option><option value="purchasing"'+(p.role==='purchasing'?' selected':'')+'>Purchasing</option></select></td><td><input class="input" list="sdmUserChoices" data-map-id="'+esc(p.id)+'" data-map-field="id" value="'+esc(m.sdm_user_id||'')+'" placeholder="users.id SDMsmart"></td><td><input class="input" data-map-id="'+esc(p.id)+'" data-map-field="name" value="'+esc(m.sdm_display_name||'')+'" placeholder="Nama di SDMsmart"></td><td>'+(linked?'<span class="status ok">TERHUBUNG</span>':'<span class="status warn">BELUM</span>')+'</td><td><div class="actions"><button class="btn purple" data-map-save="'+esc(p.id)+'">Simpan Mapping</button><button class="btn" data-map-reset="'+esc(p.id)+'">Reset Password</button></div></td></tr>';
   }).join(''):'<tr><td colspan="6" class="empty">Belum ada akun Karyawan/Purchasing server. Buat akun terlebih dahulu di menu Akun & Akses.</td></tr>';
   let dl=$('sdmUserChoices');
   if(!dl){dl=document.createElement('datalist');dl.id='sdmUserChoices';document.body.appendChild(dl)}
   dl.innerHTML=opts;
   document.querySelectorAll('[data-map-save]').forEach(b=>b.onclick=()=>saveSdmMapping(b.dataset.mapSave));
+  document.querySelectorAll('[data-map-reset]').forEach(b=>b.onclick=()=>resetPassword(b.dataset.mapReset));
   document.querySelectorAll('[data-map-role]').forEach(sel=>sel.onchange=async()=>{
     const id=sel.dataset.mapRole,role=sel.value;
     try{
@@ -1067,7 +1068,15 @@ async function saveSdmMapping(konterUserId){
       active:true
     });
     await refreshSdmFoundation();
-  }catch(e){alert('Mapping gagal disimpan: '+String(e?.message||e))}
+  }catch(e){
+    const msg=String(e?.message||e);
+    if(msg==='login_required'||msg==='admin_auth_required'){
+      alert('Sesi Admin sudah berakhir atau Anda login akun lain di tab lain. Login kembali sebagai Admin/Owner, lalu simpan mapping.');
+      location.href='./login.html?reason=session_expired&next=admin.html%3Fview%3Dsdm';
+      return;
+    }
+    alert('Mapping gagal disimpan: '+msg)
+  }
 }
 async function syncSdmSchedules(){
   ensureSdmDates();
