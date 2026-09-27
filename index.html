@@ -2826,7 +2826,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 <script src="./auth-client-v1.js?build=80&fix=tabauth1"></script>
 <script src="./sdm-integration-v1.js?build=80&fix=quiet-gate1"></script>
 <script>
-window.KAAuthV1.requireRole(['employee','admin','owner']).then(function(p){
+window.KAAuthV1.requireRole(['employee']).then(function(p){
   if(!p||p.bootstrap||p.bypass)return;
   try{
     var name=p.display_name||p.username||'Karyawan';
