@@ -255,10 +255,8 @@
       if(found||tries>60)clearInterval(t);
     },200);
 
-    // Polling ringan hanya memperbarui status gate di DOM. Tidak ada reload/replace.
-    // Ini membuat tab karyawan berikutnya otomatis berubah dari "menunggu" menjadi
-    // "siap" beberapa detik setelah pemegang sebelumnya menyelesaikan handover.
-    if(!gateRefreshTimer)gateRefreshTimer=setInterval(refreshEmployeeGateShadow,15000);
+    // Gate tidak dipolling periodik lagi. Status diperbarui saat portal dibuka,
+    // saat tab kembali aktif/focus, dan setelah begin/complete handover.
     setTimeout(refreshEmployeeGateShadow,0);
     if(!window.__KA_SDM_LIVE_GATE_BOUND){
       window.__KA_SDM_LIVE_GATE_BOUND=true;
