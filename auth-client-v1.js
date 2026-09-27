@@ -117,6 +117,35 @@
     document.documentElement.dataset.kaAuthMode='authenticated';
     document.documentElement.dataset.kaAuthRole=String(p.role);
     injectLogout(p);reveal();
+
+    // Supabase session disimpan per-origin. Jika tab lain logout / ganti akun,
+    // tab portal lama harus ikut invalid agar tidak terlihat seolah masih login.
+    if(!window.__KA_AUTH_WATCH_BOUND){
+      window.__KA_AUTH_WATCH_BOUND=true;
+      const c=await client();
+      c.auth.onAuthStateChange((event,newSession)=>{
+        if(event==='SIGNED_OUT'||!newSession){
+          window.KA_AUTH_PROFILE=null;
+          document.documentElement.dataset.kaAuthMode='signed_out';
+          const page=location.pathname.split('/').pop()||'';
+          if(page!=='login.html')setTimeout(()=>location.replace(loginUrl('session_expired')),0);
+          return;
+        }
+        const currentId=String(window.KA_AUTH_PROFILE?.id||'');
+        const newId=String(newSession?.user?.id||'');
+        if(currentId&&newId&&currentId!==newId){
+          setTimeout(async()=>{
+            try{
+              const np=await ownProfile();
+              const page=location.pathname.split('/').pop()||'';
+              const target=np?homeForRole(np.role):'./login.html';
+              if(page!=='login.html')location.replace(target);
+            }catch(_){location.replace('./login.html?reason=session_changed')}
+          },0);
+        }
+      });
+    }
+
     try{window.dispatchEvent(new CustomEvent('ka:auth-ready',{detail:p}))}catch(_){}
     return p;
   }
