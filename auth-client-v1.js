@@ -119,7 +119,11 @@
     try{p=await ownProfile()}catch(_){}
     if(!p||!p.active){await signOut();return null}
     if(!allowed.includes(String(p.role)) && !allowed.includes('*')){
-      location.replace('./login.html?reason=role_denied');return null;
+      const target=homeForRole(String(p.role||''));
+      const here='./'+(location.pathname.split('/').pop()||'index.html');
+      if(target!==here)location.replace(target);
+      else location.replace('./login.html?reason=role_denied');
+      return null;
     }
     window.KA_AUTH_PROFILE=p;
     document.documentElement.dataset.kaAuthMode='authenticated';
