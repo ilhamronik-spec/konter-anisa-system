@@ -347,21 +347,22 @@ async function pullUsageTombstones(){
   return count;
 }
 async function pushChanged(){
-  const remoteHashes=loadHashes(),localBase=loadLocalHashes(),local=recordsLocal(),changed=[],localMap=new Map();
+  const remoteHashes=loadHashes(),local=recordsLocal(),changed=[],localMap=new Map();
+  let localBase=loadLocalHashes();
+  // Migration aman: baseline lokal pertama berangkat dari baseline cloud terakhir.
+  // Dengan begitu perubahan lokal yang benar-benar belum tersinkron tetap akan dikirim.
+  // Server ka-sync v8 akan menolak push palsu yang secara bisnis tidak berubah.
+  if(!Object.keys(localBase).length){
+    localBase={...remoteHashes};
+    saveLocalHashes(localBase);
+  }
   local.forEach(r=>{
     const k=recKey(r),h=recordHash(r);
     localMap.set(k,r);
     // Push hanya jika isi lokal berubah sejak baseline lokal terakhir.
     // Beda terhadap cloud saja bukan alasan untuk push karena itu menciptakan ping-pong.
-    if(localBase[k]!==undefined && localBase[k]!==h)changed.push(r);
+    if(localBase[k]!==h)changed.push(r);
   });
-
-  // First run of this client version: adopt the current browser state as the
-  // local baseline. Future user edits will be detected normally.
-  if(!Object.keys(localBase).length){
-    saveLocalHashes(currentLocalHashes());
-    return 0;
-  }
 
   Object.keys(localBase).forEach(k=>{
     if(!k.startsWith('note_usage::'))return;
