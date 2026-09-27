@@ -192,7 +192,7 @@
 <div class="card kpi purple"><small>Proyeksi</small><strong id="opsForecastTotal2">Rp0</strong><div>Forecast akhir bulan</div></div>
 </div>
 <div class="card table-card">
-<div class="section-card"><h3>Monthly Budget & Forecast</h3><div class="notice amber" style="margin-bottom:0"><b>Aturan aktif saat ini:</b> Transportasi Rp300.000 • Sedekah Rp500.000 • Perkakas & Peralatan Rp750.000 • Perbaikan Rp1.000.000 • Operasional Rutin Rp869.000. Nilai ini mengikuti rule workflow Karyawan yang sudah ada; belum diedit dari Admin agar tidak terjadi perbedaan aturan antar sistem.</div></div>
+<div class="section-card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><h3 style="margin-bottom:5px">Monthly Budget & Forecast</h3><div class="ops-rule-note">Budget bulan aktif dimulai dari Rp0 dan hanya berubah setelah Admin menyimpan batas. Nilai tersinkron ke workflow Karyawan.</div></div><button class="btn purple" id="opsBudgetEdit">Atur Anggaran Bulan Ini</button></div></div>
 <div class="table-wrap"><table class="table" style="min-width:1050px"><thead><tr><th>Kategori</th><th>Limit</th><th>Aktual</th><th>Sisa</th><th>Utilisasi</th><th>Proyeksi Akhir Bulan</th><th>Deviasi Forecast</th><th>Status</th></tr></thead><tbody id="opsBudgetBody"></tbody></table></div>
 </div>
 </div>
@@ -372,6 +372,13 @@
 </div>
 
 <div class="modal" id="sdmAdjustmentModal"><div class="modal-card" style="width:min(760px,100%)"><div class="modal-head"><h3 id="sdmAdjustmentTitle">Review Balance SDMsmart</h3><button class="btn" id="sdmAdjustmentClose">Tutup ✕</button></div><div class="notice blue" id="sdmAdjustmentInfo">—</div><div class="grid two"><div class="card section-card"><h4>Nilai Perhitungan</h4><div class="summary-list"><div class="summary-row"><span>Balance Asli 🔒</span><b id="sdmOriginalValue">Rp0</b></div><div class="summary-row"><span>Koreksi Admin</span><b id="sdmAdjustmentPreview">Rp0</b></div><div class="summary-row"><span>Balance Final</span><b id="sdmFinalPreview">Rp0</b></div></div></div><div class="card section-card"><h4>Koreksi Admin</h4><div class="field"><label>Koreksi (+/−)</label><input class="input" id="sdmAdjustmentInput" type="number" step="1" placeholder="Contoh: 20000 atau -10000"></div><div style="font-size:10px;color:var(--muted);margin-top:6px">+ mengurangi efek minus / menaikkan final. − menambah minus / menurunkan final.</div></div></div><div class="field" style="margin-top:14px"><label>Alasan / Hasil Review Admin — Wajib</label><textarea class="textarea" id="sdmAdjustmentReason" placeholder="Contoh: Rp20.000 bukan tanggung jawab karyawan karena koreksi stok telah diverifikasi."></textarea></div><div class="actions" style="margin-top:14px"><button class="btn" id="sdmSaveDraft">Simpan Draft</button><button class="btn purple" id="sdmApprove">Sahkan untuk SDMsmart</button></div><div class="notice amber" style="margin-top:14px;margin-bottom:0"><b>Belum ada write ke aplikasi SDMsmart.</b> Tombol Sahkan hanya mengunci nilai final di Integration Ledger Konter sampai adapter STAGING diaktifkan.</div></div></div>
+<div class="modal" id="opsBudgetModal"><div class="modal-card" style="width:min(760px,100%)"><div class="modal-head"><div><h3>Atur Anggaran Operasional</h3><div id="opsBudgetModalPeriod" style="font-size:11px;color:var(--muted);margin-top:4px">—</div></div><button class="btn" id="opsBudgetClose">Tutup ✕</button></div><div class="notice blue" style="margin-top:14px"><b>Admin authority.</b> Nilai di bawah adalah batas bulanan yang akan dipakai oleh dashboard Admin dan peringatan Operasional Karyawan. Bulan baru otomatis mulai dari Rp0 sampai Admin menetapkan anggaran.</div><div class="form-grid">
+<div class="field"><label>Transportasi</label><input class="input money-entry" id="opsBudget_transport" inputmode="numeric" value="0"></div>
+<div class="field"><label>Sedekah</label><input class="input money-entry" id="opsBudget_sedekah" inputmode="numeric" value="0"></div>
+<div class="field"><label>Perkakas & Peralatan</label><input class="input money-entry" id="opsBudget_alat" inputmode="numeric" value="0"></div>
+<div class="field"><label>Perbaikan</label><input class="input money-entry" id="opsBudget_repair" inputmode="numeric" value="0"></div>
+<div class="field"><label>Operasional Rutin</label><input class="input money-entry" id="opsBudget_routine" inputmode="numeric" value="0"></div>
+</div><div class="actions" style="margin-top:15px"><button class="btn" id="opsBudgetZero">Set Semua Rp0</button><button class="btn purple" id="opsBudgetSave">Simpan Anggaran</button></div></div></div>
 <div class="modal" id="purchaseModal"><div class="modal-card" style="width:min(980px,100%)"><div class="modal-head"><h3 id="purchaseModalTitle">Detail Input Belanja</h3><button class="btn" id="purchaseModalClose">Tutup ✕</button></div><div class="notice blue" id="purchaseModalInfo">—</div><div class="grid two" style="margin-bottom:14px"><div class="card section-card"><h4>Nota Purchasing</h4><div id="purchaseModalNote"></div></div><div class="card section-card"><h4>Bukti Nota</h4><div id="purchasePhotoState" class="notice blue" style="margin:0">Memuat bila tersedia…</div><img id="purchasePhotoImg" alt="Foto nota" style="display:none;max-width:100%;max-height:360px;border-radius:12px;margin:auto"></div></div><div class="table-wrap"><table class="table" style="min-width:760px"><thead><tr><th>Item / Komponen</th><th>Qty</th><th>Harga/Modal</th><th>Subtotal</th></tr></thead><tbody id="purchaseDetailBody"></tbody></table></div></div></div>
 <div class="modal" id="returnModal"><div class="modal-card"><div class="modal-head"><h3>Kembalikan Hitungan ke Karyawan</h3><button class="btn" id="returnClose">Tutup ✕</button></div><div class="notice amber" id="returnInfo">—</div><div class="field"><label>Alasan / Temuan Admin — Wajib</label><textarea class="textarea" id="returnReason" placeholder="Contoh: Selisih minus terlalu besar. Periksa kembali Cash, QRIS BCA, dan transaksi transfer."></textarea></div><div class="actions" style="margin-top:12px"><button class="btn danger" id="returnConfirm">Kembalikan untuk Perbaikan</button></div></div></div>
 <div class="modal" id="capitalModal"><div class="modal-card" style="width:min(900px,100%)"><div class="modal-head"><h3 id="capitalModalTitle">Detail Modal</h3><button class="btn" id="capitalModalClose">Tutup ✕</button></div><div class="notice blue" id="capitalModalInfo">—</div><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>#</th><th>Kategori Modal</th><th>Nilai</th><th>Status</th></tr></thead><tbody id="capitalDetailBody"></tbody></table></div></div></div>
@@ -384,7 +391,7 @@
 <script>
 (function(){
 'use strict';
-const SUM='ka_admin_shift_summaries_v1',ATT='ka_attendance_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81',PNOTES='ka_v29_purchasing_notes',USED='ka_v29_used_notes',ACCOUNTS='ka_admin_accounts_v59',SDMADJ='ka_sdm_adjustments_v1',SHIFT_PREFIX='ka_shift_autosave_v53_',OIL_PREFIX='ka_oil_purchase_v75_',BIG=50000;
+const SUM='ka_admin_shift_summaries_v1',ATT='ka_attendance_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81',PNOTES='ka_v29_purchasing_notes',USED='ka_v29_used_notes',ACCOUNTS='ka_admin_accounts_v59',SDMADJ='ka_sdm_adjustments_v1',OPBUDGET='ka_operational_budget_v1',SHIFT_PREFIX='ka_shift_autosave_v53_',OIL_PREFIX='ka_oil_purchase_v75_',BIG=50000;
 const $=id=>document.getElementById(id);
 const read=(k,f)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}};
 const write=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));try{window.dispatchEvent(new StorageEvent('storage',{key:k,newValue:JSON.stringify(v)}))}catch(_){}};
@@ -596,7 +603,8 @@ function openDebtDetail(key){
 
 
 const PURCHASE_TYPES={package:'Paket',cigarette:'Rokok',accessory:'Aksesoris',medicine:'Obat',oil:'Minyak',operational:'Operasional'};
-function purchasingNotes(){const a=read(PNOTES,[]);return Array.isArray(a)?a:[]}
+const LEGACY_DEMO_NOTE_IDS=new Set(['NBJ-0913-01','NBJ-0913-02','NBO-0913-01','NBO-0918-01']);
+function purchasingNotes(){const a=read(PNOTES,[]);return Array.isArray(a)?a.filter(x=>!LEGACY_DEMO_NOTE_IDS.has(String(x?.id||''))):[]}
 function usedNotes(){const x=read(USED,{});return x&&typeof x==='object'?x:{}}
 function shiftPayload(id){return read(SHIFT_PREFIX+String(id||''),null)}
 function formMoney(payload,id){
@@ -668,12 +676,36 @@ function activePurchaseRows(){
 }
 
 const OP_BUDGET_RULES={
-  transport:{label:'Transportasi',limit:300000},
-  sedekah:{label:'Sedekah',limit:500000},
-  alat:{label:'Perkakas & Peralatan',limit:750000},
-  repair:{label:'Perbaikan',limit:1000000},
-  routine:{label:'Operasional Rutin',limit:869000}
+  transport:{label:'Transportasi'},
+  sedekah:{label:'Sedekah'},
+  alat:{label:'Perkakas & Peralatan'},
+  repair:{label:'Perbaikan'},
+  routine:{label:'Operasional Rutin'}
 };
+function operationalBudgetStore(){const x=read(OPBUDGET,{version:1,periods:{}});return x&&typeof x==='object'?x:{version:1,periods:{}}}
+function operationalBudgetLimits(period=currentPeriod()){
+  const p=operationalBudgetStore()?.periods?.[period]?.limits||{};
+  const out={};Object.keys(OP_BUDGET_RULES).forEach(k=>out[k]=Math.max(0,Number(p[k]||0)));
+  return out;
+}
+function moneyInputNumber(el){return Math.max(0,Number(String(el?.value||'0').replace(/[^0-9-]/g,''))||0)}
+function openOperationalBudget(){
+  const p=currentPeriod(),limits=operationalBudgetLimits(p);
+  $('opsBudgetModalPeriod').textContent='Periode '+periodLabel(p);
+  Object.keys(OP_BUDGET_RULES).forEach(k=>{$('opsBudget_'+k).value=Math.round(limits[k]||0).toLocaleString('id-ID')});
+  $('opsBudgetModal').classList.add('open');
+}
+function zeroOperationalBudgetForm(){Object.keys(OP_BUDGET_RULES).forEach(k=>$('opsBudget_'+k).value='0')}
+function saveOperationalBudget(){
+  const p=currentPeriod(),store=operationalBudgetStore(),limits={};
+  Object.keys(OP_BUDGET_RULES).forEach(k=>limits[k]=moneyInputNumber($('opsBudget_'+k)));
+  store.version=1;store.periods=store.periods&&typeof store.periods==='object'?store.periods:{};
+  store.periods[p]={limits,updatedAt:new Date().toISOString(),updatedBy:adminUser()?.name||'Admin'};
+  write(OPBUDGET,store);
+  $('opsBudgetModal').classList.remove('open');
+  renderOperationalControl();
+  try{window.KASharedDBV1?.syncNow?.(true)}catch(_){}
+}
 function setOpsTab(tab){
   document.querySelectorAll('[data-ops-tab]').forEach(b=>b.classList.toggle('active',b.dataset.opsTab===tab));
   document.querySelectorAll('[data-ops-pane]').forEach(p=>p.classList.toggle('active',p.dataset.opsPane===tab));
@@ -696,7 +728,9 @@ function opsMonthMeta(){
   return {period:p,days,elapsed,left:Math.max(0,days-elapsed)};
 }
 function opsStatus(actual,limit){
-  const pct=limit>0?(actual/limit)*100:0;
+  actual=Math.max(0,Number(actual)||0);limit=Math.max(0,Number(limit)||0);
+  if(limit===0)return actual>0?{label:'TANPA ANGGARAN',cls:'bad',pct:0}:{label:'BELUM DIATUR',cls:'info',pct:0};
+  const pct=(actual/limit)*100;
   if(actual>limit)return {label:'OVER BUDGET',cls:'bad',pct};
   if(pct>=90)return {label:'CRITICAL',cls:'bad',pct};
   if(pct>=75)return {label:'WATCH',cls:'warn',pct};
@@ -711,11 +745,12 @@ function operationalMetrics(){
   const summaryTotal=summ.reduce((a,x)=>a+Number(x.operational||0),0);
   const actual=Math.max(detailTotal,summaryTotal);
   const unclassified=Math.max(0,summaryTotal-detailTotal);
-  const budget=Object.values(OP_BUDGET_RULES).reduce((a,x)=>a+Number(x.limit||0),0);
+  const limits=operationalBudgetLimits(meta.period);
+  const budget=Object.values(limits).reduce((a,x)=>a+Number(x||0),0);
   const remaining=budget-actual;
   const burn=meta.elapsed?actual/meta.elapsed:0;
   const forecast=burn*meta.days;
-  return {meta,rows,by,detailTotal,summaryTotal,actual,unclassified,budget,remaining,burn,forecast};
+  return {meta,rows,by,limits,detailTotal,summaryTotal,actual,unclassified,budget,remaining,burn,forecast};
 }
 function renderOperationalControl(){
   if(!$('opsBudgetTotal'))return;
@@ -740,8 +775,8 @@ function renderOperationalControl(){
   $('opsForecastStatus').className=forecastState.cls==='bad'?'red':forecastState.cls==='warn'?'amber':'green';
 
   const categoryRows=Object.entries(OP_BUDGET_RULES).map(([key,rule])=>{
-    const actual=Number(m.by[key]||0),remaining=Number(rule.limit)-actual,st=opsStatus(actual,rule.limit),pct=Math.max(0,st.pct);
-    return {key,...rule,actual,remaining,status:st,forecast:m.meta.elapsed?(actual/m.meta.elapsed*m.meta.days):0};
+    const limit=Number(m.limits[key]||0),actual=Number(m.by[key]||0),remaining=limit-actual,st=opsStatus(actual,limit),pct=Math.max(0,st.pct);
+    return {key,...rule,limit,actual,remaining,status:st,forecast:m.meta.elapsed?(actual/m.meta.elapsed*m.meta.days):0};
   });
   $('opsCategoryOverview').innerHTML=categoryRows.map(r=>'<tr><td><b>'+esc(r.label)+'</b></td><td class="money">'+fmt(r.limit)+'</td><td class="money"><b>'+fmt(r.actual)+'</b></td><td class="money '+(r.remaining<0?'red':'green')+'">'+(r.remaining<0?'- '+fmt(Math.abs(r.remaining)):fmt(r.remaining))+'</td><td><div style="display:flex;align-items:center;gap:8px"><div class="budget-progress"><span style="width:'+Math.min(100,r.status.pct)+'%"></span></div><b>'+r.status.pct.toFixed(1).replace('.',',')+'%</b></div></td><td><span class="status '+r.status.cls+'">'+r.status.label+'</span></td></tr>').join('');
   $('opsBudgetBody').innerHTML=categoryRows.map(r=>{
@@ -760,7 +795,7 @@ function renderOperationalControl(){
   chronological.forEach(r=>{
     if(OP_BUDGET_RULES[r.cat]){
       running[r.cat]+=Number(r.amount||0);
-      statusById.set(r.id,opsStatus(running[r.cat],OP_BUDGET_RULES[r.cat].limit));
+      statusById.set(r.id,opsStatus(running[r.cat],Number(m.limits[r.cat]||0)));
     }else statusById.set(r.id,{label:'BELUM TERKATEGORI',cls:'warn'});
   });
   $('opsTxnBody').innerHTML=tx.length?tx.map(r=>{const st=statusById.get(r.id)||{label:'—',cls:'info'};return '<tr><td><b>'+esc(dateLabel(r.date))+' • '+esc(r.shift||'—')+'</b></td><td><b>'+esc(r.holder)+'</b></td><td>'+esc(r.label)+'</td><td class="money"><b>'+fmt(r.amount)+'</b></td><td>'+esc(r.receipt||'—')+'</td><td>'+esc(r.note||'—')+'</td><td><span class="status '+st.cls+'">'+st.label+'</span></td></tr>'}).join(''):'<tr><td colspan="7" class="empty">Tidak ada transaksi operasional sesuai filter.</td></tr>';
@@ -1219,7 +1254,7 @@ function show(v){
   $('crumbView').textContent=crumbs[v]||v;
   $('side').classList.remove('mobile-open');
 }
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases],['opsTxnSearch','input',renderOperationalControl],['opsTxnCategory','change',renderOperationalControl]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));document.querySelectorAll('[data-ops-tab]').forEach(b=>b.onclick=()=>setOpsTab(b.dataset.opsTab));$('opsTxnRefresh').onclick=renderOperationalControl;['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;document.querySelectorAll('[data-sdm-tab]').forEach(b=>b.onclick=()=>setSdmTab(b.dataset.sdmTab));$('sdmScheduleSearch').addEventListener('input',renderSdmFoundation);$('sdmScheduleFrom').addEventListener('change',refreshSdmFoundation);$('sdmScheduleTo').addEventListener('change',refreshSdmFoundation);$('sdmScheduleSync').onclick=syncSdmSchedules;[['sdmSearch','input'],['sdmStatusFilter','change'],['sdmSignFilter','change'],['sdmMarginSearch','input'],['sdmMarginStatus','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderSdm));$('sdmRefresh').onclick=renderSdm;$('sdmMarginRefresh').onclick=renderSdm;$('sdmAdjustmentInput').addEventListener('input',updateSdmPreview);$('sdmAdjustmentClose').onclick=()=>$('sdmAdjustmentModal').classList.remove('open');$('sdmAdjustmentModal').onclick=e=>{if(e.target===$('sdmAdjustmentModal'))$('sdmAdjustmentModal').classList.remove('open')};$('sdmSaveDraft').onclick=()=>saveSdmAdjustment(false);$('sdmApprove').onclick=()=>saveSdmAdjustment(true);$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS,SDMADJ].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',()=>{migrateLegacyCutoverArchiveLocal();renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',()=>{renderAll();refreshServerAccounts();refreshSdmFoundation()});window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases],['opsTxnSearch','input',renderOperationalControl],['opsTxnCategory','change',renderOperationalControl]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));document.querySelectorAll('[data-ops-tab]').forEach(b=>b.onclick=()=>setOpsTab(b.dataset.opsTab));$('opsTxnRefresh').onclick=renderOperationalControl;$('opsBudgetEdit').onclick=openOperationalBudget;$('opsBudgetClose').onclick=()=>$('opsBudgetModal').classList.remove('open');$('opsBudgetModal').onclick=e=>{if(e.target===$('opsBudgetModal'))$('opsBudgetModal').classList.remove('open')};$('opsBudgetZero').onclick=zeroOperationalBudgetForm;$('opsBudgetSave').onclick=saveOperationalBudget;document.querySelectorAll('#opsBudgetModal .money-entry').forEach(el=>el.addEventListener('input',()=>{const n=moneyInputNumber(el);el.value=n?n.toLocaleString('id-ID'):''}));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;document.querySelectorAll('[data-sdm-tab]').forEach(b=>b.onclick=()=>setSdmTab(b.dataset.sdmTab));$('sdmScheduleSearch').addEventListener('input',renderSdmFoundation);$('sdmScheduleFrom').addEventListener('change',refreshSdmFoundation);$('sdmScheduleTo').addEventListener('change',refreshSdmFoundation);$('sdmScheduleSync').onclick=syncSdmSchedules;[['sdmSearch','input'],['sdmStatusFilter','change'],['sdmSignFilter','change'],['sdmMarginSearch','input'],['sdmMarginStatus','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderSdm));$('sdmRefresh').onclick=renderSdm;$('sdmMarginRefresh').onclick=renderSdm;$('sdmAdjustmentInput').addEventListener('input',updateSdmPreview);$('sdmAdjustmentClose').onclick=()=>$('sdmAdjustmentModal').classList.remove('open');$('sdmAdjustmentModal').onclick=e=>{if(e.target===$('sdmAdjustmentModal'))$('sdmAdjustmentModal').classList.remove('open')};$('sdmSaveDraft').onclick=()=>saveSdmAdjustment(false);$('sdmApprove').onclick=()=>saveSdmAdjustment(true);$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS,SDMADJ,OPBUDGET].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',()=>{migrateLegacyCutoverArchiveLocal();renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',()=>{renderAll();refreshServerAccounts();refreshSdmFoundation()});window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){
   migrateLegacyCutoverArchiveLocal();
   bind();renderAll();refreshServerAccounts();refreshSdmFoundation();
@@ -1237,7 +1272,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <script src="./admin-lock-v3.js?build=3&fix=sdm1"></script>
 <script>
 setTimeout(function(){
-  import('./shared-db-v1.js?build=8').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+  import('./shared-db-v1.js?build=9').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
 </body>
