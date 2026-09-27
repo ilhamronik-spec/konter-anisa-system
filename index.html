@@ -810,7 +810,7 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 </section>
 <section class="section" data-i="3">\n<div class="section-head"><div><h3>4. Operasional</h3><p>Karyawan yang menginput transaksi. Admin hanya menetapkan batas kategori.</p></div><button class="btn primary" data-ui-click="nextStep()" type="button">Operasional Selesai</button></div>
 <div class="notice amber">Jika batas kategori terlampaui, transaksi tetap boleh disimpan. Admin menerima peringatan pada transaksi tersebut dan setiap transaksi berikutnya selama kategori masih over budget.</div>
-<div class="grid two"><div class="card form"><h4 style="margin:0 0 14px">Input Operasional Karyawan</h4><div class="form-grid"><div class="field"><label>Nota Operasional</label><select class="select" id="opReceipt"><option>NBO-0913-01 • tersedia</option></select></div><div class="field"><label>Kategori</label><select class="select" data-ui-change="calcOp()" id="opCat"><option value="transport">Transportasi</option><option value="sedekah">Sedekah</option><option value="alat">Perkakas &amp; Peralatan</option><option value="repair">Perbaikan</option><option value="routine">Operasional Rutin</option></select></div><div class="field"><label>Nominal</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);calcOp()" id="opAmount" inputmode="numeric" type="text" value="10.000"/></div><div class="field"><label>Keterangan</label><input class="input" id="opNote" value="Minyak perjalanan belanja"/></div></div><div class="calc-grid"><div class="calcbox"><small>Terpakai Sebelum</small><b id="opUsed">Rp210.000</b></div><div class="calcbox"><small>Batas Bulanan</small><b id="opLimit">Rp300.000</b></div><div class="calcbox"><small>Setelah Input</small><b id="opAfter">Rp220.000</b></div><div class="calcbox good" id="opStatusBox"><small>Status</small><b id="opStatus">Aman</b></div></div><div class="actions" style="margin-top:14px"><button class="btn primary" data-ui-click="addOperationalEntry()" type="button">+ Tambahkan Operasional ke Daftar</button></div></div><div class="card summary"><h4>Ringkasan Batas Bulan Ini</h4><div class="sumrow"><span>Transportasi</span><b>Rp210.000 / Rp300.000</b></div><div class="sumrow"><span>Perbaikan</span><b style="color:var(--red)">Rp1.250.000 / Rp1.000.000</b></div><div class="sumrow"><span>Sedekah</span><b>Rp150.000 / Rp500.000</b></div><div class="sumrow"><span>Perkakas &amp; Peralatan</span><b>Rp320.000 / Rp750.000</b></div><div class="sumrow"><span>Operasional Rutin</span><b>Rp869.000</b></div></div></div><div class="card multi-list-card" style="margin-top:14px"><div class="section-head"><div><h4 style="margin:0">Daftar Operasional Shift Ini</h4><p style="margin:4px 0 0;color:var(--muted)">Bisa lebih dari satu transaksi. Tambahkan satu per satu; transaksi yang sudah masuk daftar dapat dihapus lalu diinput ulang.</p></div><span class="status info" id="opEntryCount">0 transaksi</span></div><div class="table-wrap"><table class="table" style="min-width:760px"><thead><tr><th>#</th><th>Nota</th><th>Kategori</th><th>Nominal</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="opEntryList"><tr><td class="multi-empty" colspan="7">Belum ada transaksi yang ditambahkan.</td></tr></tbody></table></div></div>
+<div class="grid two"><div class="card form"><h4 style="margin:0 0 14px">Input Operasional Karyawan</h4><div class="form-grid"><div class="field"><label>Nota Operasional</label><select class="select" id="opReceipt"><option>NBO-0913-01 • tersedia</option></select></div><div class="field"><label>Kategori</label><select class="select" data-ui-change="calcOp()" id="opCat"><option value="transport">Transportasi</option><option value="sedekah">Sedekah</option><option value="alat">Perkakas &amp; Peralatan</option><option value="repair">Perbaikan</option><option value="routine">Operasional Rutin</option></select></div><div class="field"><label>Nominal</label><input autocomplete="off" class="input money-entry" data-ui-input="formatMoneyInput(this);calcOp()" id="opAmount" inputmode="numeric" type="text" value="10.000"/></div><div class="field"><label>Keterangan</label><input class="input" id="opNote" value="Minyak perjalanan belanja"/></div></div><div class="calc-grid"><div class="calcbox"><small>Terpakai Sebelum</small><b id="opUsed">Rp210.000</b></div><div class="calcbox"><small>Batas Bulanan</small><b id="opLimit">Rp300.000</b></div><div class="calcbox"><small>Setelah Input</small><b id="opAfter">Rp220.000</b></div><div class="calcbox good" id="opStatusBox"><small>Status</small><b id="opStatus">Aman</b></div></div><div class="actions" style="margin-top:14px"><button class="btn primary" data-ui-click="addOperationalEntry()" type="button">+ Tambahkan Operasional ke Daftar</button></div></div><div class="card summary"><h4>Ringkasan Batas Bulan Ini</h4><div class="sumrow"><span>Transportasi</span><b id="opBudgetSummary_transport">Rp0 / Rp0</b></div><div class="sumrow"><span>Perbaikan</span><b id="opBudgetSummary_repair">Rp0 / Rp0</b></div><div class="sumrow"><span>Sedekah</span><b id="opBudgetSummary_sedekah">Rp0 / Rp0</b></div><div class="sumrow"><span>Perkakas &amp; Peralatan</span><b id="opBudgetSummary_alat">Rp0 / Rp0</b></div><div class="sumrow"><span>Operasional Rutin</span><b id="opBudgetSummary_routine">Rp0 / Rp0</b></div></div></div><div class="card multi-list-card" style="margin-top:14px"><div class="section-head"><div><h4 style="margin:0">Daftar Operasional Shift Ini</h4><p style="margin:4px 0 0;color:var(--muted)">Bisa lebih dari satu transaksi. Tambahkan satu per satu; transaksi yang sudah masuk daftar dapat dihapus lalu diinput ulang.</p></div><span class="status info" id="opEntryCount">0 transaksi</span></div><div class="table-wrap"><table class="table" style="min-width:760px"><thead><tr><th>#</th><th>Nota</th><th>Kategori</th><th>Nominal</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="opEntryList"><tr><td class="multi-empty" colspan="7">Belum ada transaksi yang ditambahkan.</td></tr></tbody></table></div></div>
 </section>
 <section class="section" data-i="6">
 <div class="section-head"><div><h3>7. Stok Akhir Paket</h3><p>Karyawan hanya fokus pada Stok Akhir. Sistem menghitung penjualan, uang, margin dan sisa modal otomatis.</p></div><button class="btn primary" data-ui-click="nextStep()" type="button">Paket Selesai</button></div>
@@ -1963,7 +1963,7 @@ function addOperationalEntry(){
   const note=(document.getElementById('opNote').value||'').trim();
   if(amount<=0)return uiToast('Nominal operasional harus lebih dari Rp0.','warn');
 
-  const [used,limit]=opData[cat];
+  const [used,limit]=opDataForV1(cat);
   const before=used+currentOpAdded(cat);
   const after=before+amount;
   const over=after>limit;
@@ -1973,6 +1973,8 @@ function addOperationalEntry(){
   uiToast(over?'Operasional tersimpan dengan peringatan over budget.':'Operasional ditambahkan.','ok');
 }
 function removeOp(i){opEntries.splice(i,1);renderOperationalEntries();calcOp();}
+window.addEventListener('storage',e=>{if(e.key===OP_BUDGET_STORAGE)calcOp()});
+window.addEventListener('ka:operational-budget-updated',()=>calcOp());
 function renderOperationalEntries(){
   const b=document.getElementById('opEntryList');
   if(!b)return;
@@ -2001,14 +2003,48 @@ function calcMitra(){const n=getMitraNominal(),q=Math.max(0,Number(mitraQty.valu
 function calcSvplus(){const b=Math.max(0,moneyValue(svBase)),s=Math.max(0,moneyValue(svSell)),m=s-b;svBaseOut.textContent=fmt(b);svSellOut.textContent=fmt(s);svMargin.textContent=fmt(m);svMarginInput.value=m.toLocaleString('id-ID')}
 function calcTarikBca(){const a=moneyValue(tarikBcaAmount),d=bankAdminDefault(a);setDefault('tarikBca',d,a)}
 function calcTransferBca(){const a=moneyValue(transferBcaAmount),base=bankAdminDefault(a),d=base+2000;adminState.transferBca=d;transferBcaBase.textContent=fmt(base);transferBcaDefault.textContent=fmt(d);if(document.activeElement!==transferBcaAdmin)setMoneyInput(transferBcaAdmin,d);transferBcaTotal.textContent=fmt(a+moneyValue(transferBcaAdmin));checkAdminOverride('transferBca')}
-const opData={transport:[210000,300000],sedekah:[150000,500000],alat:[320000,750000],repair:[1250000,1000000],routine:[869000,869000]};
+const OP_BUDGET_STORAGE='ka_operational_budget_v1';
+const OP_CATEGORIES=['transport','sedekah','alat','repair','routine'];
+function opPeriodV1(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'}).slice(0,7)}
+function opBudgetLimitsV1(){
+  let cfg={};try{cfg=JSON.parse(localStorage.getItem(OP_BUDGET_STORAGE)||'{}')||{}}catch(_){}
+  const src=cfg?.periods?.[opPeriodV1()]?.limits||{},out={};
+  OP_CATEGORIES.forEach(k=>out[k]=Math.max(0,Number(src[k]||0)));
+  return out;
+}
+function opMonthlyUsedBeforeV1(cat){
+  let map={};try{map=JSON.parse(localStorage.getItem('ka_admin_shift_summaries_v1')||'{}')||{}}catch(_){}
+  const activeId=String(window.KARegulationsV29?.activeShift?.id||'');
+  return Object.values(map).filter(x=>{
+    const d=String(x?.date||''),sid=String(x?.shiftId||'');
+    const archived=x?.archived===true||String(x?.archiveStatus||'')==='archived';
+    return !archived&&d.slice(0,7)===opPeriodV1()&&sid!==activeId;
+  }).reduce((total,x)=>total+(Array.isArray(x?.operationalEntries)?x.operationalEntries:[]).filter(e=>String(e?.cat||'')===cat).reduce((a,e)=>a+Number(e?.amount||0),0),0);
+}
+function opDataForV1(cat){
+  const limits=opBudgetLimitsV1();
+  return [opMonthlyUsedBeforeV1(cat),Number(limits[cat]||0)];
+}
+function renderOperationalBudgetSummaryV1(){
+  const limits=opBudgetLimitsV1();
+  OP_CATEGORIES.forEach(cat=>{
+    const el=document.getElementById('opBudgetSummary_'+cat);if(!el)return;
+    const used=opMonthlyUsedBeforeV1(cat)+(typeof currentOpAdded==='function'?currentOpAdded(cat):0),limit=Number(limits[cat]||0);
+    el.textContent=fmt(used)+' / '+fmt(limit);
+    el.style.color=limit===0?(used>0?'var(--red)':'var(--muted)'):(used>limit?'var(--red)':'');
+  });
+}
 function calcOp(){
-  const cat=opCat.value,[baseUsed,limit]=opData[cat];
+  const cat=opCat.value,[baseUsed,limit]=opDataForV1(cat);
   if(cat==='transport' && document.activeElement!==opAmount)setMoneyInput(opAmount,10000);
   const used=baseUsed+(typeof currentOpAdded==='function'?currentOpAdded(cat):0);
   const amt=Math.max(0,moneyValue(opAmount)),after=used+amt;
   opUsed.textContent=fmt(used);opLimit.textContent=fmt(limit);opAfter.textContent=fmt(after);
-  const over=after>limit;opStatus.textContent=over?'OVER '+fmt(after-limit):'Aman';opStatus.style.color=over?'var(--red)':'var(--green)';opStatusBox.className='calcbox '+(over?'bad':'good')
+  const over=limit<=0?after>0:after>limit;
+  opStatus.textContent=limit<=0?(after>0?'TANPA ANGGARAN':'Belum Diatur'):(over?'OVER '+fmt(after-limit):'Aman');
+  opStatus.style.color=over?'var(--red)':limit<=0?'var(--muted)':'var(--green)';
+  opStatusBox.className='calcbox '+(over?'bad':limit<=0?'':'good');
+  renderOperationalBudgetSummaryV1();
 }
 
 const openingPkg=[{"group": "AXIS", "name": "1.5 GB/1H", "base": 7050.0, "sell": 8000.0, "stock": 66}, {"group": "AXIS", "name": "5gb/2H", "base": 9500.0, "sell": 10000.0, "stock": 61}, {"group": "AXIS", "name": "5 gb/5 H", "base": 13950.0, "sell": 15000.0, "stock": 29}, {"group": "AXIS", "name": "5,5 GB/3 H", "base": 12000.0, "sell": 13000.0, "stock": 54}, {"group": "AXIS", "name": "6 gb/5H", "base": 14550.0, "sell": 16000.0, "stock": 38}, {"group": "AXIS", "name": "8,5 GB/3H", "base": 13500.0, "sell": 15000.0, "stock": 18}, {"group": "AXIS", "name": "16 GB/5H", "base": 23500.0, "sell": 24000.0, "stock": 10}, {"group": "AXIS", "name": "12,5/3h", "base": 15950.0, "sell": 17000.0, "stock": 24}, {"group": "AXIS", "name": "10GB/7H", "base": 23500.0, "sell": 25000.0, "stock": 8}, {"group": "AXIS", "name": "24/5H", "base": 26000.0, "sell": 29000.0, "stock": 4}, {"group": "AXIS", "name": "5gb\\15h", "base": 23100.0, "sell": 25000.0, "stock": 2}, {"group": "AXIS", "name": "11GB/7H", "base": 31800.0, "sell": 33000.0, "stock": 0}, {"group": "AXIS", "name": "24gb/15H", "base": 44000.0, "sell": 48000.0, "stock": 5}, {"group": "SMARTFREEN", "name": "1GB/3H", "base": 6900.0, "sell": 7000.0, "stock": 19}, {"group": "SMARTFREEN", "name": "2GB/3H", "base": 8900.0, "sell": 10000.0, "stock": 0}, {"group": "SMARTFREEN", "name": "3GB/5H", "base": 13750.0, "sell": 15000.0, "stock": 41}, {"group": "SMARTFREEN", "name": "4GB/7H", "base": 16100.0, "sell": 17000.0, "stock": 16}, {"group": "SMARTFREEN", "name": "4GB/14H", "base": 19500.0, "sell": 21000.0, "stock": 5}, {"group": "SMARTFREEN", "name": "4gb/3h", "base": 9750.0, "sell": 11000.0, "stock": 20}, {"group": "SMARTFREEN", "name": "UNLI 1GB/7H", "base": 17200.0, "sell": 19000.0, "stock": 34}, {"group": "SMARTFREEN", "name": "UNLI 2GB/7H", "base": 23000.0, "sell": 25000.0, "stock": 39}, {"group": "SMARTFREEN", "name": "UNLI 3 GB/7H", "base": 30000.0, "sell": 32000.0, "stock": 0}, {"group": "SMARTFREEN", "name": "UNLI 700MB/28H", "base": 64500.0, "sell": 76000.0, "stock": 4}, {"group": "SMARTFREEN", "name": "UNLI 2GB/28H", "base": 90000.0, "sell": 95000.0, "stock": 4}, {"group": "TELKOMSEL", "name": "1,5GB/3H", "base": 8400.0, "sell": 10000.0, "stock": 0}, {"group": "TELKOMSEL", "name": "6gb/2h", "base": 10200.0, "sell": 12000.0, "stock": 31}, {"group": "TELKOMSEL", "name": "2GB/3H", "base": 9900.0, "sell": 12000.0, "stock": 0}, {"group": "TELKOMSEL", "name": "2GB/5H", "base": 11850.0, "sell": 13000.0, "stock": 4}, {"group": "TELKOMSEL", "name": "7GB/3H", "base": 14550.0, "sell": 16000.0, "stock": 17}, {"group": "TELKOMSEL", "name": "6GB/5H", "base": 14700.0, "sell": 16000.0, "stock": 25}, {"group": "TELKOMSEL", "name": "9GB/5H", "base": 22200.0, "sell": 24000.0, "stock": 4}, {"group": "TELKOMSEL", "name": "9GB/7H", "base": 27500.0, "sell": 29000.0, "stock": 16}, {"group": "TELKOMSEL", "name": "4GB/5H", "base": 13200.0, "sell": 14000.0, "stock": 72}, {"group": "IM3", "name": "1,5GB/1H", "base": 7800.0, "sell": 8000.0, "stock": 24}, {"group": "IM3", "name": "5/2h", "base": 9200.0, "sell": 11000.0, "stock": 18}, {"group": "IM3", "name": "2,5GB/5H", "base": 13250.0, "sell": 15000.0, "stock": 3}, {"group": "IM3", "name": "3,5GB/5H", "base": 15150.0, "sell": 17000.0, "stock": 4}, {"group": "IM3", "name": "5GB/5H", "base": 17100.0, "sell": 18000.0, "stock": 20}, {"group": "IM3", "name": "7GB/7H", "base": 23100.0, "sell": 25000.0, "stock": 18}, {"group": "IM3", "name": "3GB/30H", "base": 20100.0, "sell": 22000.0, "stock": 0}, {"group": "IM3", "name": "7GB/30H", "base": 34750.0, "sell": 34000.0, "stock": 2}, {"group": "TRI", "name": "6gb/2h", "base": 9600.0, "sell": 11000.0, "stock": 9}, {"group": "TRI", "name": "5gb 1hri", "base": 7800.0, "sell": 8000.0, "stock": 12}, {"group": "TRI", "name": "4GB/3H", "base": 12300.0, "sell": 13000.0, "stock": 34}, {"group": "TRI", "name": "12GB/7H", "base": 22800.0, "sell": 24000.0, "stock": 44}, {"group": "TRI", "name": "3GB/30H", "base": 22500.0, "sell": 25000.0, "stock": 0}, {"group": "XL", "name": "2,5GB", "base": 12100.0, "sell": 13000.0, "stock": 3}, {"group": "XL", "name": "3,5GB", "base": 16500.0, "sell": 18000.0, "stock": 3}, {"group": "XL", "name": "5,5GB", "base": 15750.0, "sell": 22000.0, "stock": 1}, {"group": "XL", "name": "9GB", "base": 26800.0, "sell": 28000.0, "stock": 10}, {"group": "PERDANA", "name": "TELS 0", "base": 19500.0, "sell": 25000.0, "stock": 3}, {"group": "PERDANA", "name": "TELS 4", "base": 28500.0, "sell": 36000.0, "stock": 5}, {"group": "PERDANA", "name": "AXIS 0", "base": 8750.0, "sell": 17000.0, "stock": 0}, {"group": "PERDANA", "name": "AXIS 3GB", "base": 15000.0, "sell": 27000.0, "stock": 3}, {"group": "PERDANA", "name": "IM3 3GB", "base": 16000.0, "sell": 38000.0, "stock": 3}, {"group": "PERDANA", "name": "TRI 3GB", "base": 15000.0, "sell": 42000.0, "stock": 4}, {"group": "PERDANA", "name": "SMARTFREEN 12GB", "base": 11000.0, "sell": 25000.0, "stock": 0}, {"group": "PERDANA", "name": "SMARTFREEN 3GB", "base": 18500.0, "sell": 32000.0, "stock": 4}];
@@ -3621,7 +3657,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 <script>
 setTimeout(function(){
-  import('./shared-db-v1.js?build=8').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+  import('./shared-db-v1.js?build=9').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
 </body>
