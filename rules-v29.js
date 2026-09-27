@@ -14,13 +14,9 @@
     usedNotes: 'ka_v29_used_notes'
   };
 
-  // Seed lama tetap terikat ke tanggal asal; jangan pernah dipindahkan otomatis ke shift lain.
-  const seedNotes = [
-    { id: 'NBJ-0913-01', type: 'package', amount: 1680000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '07:18', status: 'ready' },
-    { id: 'NBJ-0913-02', type: 'cigarette', amount: 850000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '09:02', status: 'ready' },
-    { id: 'NBO-0913-01', type: 'operational', amount: 10000, shiftId: '2026-09-13-full-rifda', shiftLabel: '13 September 2026 • Shift Full • Rifda', uploadedAt: '10:15', status: 'ready' },
-    { id: 'NBO-0918-01', type: 'operational', category: 'sedekah', label: 'Sedekah', amount: 154000, shiftId: '2026-09-18-full-rifda', shiftLabel: '18 September 2026 • Shift Full • Rifda', uploadedAt: '10:00', status: 'ready' }
-  ];
+  // Production cutover: tidak ada nota simulasi bawaan.
+  const seedNotes = [];
+  const LEGACY_DEMO_NOTE_IDS = new Set(['NBJ-0913-01','NBJ-0913-02','NBO-0913-01','NBO-0918-01']);
 
   function slugShift(value) {
     return String(value || 'unknown').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'unknown';
@@ -54,22 +50,22 @@
     };
   }
 
+  const storedNotes=load(STORE.notes, null);
+  const cleanNotes=(Array.isArray(storedNotes)?storedNotes:seedNotes).filter(n=>!LEGACY_DEMO_NOTE_IDS.has(String(n?.id||'')));
+  const storedUsage=load(STORE.usedNotes, {});
+  LEGACY_DEMO_NOTE_IDS.forEach(id=>{if(storedUsage&&typeof storedUsage==='object')delete storedUsage[id]});
   const state = window.KARegulationsV29 = {
     activeShift: ACTIVE_SHIFT,
     modalConfirmed: false,
     exceptions: load(STORE.exceptions, {}),
     approvals: load(STORE.approvals, {}),
-    notes: load(STORE.notes, null) || seedNotes,
-    usedNotes: load(STORE.usedNotes, {})
+    notes: cleanNotes,
+    usedNotes: storedUsage&&typeof storedUsage==='object'?storedUsage:{}
   };
 
-  // Migrasi nota uji Purchasing tanggal 18 ke browser yang sudah punya localStorage lama.
-  // Tidak menggandakan nota bila sudah ada.
-  const requiredTestNote = seedNotes.find(n => n.id === 'NBO-0918-01');
-  if (requiredTestNote && !state.notes.some(n => n.id === requiredTestNote.id)) {
-    state.notes.push({ ...requiredTestNote });
-  }
+  // Cutover produksi: bersihkan seed/simulasi lama dari browser yang pernah menjalankan preview.
   save(STORE.notes, state.notes);
+  save(STORE.usedNotes, state.usedNotes);
 
   function load(key, fallback) {
     try {
