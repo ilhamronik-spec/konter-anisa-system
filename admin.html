@@ -79,7 +79,7 @@
 <div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn">☰</button> <span class="crumb">Admin / <span id="crumbView">Dashboard</span></span></div><div class="user"><div style="text-align:right"><b id="adminName" style="font-size:12px">Admin</b><div style="font-size:10px;color:var(--muted)">Administrator</div></div><div class="avatar" id="adminAvatar">AD</div></div></div>
 <div class="content">
 <section class="view active" id="view-dashboard">
-<div class="hero"><div><h2>Dashboard Admin</h2><p>Pusat monitoring periode aktif. Riwayat bulan sebelumnya dan data simulasi dipindahkan ke Arsip.</p></div><div class="actions"><span class="pill purple" id="activePeriodPill">Periode Aktif</span><span class="pill green">Tidak Mengubah Rumus V80</span></div></div>
+<div class="hero"><div><h2>Dashboard Admin</h2><p>Pusat monitoring periode aktif. KPI keuangan hanya menghitung shift yang sudah <b>SIMPAN & KIRIM KE ADMIN</b>; draft/autosave tidak masuk angka Dashboard.</p></div><div class="actions"><span class="pill purple" id="activePeriodPill">Periode Aktif</span><span class="pill green">Tidak Mengubah Rumus V80</span></div></div>
 <div id="noAdmin" class="notice red" style="display:none"><b>Sesi Admin tidak ditemukan.</b> Portal ini nanti akan menggunakan akun Admin dari Login sungguhan.</div>
 <div class="grid kpis">
 <div class="card kpi good"><small>Total Margin Bulan Ini</small><strong id="kpiMargin">Rp0</strong><div id="kpiMarginSub">0 shift terekam</div></div>
@@ -431,6 +431,8 @@ function isLegacyCutoverArchive(x){return LEGACY_CUTOVER_ARCHIVE_IDS.has(String(
 function explicitArchive(x){return isLegacyCutoverArchive(x)||x?.archived===true||String(x?.archiveStatus||'')==='archived'}
 function productionSummaries(){return summaries().filter(x=>!explicitArchive(x))}
 function activeSummaries(){const p=currentPeriod();return productionSummaries().filter(x=>periodKey(x.date)===p)}
+function isSubmittedSummary(x){return String(x?.submissionStatus||'')==='submitted'&&!!x?.submittedAt}
+function activeSubmittedSummaries(){return activeSummaries().filter(isSubmittedSummary)}
 function archivedSummaries(){const p=currentPeriod();return summaries().filter(x=>explicitArchive(x)||(periodKey(x.date)&&periodKey(x.date)<p))}
 function archiveShiftIds(){return new Set(archivedSummaries().map(x=>String(x.shiftId||'')).filter(Boolean))}
 function activeAttendance(){const p=currentPeriod();return attendance().filter(x=>periodKey(x.date)===p)}
@@ -486,27 +488,27 @@ function today(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ja
 function datesFrom(arr,field='date'){return [...new Set(arr.map(x=>String(x[field]||'')).filter(Boolean))].sort().reverse()}
 function fillDates(id,dates){const el=$(id),cur=el.value;el.innerHTML='<option value="">Semua tanggal</option>'+dates.map(d=>'<option value="'+esc(d)+'">'+esc(dateLabel(d))+'</option>').join('');if(dates.includes(cur))el.value=cur}
 function renderDashboard(){
-  const s=activeSummaries(),m=s.reduce((x,y)=>x+Number(y.margin||0),0),op=s.reduce((x,y)=>x+Number(y.operational||0),0);
-  const capitalRows=productionSummaries().filter(x=>Number(x.modalClosing||0)>0).sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))||Number(x.savedAt||0)-Number(y.savedAt||0));
+  const s=activeSubmittedSummaries(),m=s.reduce((x,y)=>x+Number(y.margin||0),0),op=s.reduce((x,y)=>x+Number(y.operational||0),0);
+  const capitalRows=s.filter(x=>Number(x.modalClosing||0)>0).sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))||Number(x.savedAt||0)-Number(y.savedAt||0));
   const periodPill=$('activePeriodPill');if(periodPill)periodPill.textContent='Periode Aktif • '+periodLabel(currentPeriod());
   const latestCapital=capitalRows[capitalRows.length-1]||null;
   const pending=s.filter(x=>Number(x.balance||0)!==0&&sdmAdjState(x,sdmAdjFor(x.shiftId))!=='approved');
-  $('kpiMargin').textContent=fmt(m);$('kpiMarginSub').textContent=s.length+' shift terekam';
+  $('kpiMargin').textContent=fmt(m);$('kpiMarginSub').textContent=s.length+' shift final';
   $('kpiMinus').textContent=fmt(latestCapital?.modalClosing||0);$('kpiMinusSub').textContent=latestCapital?(dateLabel(latestCapital.date)+' • '+(latestCapital.holder||'—')):'Belum ada shift final';
-  $('kpiOperational').textContent=fmt(op);$('kpiOperationalSub').textContent=s.length+' shift terekam';
+  $('kpiOperational').textContent=fmt(op);$('kpiOperationalSub').textContent=s.length+' shift final';
   $('kpiAttendance').textContent=String(pending.length);$('kpiAttendanceSub').textContent='Balance non-zero menunggu keputusan Admin';
   const rows=pending.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,5);
   $('dashAttendance').innerHTML=rows.length?rows.map(x=>'<tr><td><b>'+esc(dateLabel(x.date))+'</b><div style="font-size:10px;color:var(--muted)">'+esc(x.shift||'')+'</div></td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money '+(Number(x.balance)<0?'red':'amber')+'"><b>'+fmtSigned(x.balance)+'</b></td><td><span class="status warn">'+(sdmAdjState(x,sdmAdjFor(x.shiftId))==='stale'?'SUMBER BERUBAH':'BELUM DISAHKAN')+'</span></td><td><button class="btn" data-dash-sdm="'+esc(x.shiftId)+'">Review</button></td></tr>').join(''):'<tr><td colspan="5" class="empty">Tidak ada Balance non-zero yang menunggu review SDMsmart.</td></tr>';
   document.querySelectorAll('[data-dash-sdm]').forEach(b=>b.onclick=()=>{show('sdm');openSdmAdjustment(b.dataset.dashSdm)});
   const recent=s.slice().sort((x,y)=>String(y.date||'').localeCompare(String(x.date||''))||Number(y.savedAt||0)-Number(x.savedAt||0)).slice(0,5);
-  $('dashMinusList').innerHTML=recent.length?recent.map(x=>'<div class="summary-row"><span><b>'+esc(dateLabel(x.date))+' • '+esc(x.holder||'—')+'</b><br><small>'+esc(x.shift||'')+' • Margin '+fmt(x.margin)+'</small></span><b>'+fmt(x.modalClosing||0)+'</b></div>').join(''):'<div class="notice blue">Belum ada shift terekam.</div>';
+  $('dashMinusList').innerHTML=recent.length?recent.map(x=>'<div class="summary-row"><span><b>'+esc(dateLabel(x.date))+' • '+esc(x.holder||'—')+'</b><br><small>'+esc(x.shift||'')+' • Margin '+fmt(x.margin)+'</small></span><b>'+fmt(x.modalClosing||0)+'</b></div>').join(''):'<div class="notice blue">Belum ada shift final yang dikirim Karyawan.</div>';
 }
 function filtered(base,searchId,dateId){const q=String($(searchId)?.value||'').toLowerCase(),d=$(dateId)?.value||'';return base.filter(x=>(!d||x.date===d)&&(!q||[x.date,x.holder,x.shift,x.shiftLabel,x.shiftId].join(' ').toLowerCase().includes(q)))}
 function renderMargin(){const s=activeSummaries();fillDates('marginDate',datesFrom(s));const a=filtered(s,'marginSearch','marginDate');$('marginBody').innerHTML=a.length?a.map(x=>{const sent=x.submissionStatus==='submitted';const st=sent?'<span class="status ok">TERKIRIM</span><div style="font-size:10px;color:var(--muted);margin-top:4px">'+when(x.submittedAt)+'</div>':'<span class="status info">DRAFT / AUTOSAVE</span>';return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money green"><b>'+fmt(x.margin)+'</b></td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td><td>'+st+'</td><td>'+when(x.savedAt)+'</td></tr>'}).join(''):'<tr><td colspan="7" class="empty">Belum ada data.</td></tr>'}
 function renderMinus(){const s=activeSummaries().filter(x=>Number(x.balance||0)<0);fillDates('minusDate',datesFrom(s));const a=filtered(s,'minusSearch','minusDate');$('minusBody').innerHTML=a.length?a.map(x=>{const c=corrForShift(x.shiftId);return '<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money red"><b>'+fmt(Math.abs(x.balance))+'</b></td><td>'+(Math.abs(x.balance)>=BIG?'<span class="status bad">MINUS BESAR</span>':'<span class="status warn">Minus</span>')+'</td><td>'+corrBadge(c)+'</td></tr>'}).join(''):'<tr><td colspan="6" class="empty">Tidak ada data minus.</td></tr>'}
 function renderOp(){const s=activeSummaries();fillDates('opDate',datesFrom(s));const a=filtered(s,'opSearch','opDate');$('opBody').innerHTML=a.length?a.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money"><b>'+fmt(x.operational)+'</b></td><td class="money green">'+fmt(x.margin)+'</td><td class="money '+(x.balance<0?'red':x.balance>0?'amber':'green')+'">'+fmt(x.balance)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'}
 
-function capitalRows(){return activeSummaries().filter(x=>Number.isFinite(Number(x.modalOpening))||Number.isFinite(Number(x.modalClosing))).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0))}
+function capitalRows(){return activeSubmittedSummaries().filter(x=>Number.isFinite(Number(x.modalOpening))||Number.isFinite(Number(x.modalClosing))).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||Number(a.savedAt||0)-Number(b.savedAt||0))}
 
 function dailyCapitalRows(){
   const byDate=new Map();
@@ -1175,7 +1177,7 @@ function setSdmTab(tab){
   if(tab==='gate')refreshGateOverview();
 }
 function renderSdm(){
-  const rows=activeSummaries(),map=sdmAdjustments();
+  const rows=activeSubmittedSummaries(),map=sdmAdjustments();
   const originalNet=rows.reduce((t,x)=>t+Number(x.balance||0),0);
   const adjustmentNet=rows.reduce((t,x)=>t+Number(map[x.shiftId]?.adjustment||0),0);
   const approved=rows.filter(x=>sdmAdjState(x,map[x.shiftId])==='approved');
@@ -1326,7 +1328,7 @@ function operationalRowsForReport(s){
 }
 function reportData(){
   if(reportDemo)return demoReportData();
-  const s=activeSummaries().filter(x=>reportDateInRange(x.date)),a=activeAttendance().filter(x=>reportDateInRange(x.date));
+  const s=activeSubmittedSummaries().filter(x=>reportDateInRange(x.date)),a=activeAttendance().filter(x=>reportDateInRange(x.date));
   const allDebts=debtLedger();
   return {s,a,debts:allDebts,stock:aggregateStockForReport(s),ops:operationalRowsForReport(s)};
 }
