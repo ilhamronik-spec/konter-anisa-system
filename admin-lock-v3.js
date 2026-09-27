@@ -49,10 +49,11 @@
     }
     const cls='status '+(pass?'ok':'bad');
     const txt=pass?'ADMIN V3 • LOCKED':'ADMIN V3 • LOCK FAILED';
+    const title=detail||'';
     if(badge.className!==cls)badge.className=cls;
     if(badge.textContent!==txt)badge.textContent=txt;
-    badge.title=detail||'';
-    badge.dataset.adminLock='1';
+    if(badge.title!==title)badge.title=title;
+    if(badge.dataset.adminLock!=='1')badge.dataset.adminLock='1';
   }
 
   function gate(pass){
@@ -136,5 +137,4 @@
   window.addEventListener('storage',e=>{
     if(['ka_admin_accounts_v59','ka_admin_correction_requests_v1','ka_sdm_adjustments_v1'].includes(String(e.key||'')))run();
   });
-  setInterval(audit,5000);
 })();
