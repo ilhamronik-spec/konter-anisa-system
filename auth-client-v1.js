@@ -4,7 +4,48 @@
   const SUPABASE_URL='https://nrvmaijxrwaxsoaeogud.supabase.co';
   const PUBLISHABLE_KEY='sb_publishable_tiznMT7yXPvE-h5WfQ2FYA_0Sbqpx0Y';
   const AUTH_ADMIN=SUPABASE_URL+'/functions/v1/ka-auth-admin';
+  const LEGACY_AUTH_STORAGE_KEY='ka_supabase_auth_tab_v1';
+  const AUTH_STORAGE_PTR='ka_supabase_auth_active_key_v2';
   let sdkPromise=null,clientPromise=null;
+
+  function newTabAuthStorageKey(){
+    const suffix=(globalThis.crypto?.randomUUID?.()||(
+      Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)
+    )).replace(/[^a-zA-Z0-9_-]/g,'');
+    const next='ka_supabase_auth_tab_v2_'+suffix;
+    try{
+      const previous=String(sessionStorage.getItem(AUTH_STORAGE_PTR)||LEGACY_AUTH_STORAGE_KEY);
+      const sources=[previous,LEGACY_AUTH_STORAGE_KEY].filter((v,i,a)=>v&&a.indexOf(v)===i);
+      sources.forEach(src=>{
+        const keys=[];
+        for(let i=0;i<sessionStorage.length;i++){
+          const k=sessionStorage.key(i);
+          if(k&&(k===src||k.startsWith(src+'-')))keys.push(k);
+        }
+        keys.forEach(k=>{
+          const v=sessionStorage.getItem(k);
+          if(v!==null){
+            const dest=next+k.slice(src.length);
+            if(sessionStorage.getItem(dest)===null)sessionStorage.setItem(dest,v);
+          }
+        });
+      });
+      sessionStorage.setItem(AUTH_STORAGE_PTR,next);
+      // Hapus key auth lama dari tab INI setelah migrasi. Tab lain memiliki
+      // sessionStorage terpisah dan tidak ikut terpengaruh.
+      for(const src of sources){
+        if(src===next)continue;
+        const keys=[];
+        for(let i=0;i<sessionStorage.length;i++){
+          const k=sessionStorage.key(i);
+          if(k&&(k===src||k.startsWith(src+'-')))keys.push(k);
+        }
+        keys.forEach(k=>sessionStorage.removeItem(k));
+      }
+    }catch(_){}
+    return next;
+  }
+  const AUTH_STORAGE_KEY=newTabAuthStorageKey();
 
   function qs(v){return encodeURIComponent(String(v||''))}
   function nextUrl(){return location.pathname.split('/').pop()+(location.search||'')+(location.hash||'')}
@@ -36,7 +77,9 @@
           autoRefreshToken:true,
           detectSessionInUrl:true,
           storage:window.sessionStorage,
-          storageKey:'ka_supabase_auth_tab_v1'
+          // Unik per page/tab instance. Ini memutus BroadcastChannel Supabase
+          // antar akun berbeda (mis. Ilham di Admin dan Sifa di Karyawan).
+          storageKey:AUTH_STORAGE_KEY
         }
       });
     })();
@@ -130,8 +173,8 @@
     document.documentElement.dataset.kaAuthRole=String(p.role);
     injectLogout(p);reveal();
 
-    // Supabase session disimpan per-origin. Jika tab lain logout / ganti akun,
-    // tab portal lama harus ikut invalid agar tidak terlihat seolah masih login.
+    // Auth watcher hanya untuk perubahan sesi di tab INI. Setiap tab memakai
+    // storageKey/BroadcastChannel unik sehingga akun berbeda tidak saling me-redirect.
     if(!window.__KA_AUTH_WATCH_BOUND){
       window.__KA_AUTH_WATCH_BOUND=true;
       const c=await client();
