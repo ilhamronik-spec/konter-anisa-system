@@ -2824,7 +2824,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 </script>
 <script src="./account-master-v59.js?build=80"></script>
 <script src="./auth-client-v1.js?build=80&fix=role-route1"></script>
-<script src="./sdm-integration-v1.js?build=80&fix=quiet-shell1"></script>
+<script src="./sdm-integration-v1.js?build=80&fix=no-poll1"></script>
 <script>
 window.KAAuthV1.requireRole(['employee']).then(function(p){
   if(!p||p.bootstrap||p.bypass)return;
@@ -3233,10 +3233,10 @@ window.KAAuthV1.requireRole(['employee']).then(function(p){
 <script src="./transactions-v53.js?build=80&fix=idle-autosave2"></script>
 <script src="./transactions-v55.js?build=80"></script>
 <script src="./transactions-v61.js?build=80&fix=quiet-workflow1"></script>
-<script src="./ui-clean-v74.js?build=80"></script>
+<script src="./ui-clean-v74.js?build=80&fix=no-observer1"></script>
 <script src="./transactions-v75.js?build=80"></script>
 <script src="./transactions-v79.js?build=80"></script>
-<script src="./runtime-lock-v77.js?build=80"></script>
+<script src="./runtime-lock-v77.js?build=80&fix=no-observer1"></script>
 
 <style id="ka-admin-bridge-style-v1">
 #kaAttendanceOverlay,#kaCorrectionOverlay,#kaHistoryOverlay{position:fixed;inset:0;z-index:26000;background:rgba(8,8,11,.74);backdrop-filter:blur(6px);display:none;padding:22px;overflow:auto}
@@ -3708,11 +3708,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 
   function boot(){
-    let tries=0;
-    const timer=setInterval(()=>{
-      tries++;
-      if(ensureUI()||tries>80)clearInterval(timer);
-    },150);
+    ensureUI();
+    window.addEventListener('load',()=>ensureUI(),{once:true});
     let refreshTimer=null;
     const scheduleRefresh=()=>{
       clearTimeout(refreshTimer);
@@ -3733,7 +3730,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 <script>
 setTimeout(function(){
-  import('./shared-db-v1.js?build=15&fix=sync-storm2').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+  import('./shared-db-v1.js?build=16&fix=incremental1').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
 </body>
