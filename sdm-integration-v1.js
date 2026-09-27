@@ -69,18 +69,26 @@
     const ctx=runtimeContext(profile,sc);
     const loadedFromRuntime=String(document.documentElement.dataset.kaRuntimeShiftReady||'')==='1';
     const wasCorrect=contextMatches(ctx);
-    try{sessionStorage.setItem('ka_runtime_shift_context_v1',JSON.stringify(ctx))}catch(_){}
+    const reloadKey='ka_runtime_shift_reload_done_v1';
+    let reloadDone='';
+    try{
+      sessionStorage.setItem('ka_runtime_shift_context_v1',JSON.stringify(ctx));
+      reloadDone=String(sessionStorage.getItem(reloadKey)||'');
+    }catch(_){}
 
-    // First authenticated resolve: reload once so Rules + Autosave initialize
-    // against the correct employee/date/shift key, never the old preview shift.
-    if(!loadedFromRuntime && !wasCorrect){
+    // Maksimal SATU reload per shift-context. Query ?ctx=sdm dan session marker
+    // menjadi circuit-breaker agar halaman tidak pernah masuk refresh loop.
+    if(!loadedFromRuntime && !wasCorrect && q.get('ctx')!=='sdm' && reloadDone!==ctx.id){
+      try{sessionStorage.setItem(reloadKey,ctx.id)}catch(_){}
       const u=new URL(location.href);
       u.searchParams.set('ctx','sdm');
       location.replace(u.href);
       return true;
     }
 
+    // Setelah reload pertama, jangan reload lagi. Sinkronkan context live sebagai fallback.
     window.KA_SHIFT_CONTEXT=ctx;
+    document.documentElement.dataset.kaRuntimeShiftReady='1';
     if(window.KARegulationsV29?.activeShift){
       const a=window.KARegulationsV29.activeShift;
       a.id=ctx.id;a.date=ctx.date;a.shift=ctx.shift;a.holder=ctx.holder;a.label=ctx.label;
