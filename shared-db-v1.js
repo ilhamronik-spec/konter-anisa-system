@@ -29,9 +29,13 @@ function hash(v){
 }
 function stablePayload(kind,payload){
   if(!payload||typeof payload!=='object')return payload;
-  if(kind!=='shift'&&kind!=='summary')return payload;
   const p=JSON.parse(JSON.stringify(payload));
-  delete p.savedAt;delete p.reason;delete p._syncIndexTs;
+  if(kind==='shift'||kind==='summary'){
+    delete p.savedAt;delete p.reason;delete p._syncIndexTs;
+  }
+  if(kind==='accounts'){
+    delete p.updatedAt;
+  }
   return p;
 }
 function recordHash(r){return hash(stablePayload(String(r?.kind||''),r?.payload))}
@@ -452,9 +456,13 @@ async function getMediaUrl(noteId){
 }
 function start(){
   if(started)return;started=true;badge();
-  if(localStorage.getItem(TOKEN_KEY)){syncNow();timer=setInterval(()=>syncNow(false),4000)}
-  else setStatus('idle');
-  window.addEventListener('online',()=>syncNow(false));
+  const autoSync=()=>{if(!document.hidden)syncNow(false)};
+  if(localStorage.getItem(TOKEN_KEY)){
+    autoSync();
+    timer=setInterval(autoSync,4000);
+  }else setStatus('idle');
+  window.addEventListener('online',autoSync);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoSync()});
 }
 export function startKASharedDBV1(){start()}
 export const KASharedDBV1={start,pair,unpair,syncNow,getMediaUrl,status:()=>({paired:!!localStorage.getItem(TOKEN_KEY),busy,lastError,endpoint:ENDPOINT})};
