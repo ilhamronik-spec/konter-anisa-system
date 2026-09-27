@@ -12,7 +12,7 @@
 .logo{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:#fff;color:#24152e;font-weight:900;font-size:20px}
 .brand h1{font-size:34px;line-height:1.05;margin:18px 0 10px}.brand p{color:#ded4e7;line-height:1.6}.brand small{color:#cbbdd8}
 .panel{padding:42px}.panel h2{margin:0 0 8px;font-size:28px}.sub{color:var(--muted);margin:0 0 26px;line-height:1.55}
-.field{margin:14px 0}.field label{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6c6175;margin-bottom:7px}.input{width:100%;height:48px;border:1px solid #ded6e5;border-radius:12px;padding:0 14px;font-size:14px;background:#fff;outline:none}.input:focus{border-color:#9b6bea;box-shadow:0 0 0 3px rgba(124,58,237,.09)}
+.field{margin:14px 0}.field label{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6c6175;margin-bottom:7px}.input{width:100%;height:48px;border:1px solid #ded6e5;border-radius:12px;padding:0 14px;font-size:14px;background:#fff;outline:none}.input:focus{border-color:#9b6bea;box-shadow:0 0 0 3px rgba(124,58,237,.09)}.pw-wrap{position:relative}.pw-wrap .input{padding-right:74px}.pw-toggle{position:absolute;right:8px;top:7px;height:34px;border:1px solid #ded6e5;background:#f8f5fb;color:#5b3b70;border-radius:9px;padding:0 11px;font-weight:800;font-size:11px;cursor:pointer}
 .btn{width:100%;height:48px;border:0;border-radius:12px;font-weight:800;cursor:pointer}.primary{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff}.secondary{background:#f3eef8;color:#3f2a4a}
 .notice{padding:12px 14px;border-radius:12px;font-size:12px;line-height:1.5;margin:14px 0}.info{background:#f2effc;color:#4d3280;border:1px solid #dfd5f4}.ok{background:#ecfdf3;color:#166534;border:1px solid #bbf7d0}.bad{background:#fff1f1;color:#991b1b;border:1px solid #fecaca}.warn{background:#fff8e7;color:#92400e;border:1px solid #fde68a}
 .sep{height:1px;background:var(--line);margin:26px 0}.setup{display:none}.setup.show{display:block}.muted{font-size:11px;color:var(--muted)}.foot{margin-top:20px;text-align:center;font-size:11px;color:var(--muted)}
@@ -39,7 +39,7 @@
       <div id="loginNotice" class="notice info">Memeriksa status sistem login…</div>
       <form id="loginForm">
         <div class="field"><label>Username</label><input class="input" id="username" autocomplete="username" placeholder="contoh: ilham" required></div>
-        <div class="field"><label>Password</label><input class="input" id="password" type="password" autocomplete="current-password" placeholder="••••••••" required></div>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input class="input" id="password" type="password" autocomplete="current-password" placeholder="••••••••" required><button class="pw-toggle" id="togglePassword" type="button" aria-label="Tampilkan password">Lihat</button></div></div>
         <button class="btn primary" id="loginBtn" type="submit">MASUK KE SISTEM</button>
       </form>
     </div>
@@ -52,8 +52,8 @@
       <form id="setupForm">
         <div class="field"><label>Nama</label><input class="input" id="setupName" value="Ilham" required></div>
         <div class="field"><label>Username</label><input class="input" id="setupUsername" value="ilham" pattern="[A-Za-z0-9._-]{3,40}" required></div>
-        <div class="field"><label>Password Baru</label><input class="input" id="setupPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Minimal 8 karakter" required></div>
-        <div class="field"><label>Ulangi Password</label><input class="input" id="setupPassword2" type="password" minlength="8" autocomplete="new-password" placeholder="Ulangi password" required></div>
+        <div class="field"><label>Password Baru</label><div class="pw-wrap"><input class="input" id="setupPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Minimal 8 karakter" required><button class="pw-toggle" data-pw-toggle="setupPassword" type="button">Lihat</button></div></div>
+        <div class="field"><label>Ulangi Password</label><div class="pw-wrap"><input class="input" id="setupPassword2" type="password" minlength="8" autocomplete="new-password" placeholder="Ulangi password" required><button class="pw-toggle" data-pw-toggle="setupPassword2" type="button">Lihat</button></div></div>
         <button class="btn secondary" id="setupBtn" type="submit">AKTIFKAN OWNER & LOGIN</button>
       </form>
       <div class="muted" style="margin-top:10px">Password tidak disimpan di file website. Verifikasi dilakukan oleh Supabase Auth.</div>
@@ -71,6 +71,19 @@
   const q=new URLSearchParams(location.search);
   const reason=q.get('reason')||'';
   const next=q.get('next')||'';
+
+  function bindPasswordToggle(button,targetId){
+    if(!button)return;
+    button.addEventListener('click',()=>{
+      const input=$(targetId);if(!input)return;
+      const show=input.type==='password';
+      input.type=show?'text':'password';
+      button.textContent=show?'Sembunyi':'Lihat';
+      button.setAttribute('aria-label',show?'Sembunyikan password':'Tampilkan password');
+    });
+  }
+  bindPasswordToggle($('togglePassword'),'password');
+  document.querySelectorAll('[data-pw-toggle]').forEach(b=>bindPasswordToggle(b,b.dataset.pwToggle));
 
   function safeNext(){
     if(next && !/^https?:/i.test(next) && !next.startsWith('//')) return './'+next.replace(/^\.\//,'');
@@ -116,7 +129,11 @@
       notice('loginNotice','Login berhasil. Membuka portal…','ok');
       await redirectByProfile();
     }catch(err){
-      notice('loginNotice','Login gagal. Periksa username/password atau status akun.','bad');
+      const raw=String(err?.message||err||'');
+      const msg=/invalid login credentials/i.test(raw)
+        ? 'Login gagal: username ditemukan tetapi password tidak cocok. Jika akun baru, minta Admin reset password dari menu Akun & Akses.'
+        : 'Login gagal. Periksa username/password atau status akun.';
+      notice('loginNotice',msg,'bad');
       $('loginBtn').disabled=false;
     }
   });
