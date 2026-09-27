@@ -134,6 +134,13 @@
       if(sub)sub.textContent=gateReasonLabel[g.reason]||String(g.reason||'Gate belum siap');
     }
   }
+  function paintGate(box,key,html){
+    if(!box)return;
+    if(String(box.dataset.kaGatePaint||'')===String(key||''))return;
+    box.dataset.kaGatePaint=String(key||'');
+    box.innerHTML=html;
+  }
+
   async function renderEmployeeGateShadow(){
     const content=document.querySelector('.content');
     if(!content||!window.KA_AUTH_PROFILE||!['employee','admin','owner'].includes(String(window.KA_AUTH_PROFILE.role||'')))return;
@@ -147,7 +154,7 @@
       const hero=content.querySelector('.hero');
       if(hero?.nextSibling)content.insertBefore(box,hero.nextSibling);else content.prepend(box);
     }
-    box.innerHTML='<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart</b><div style="font-size:11px;color:var(--muted);margin-top:4px">Memeriksa mapping & jadwal read-only…</div></div><span class="status info">SHADOW • TIDAK MEMBLOKIR</span></div>';
+    if(!box.dataset.kaGatePaint)paintGate(box,'loading','<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart</b><div style="font-size:11px;color:var(--muted);margin-top:4px">Memeriksa mapping & jadwal read-only…</div></div><span class="status info">SHADOW • TIDAK MEMBLOKIR</span></div>');
     try{
       const r=await call('my_schedule',{date:todayJakarta()});
       const m=r.mapping,sc=r.schedule,g=r.gate||{},session=r.session||null,prev=r.previous_schedule||null,pos=r.queue_position||null,total=r.queue_length||null;
@@ -169,9 +176,12 @@
         if(pos)detail+=' • Urutan hitung '+pos+(total?' dari '+total:'');
         if(prev&&g.reason==='previous_not_handover')detail+=' • Menunggu '+String(prev.sdm_display_name||prev.sdm_user_id||'shift sebelumnya');
       }
-      box.innerHTML='<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart • '+esc(title)+'</b><div style="font-size:11px;color:var(--muted);margin-top:4px">'+esc(detail)+'</div></div><span class="status '+tone+'">'+(g.enforced?'ENFORCED':'SHADOW • TIDAK MEMBLOKIR')+'</span></div>';
+      const gateMode=g.enforced?'ENFORCED':'SHADOW • TIDAK MEMBLOKIR';
+      const gateKey=[title,detail,tone,gateMode].join('|');
+      paintGate(box,gateKey,'<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart • '+esc(title)+'</b><div style="font-size:11px;color:var(--muted);margin-top:4px">'+esc(detail)+'</div></div><span class="status '+tone+'">'+gateMode+'</span></div>');
     }catch(e){
-      box.innerHTML='<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart • GATEWAY BELUM SIAP</b><div style="font-size:11px;color:var(--muted);margin-top:4px">'+esc(String(e?.message||e))+'</div></div><span class="status warn">SHADOW • TIDAK MEMBLOKIR</span></div>';
+      const msg=String(e?.message||e);
+      paintGate(box,'error|'+msg,'<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart • GATEWAY BELUM SIAP</b><div style="font-size:11px;color:var(--muted);margin-top:4px">'+esc(msg)+'</div></div><span class="status warn">SHADOW • TIDAK MEMBLOKIR</span></div>');
     }
   }
 
