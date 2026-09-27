@@ -6,6 +6,7 @@ const BUILD='80';
 const EXPECTED=[
   'account-master-v59.js',
   'auth-client-v1.js',
+  'sdm-integration-v1.js',
   'rules-v29.js',
   'layout-v31.js',
   'transactions-v33.js',
