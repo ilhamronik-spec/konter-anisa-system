@@ -281,6 +281,7 @@
     completeHandover,
     gateOverview:(date=todayJakarta())=>call('gate_overview',{date}),
     forceHandover:(session_id,reason)=>call('force_handover',{session_id,reason}),
+    writebackPreflight:(shift_id)=>call('writeback_preflight',{shift_id}),
     stageWriteback:(payload)=>call('stage_writeback',payload||{}),
     listWritebacks:(filters={})=>call('list_writebacks',filters||{}),
     inspectRemoteSchema:()=>call('inspect_remote_schema'),
