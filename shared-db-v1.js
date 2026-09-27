@@ -141,7 +141,17 @@ function storageSignal(key,value){
   try{window.dispatchEvent(new StorageEvent('storage',{key,newValue:value==null?null:JSON.stringify(value),storageArea:localStorage,url:location.href}))}catch(_){}
 }
 function setJson(key,value){
-  write(key,value);storageSignal(key,value);
+  // Jangan menulis ulang nilai yang identik. Pull cloud berjalan periodik dan
+  // sebelumnya setiap record memicu event storage meskipun datanya sama.
+  // Itu menyebabkan portal Admin merender ulang berkali-kali dan tampak berkedip.
+  try{
+    const raw=localStorage.getItem(key);
+    if(raw!==null){
+      const current=JSON.parse(raw);
+      if(canonical(current)===canonical(value))return false;
+    }
+  }catch(_){}
+  write(key,value);storageSignal(key,value);return true;
 }
 function mergeAccObatShift(id,payload){
   const sid=String(id||'');
@@ -279,17 +289,26 @@ function baseline(){
 }
 async function pullAll(){
   const data=await api({action:'pull'});
-  const hashes=loadHashes();
-  (data.records||[]).forEach(r=>{
-    applyOne(r);
-    hashes[recKey(r)]=r.is_deleted?'__deleted__':recordHash(r);
+  const hashes=loadHashes(),rows=data.records||[];
+  let changed=0;
+  rows.forEach(r=>{
+    const k=recKey(r),remoteHash=r.is_deleted?'__deleted__':recordHash(r);
+    // Remote yang sama dengan baseline terakhir tidak perlu diaplikasikan ulang
+    // ke localStorage. Ini menjaga sinkron 4 detik tetap aktif tanpa UI churn.
+    if(hashes[k]!==remoteHash){
+      applyOne(r);
+      changed++;
+    }
+    hashes[k]=remoteHash;
     if(r.kind==='note'&&!r.is_deleted)cloudNoteIds.add(String(r.record_id));
   });
   saveHashes(hashes);
-  try{window.KAPurchasingV56?.refreshNotes?.()}catch(_){}
-  try{$('refreshHistory')?.click()}catch(_){}
-  try{window.dispatchEvent(new CustomEvent('ka:shared-sync',{detail:{direction:'pull',count:(data.records||[]).length}}))}catch(_){}
-  return data.records||[];
+  if(changed>0){
+    try{window.KAPurchasingV56?.refreshNotes?.()}catch(_){}
+    try{$('refreshHistory')?.click()}catch(_){}
+  }
+  try{window.dispatchEvent(new CustomEvent('ka:shared-sync',{detail:{direction:'pull',count:rows.length,changed}}))}catch(_){}
+  return rows;
 }
 async function pullUsageTombstones(){
   const data=await api({action:'pull',kinds:['note_usage']});
@@ -380,7 +399,9 @@ async function syncNow(manual=false){
   if(busy)return false;
   const token=String(localStorage.getItem(TOKEN_KEY)||'').trim();
   if(!token){setStatus('idle');return false}
-  busy=true;setStatus('sync');
+  busy=true;
+  // Auto-sync tidak lagi membuat badge berkedip SINKRON ↔ TERHUBUNG setiap 4 detik.
+  if(manual)setStatus('sync');
   try{
     if(!localStorage.getItem(BOOT_KEY))await bootstrap();
     else{
