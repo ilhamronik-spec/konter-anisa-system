@@ -159,7 +159,17 @@
     if(!el) return;
     const d=savedAt?new Date(savedAt):null;
     const time=d&&!Number.isNaN(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
-    el.textContent=(recovered?'Data dipulihkan • ':'Autosave aktif • ')+(savedAt?'terakhir '+time:'menunggu input');
+    const next=(recovered?'Data dipulihkan • ':'Autosave aktif • ')+(savedAt?'terakhir '+time:'menunggu input');
+    if(el.textContent!==next)el.textContent=next;
+  }
+
+  function saveFingerprint(v){
+    try{
+      const x=JSON.parse(JSON.stringify(v||{}));
+      delete x.savedAt;
+      delete x.reason;
+      return JSON.stringify(x);
+    }catch(_){return ''}
   }
 
   function saveNow(reason='auto'){
@@ -167,20 +177,27 @@
     if(window.KADayRolloverV1?.isSimulation?.() && !window.KADayRolloverV1?.ready?.()) return false;
     try{
       const key=storageKey();
-      const ts=Date.now();
       const roll=window.KADayRolloverV1?.metadata?.()||{};
-      const data={
+      const material={
         schema:SCHEMA,
         shiftId:shiftId(),
         sourceFingerprint:sourceFingerprint(),
-        savedAt:ts,
-        reason,
         ...roll,
         forms:formSnapshot(),
         catalogs:catalogSnapshot(),
         core:coreSnapshot(),
         flags:flagSnapshot()
       };
+      let prev=null;
+      try{prev=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
+      // Jangan membuat savedAt baru jika isi shift sama. Dulu ini terjadi tiap
+      // 2 detik dan memicu storage event/render lintas tab tanpa perubahan nyata.
+      if(prev && saveFingerprint(prev)===saveFingerprint(material)){
+        lastSavedAt=Number(prev.savedAt||lastSavedAt||0);
+        return false;
+      }
+      const ts=Date.now();
+      const data={...material,savedAt:ts,reason};
       localStorage.setItem(key,JSON.stringify(data));
       touchIndex(key,ts);
       lastSavedAt=ts;
@@ -640,7 +657,8 @@
       if(document.visibilityState==='hidden') saveNow('hidden');
     });
     window.addEventListener('beforeunload',()=>saveNow('beforeunload'));
-    setInterval(()=>saveNow('interval'),2000);
+    // Tidak ada autosave timer 2 detik. Input/change/click/hidden sudah menjadi
+    // trigger autosave, sehingga halaman diam saat pengguna tidak melakukan apa-apa.
   }
 
   function initDom(){
