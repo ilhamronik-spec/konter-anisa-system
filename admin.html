@@ -19,6 +19,17 @@
 .group-tabs button{border:1px solid transparent;background:transparent;color:#6f647b;border-radius:10px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer}
 .group-tabs button:hover{background:#f7f2ff;color:#5b21b6}
 .group-tabs button.active{background:linear-gradient(135deg,#171019,#2d1837);color:#fff;border-color:#8b5cf6;box-shadow:0 6px 16px rgba(124,58,237,.15)}
+.ops-pane{display:none}.ops-pane.active{display:block}
+.ops-budget-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;margin-bottom:14px}
+.ops-health{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ops-health .metric{padding:13px;border:1px solid #ece6f1;border-radius:13px;background:#fcfbfd}
+.ops-health .metric small{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#82788b;font-weight:800}
+.ops-health .metric b{display:block;margin-top:5px;font-size:16px}
+.budget-progress{height:7px;background:#eee8f3;border-radius:999px;overflow:hidden;min-width:110px}
+.budget-progress span{display:block;height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7);border-radius:999px}
+.ops-rule-note{font-size:10px;color:var(--muted);line-height:1.5}
+@media(max-width:1000px){.ops-budget-grid{grid-template-columns:1fr}.ops-health{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.ops-health{grid-template-columns:1fr}}
 .side-foot{font-size:9.5px!important}
 .nav button{transition:.16s ease}.nav button:hover{background:rgba(168,85,247,.08);transform:translateX(2px)}
 .report-paper{background:#fff;border:1px solid #e8e0ee;border-radius:16px;box-shadow:0 14px 35px rgba(54,34,72,.06);padding:28px;margin-top:14px}
@@ -54,7 +65,7 @@
 <button class="active" data-view="dashboard" data-group="dashboard"><span class="dot"></span>Dashboard</button>
 <button data-view="margin" data-group="finance"><span class="dot"></span>Keuangan</button>
 <button data-view="capital" data-group="capitaldebt"><span class="dot"></span>Modal & Hutang</button>
-<button data-view="purchases" data-group="purchases"><span class="dot"></span>Input Belanja</button>
+<button data-view="purchases" data-group="purchases"><span class="dot"></span>Operasional & Purchasing</button>
 <button data-view="review" data-group="review"><span class="dot"></span>Cek Inputan</button>
 <button data-view="accounts" data-group="accounts"><span class="dot"></span>Akun & Akses</button>
 <button data-view="sdm" data-group="sdm"><span class="dot"></span>Integrasi SDMsmart</button>
@@ -75,7 +86,7 @@
 <div class="card kpi warn"><small>Operasional Bulan Ini</small><strong id="kpiOperational">Rp0</strong><div id="kpiOperationalSub">Seluruh shift terekam</div></div>
 <div class="card kpi purple"><small>Review SDM Pending</small><strong id="kpiAttendance">0</strong><div id="kpiAttendanceSub">Balance menunggu keputusan Admin</div></div>
 </div>
-<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="purchases">Input Belanja</button><button data-go="review">Cek Inputan</button><button data-go="accounts">Akun & Akses</button><button data-go="sdm">Integrasi SDMsmart</button><button data-go="archive">Arsip</button><button data-go="reports">Laporan & Audit</button></div>
+<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="purchases">Operasional & Purchasing</button><button data-go="review">Cek Inputan</button><button data-go="accounts">Akun & Akses</button><button data-go="sdm">Integrasi SDMsmart</button><button data-go="archive">Arsip</button><button data-go="reports">Laporan & Audit</button></div>
 <div class="grid two">
 <div class="card section-card"><h3>Balance Belum Disahkan ke SDMsmart</h3><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>Tanggal</th><th>Karyawan</th><th>Balance</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="dashAttendance"></tbody></table></div><div class="actions" style="margin-top:12px"><button class="btn purple" data-go="sdm">Buka Integrasi SDMsmart</button></div></div>
 <div class="card section-card"><h3>Shift Terakhir</h3><div class="notice blue">Ringkasan aktivitas terbaru: tanggal, pemegang shift, margin, dan modal akhir.</div><div id="dashMinusList" class="summary-list"></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-go="margin">Buka Keuangan</button></div></div>
@@ -83,19 +94,19 @@
 </section>
 
 <section class="view" id="view-margin">
-<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="operational">Operasional</button></div>
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="purchases">Operasional & Purchasing</button></div>
 <div class="hero"><div><h2>Margin</h2><p>Rincian Margin per hari dan shift. Dashboard hanya menampilkan total keseluruhan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="marginSearch" placeholder="Cari tanggal / pemegang / ID shift"><select class="select" id="marginDate"><option value="">Semua tanggal</option></select><button class="btn" id="marginRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Margin</th><th>Balance</th><th>Status Kirim</th><th>Update</th></tr></thead><tbody id="marginBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-minus">
-<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="operational">Operasional</button></div>
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="purchases">Operasional & Purchasing</button></div>
 <div class="hero"><div><h2>Minus</h2><p>Rincian Balance minus per hari. Data positif dan Balance pas tidak dimasukkan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="minusSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="minusDate"><option value="">Semua tanggal</option></select><button class="btn" id="minusRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Balance</th><th>Kategori</th><th>Status Review</th></tr></thead><tbody id="minusBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-operational">
-<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="operational">Operasional</button></div>
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="purchases">Operasional & Purchasing</button></div>
 <div class="hero"><div><h2>Operasional</h2><p>Rincian total operasional per hari/shift. Dashboard menampilkan akumulasi keseluruhan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="opSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="opDate"><option value="">Semua tanggal</option></select><button class="btn" id="opRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Operasional</th><th>Margin</th><th>Balance</th></tr></thead><tbody id="opBody"></tbody></table></div></div>
 </section>
@@ -135,8 +146,57 @@
 </section>
 
 <section class="view" id="view-purchases">
-<div class="hero"><div><h2>Pemantauan Input Belanja</h2><p>Admin memantau Nota Purchasing dan input belanja Karyawan per shift. Paket/Rokok dibandingkan dengan total detail yang divalidasi; Aksesoris, Obat, Minyak, dan Operasional mengikuti nominal nota yang dikunci workflow.</p></div><div class="actions"><span class="pill purple">Read Only</span><span class="pill green">Sinkron Database</span></div></div>
-<div class="notice blue"><b>Tujuan:</b> memastikan setiap Nota Purchasing masuk ke shift yang benar, terlihat apakah sudah dipakai Karyawan, dan mendeteksi selisih nominal sebelum menjadi masalah pada Balance. Admin hanya memantau; perubahan transaksi tetap dilakukan dari workflow Karyawan/Purchasing.</div>
+<div class="hero"><div><h2>Operasional & Purchasing</h2><p>Control center biaya operasional bulanan, proyeksi pengeluaran, kepatuhan anggaran per kategori, serta monitoring seluruh Nota Purchasing.</p></div><div class="actions"><span class="pill purple" id="opsPeriodPill">Periode Aktif</span><span class="pill green">Control Center</span></div></div>
+<div class="notice blue"><b>Governance:</b> transaksi tetap dibuat dari workflow Karyawan/Purchasing. Admin memantau realisasi, batas anggaran, proyeksi akhir bulan, penggunaan nota, dan exception. Aturan limit saat ini mengikuti rule yang sudah ada pada workflow Karyawan.</div>
+
+<div class="group-tabs" id="opsTabs">
+<button class="active" data-ops-tab="overview">Executive Overview</button>
+<button data-ops-tab="budget">Anggaran & Proyeksi</button>
+<button data-ops-tab="notes">Monitoring Nota</button>
+<button data-ops-tab="transactions">Transaksi Operasional</button>
+</div>
+
+<div class="ops-pane active" data-ops-pane="overview">
+<div class="grid kpis">
+<div class="card kpi purple"><small>Anggaran Operasional Bulanan</small><strong id="opsBudgetTotal">Rp0</strong><div>Akumulasi limit seluruh kategori</div></div>
+<div class="card kpi good"><small>Realisasi Bulan Ini</small><strong id="opsActualTotal">Rp0</strong><div id="opsActualSub">0% dari anggaran</div></div>
+<div class="card kpi warn"><small>Sisa Anggaran</small><strong id="opsRemainingTotal">Rp0</strong><div id="opsRemainingSub">Sisa sampai akhir bulan</div></div>
+<div class="card kpi purple"><small>Proyeksi Akhir Bulan</small><strong id="opsForecastTotal">Rp0</strong><div id="opsForecastSub">Berdasarkan burn rate berjalan</div></div>
+</div>
+<div class="ops-budget-grid">
+<div class="card table-card">
+<div class="section-card" style="padding-bottom:8px"><h3>Budget Control per Kategori</h3><div class="ops-rule-note">Status dihitung dari realisasi bulan berjalan terhadap limit aktif. 75% = Watch, 90% = Critical, di atas 100% = Over Budget.</div></div>
+<div class="table-wrap"><table class="table" style="min-width:850px"><thead><tr><th>Kategori</th><th>Limit Bulanan</th><th>Realisasi</th><th>Sisa</th><th>Utilisasi</th><th>Status</th></tr></thead><tbody id="opsCategoryOverview"></tbody></table></div>
+</div>
+<div class="card section-card"><h3>Operational Health</h3><div class="ops-health">
+<div class="metric"><small>Burn Rate / Hari</small><b id="opsBurnRate">Rp0</b></div>
+<div class="metric"><small>Sisa Hari Bulan</small><b id="opsDaysLeft">0 hari</b></div>
+<div class="metric"><small>Nota Belum Dipakai</small><b id="opsPendingNotes">0</b></div>
+<div class="metric"><small>Nota Perlu Perhatian</small><b id="opsIssueNotes">0</b></div>
+<div class="metric"><small>Belum Terkategori</small><b id="opsUnclassified">Rp0</b></div>
+<div class="metric"><small>Forecast Status</small><b id="opsForecastStatus">AMAN</b></div>
+</div></div>
+</div>
+<div class="card table-card">
+<div class="section-card" style="padding-bottom:8px"><h3>Aktivitas Operasional Terbaru</h3><div class="ops-rule-note">Menampilkan transaksi operasional bulan berjalan dari snapshot shift yang sudah tersimpan.</div></div>
+<div class="table-wrap"><table class="table" style="min-width:900px"><thead><tr><th>Tanggal</th><th>Pemegang</th><th>Kategori</th><th>Nominal</th><th>Nota</th><th>Keterangan</th></tr></thead><tbody id="opsRecentBody"></tbody></table></div>
+</div>
+</div>
+
+<div class="ops-pane" data-ops-pane="budget">
+<div class="grid kpis">
+<div class="card kpi purple"><small>Total Limit</small><strong id="opsBudgetTotal2">Rp0</strong><div>Budget control bulanan</div></div>
+<div class="card kpi good"><small>Realisasi</small><strong id="opsActualTotal2">Rp0</strong><div>Aktual bulan berjalan</div></div>
+<div class="card kpi warn"><small>Sisa</small><strong id="opsRemainingTotal2">Rp0</strong><div>Limit dikurangi aktual</div></div>
+<div class="card kpi purple"><small>Proyeksi</small><strong id="opsForecastTotal2">Rp0</strong><div>Forecast akhir bulan</div></div>
+</div>
+<div class="card table-card">
+<div class="section-card"><h3>Monthly Budget & Forecast</h3><div class="notice amber" style="margin-bottom:0"><b>Aturan aktif saat ini:</b> Transportasi Rp300.000 • Sedekah Rp500.000 • Perkakas & Peralatan Rp750.000 • Perbaikan Rp1.000.000 • Operasional Rutin Rp869.000. Nilai ini mengikuti rule workflow Karyawan yang sudah ada; belum diedit dari Admin agar tidak terjadi perbedaan aturan antar sistem.</div></div>
+<div class="table-wrap"><table class="table" style="min-width:1050px"><thead><tr><th>Kategori</th><th>Limit</th><th>Aktual</th><th>Sisa</th><th>Utilisasi</th><th>Proyeksi Akhir Bulan</th><th>Deviasi Forecast</th><th>Status</th></tr></thead><tbody id="opsBudgetBody"></tbody></table></div>
+</div>
+</div>
+
+<div class="ops-pane" data-ops-pane="notes">
 <div class="grid kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
 <div class="card kpi purple"><small>Total Nota</small><strong id="purchaseKpiTotal">0</strong><div>Semua nota Purchasing terekam</div></div>
 <div class="card kpi good"><small>Sudah Dipakai</small><strong id="purchaseKpiUsed">0</strong><div>Terhubung ke input Karyawan</div></div>
@@ -151,6 +211,14 @@
 <button class="btn" id="purchaseRefresh">↻ Refresh</button>
 </div>
 <div class="table-wrap"><table class="table" style="min-width:1180px"><thead><tr><th>Nota</th><th>Tanggal / Shift</th><th>Pemegang</th><th>Jenis</th><th>Total Nota</th><th>Input Karyawan</th><th>Status</th><th>Purchasing</th><th>Update</th><th>Detail</th></tr></thead><tbody id="purchaseBody"></tbody></table></div>
+</div>
+</div>
+
+<div class="ops-pane" data-ops-pane="transactions">
+<div class="card table-card">
+<div class="table-toolbar" style="grid-template-columns:1fr .8fr auto"><input class="input" id="opsTxnSearch" placeholder="Cari tanggal / karyawan / kategori / keterangan"><select class="select" id="opsTxnCategory"><option value="">Semua kategori</option><option value="transport">Transportasi</option><option value="sedekah">Sedekah</option><option value="alat">Perkakas & Peralatan</option><option value="repair">Perbaikan</option><option value="routine">Operasional Rutin</option></select><button class="btn" id="opsTxnRefresh">↻ Refresh</button></div>
+<div class="table-wrap"><table class="table" style="min-width:1000px"><thead><tr><th>Tanggal / Shift</th><th>Pemegang</th><th>Kategori</th><th>Nominal</th><th>Nota</th><th>Keterangan</th><th>Status Budget</th></tr></thead><tbody id="opsTxnBody"></tbody></table></div>
+</div>
 </div>
 </section>
 
@@ -1043,7 +1111,7 @@ function renderAudit(){
 function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderPurchases();renderReview();renderAttendance();renderAccounts();renderSdm();renderArchive();renderReport();renderAudit()}
 function show(v){
   const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',purchases:'purchases',review:'review',attendance:'accounts',accounts:'accounts',sdm:'sdm',archive:'archive',reports:'reports',audit:'reports'};
-  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Cek Inputan / Selisih Lama',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',purchases:'Pemantauan Input Belanja',review:'Cek Inputan',attendance:'Akun & Akses / Kehadiran Lama',accounts:'Akun & Akses',sdm:'Integrasi SDMsmart',archive:'Arsip Bulanan',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
+  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Cek Inputan / Selisih Lama',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',purchases:'Operasional & Purchasing',review:'Cek Inputan',attendance:'Akun & Akses / Kehadiran Lama',accounts:'Akun & Akses',sdm:'Integrasi SDMsmart',archive:'Arsip Bulanan',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
   document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.group===groups[v]));
   document.querySelectorAll('.group-tabs [data-go]').forEach(x=>x.classList.toggle('active',x.dataset.go===v));
