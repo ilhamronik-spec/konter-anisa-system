@@ -716,7 +716,6 @@ function install(){
   setTimeout(()=>{refresh();enforceStockCheckpoint();lockWorkflow();},1100);
   window.addEventListener('load',()=>setTimeout(()=>{enforceStockCheckpoint();lockWorkflow();},350),{once:true});
   window.addEventListener('pageshow',()=>setTimeout(lockWorkflow,0));
-  setInterval(lockWorkflow,1500);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
