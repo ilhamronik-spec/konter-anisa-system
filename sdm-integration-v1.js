@@ -108,30 +108,32 @@
     const dateLabel=dateLabelId(sc.date);
     const start=String(sc.start_time||'').slice(0,5),end=String(sc.end_time||'').slice(0,5);
     const byId=id=>document.getElementById(id);
-    if(byId('shiftCrumbText'))byId('shiftCrumbText').textContent='Perhitungan Harian / '+dateLabel;
-    if(byId('topbarRoleShift'))byId('topbarRoleShift').textContent='Karyawan • '+shift;
-    if(byId('holderPill'))byId('holderPill').textContent='Pemegang: '+holder;
-    if(byId('scheduleLabel'))byId('scheduleLabel').textContent=shift;
-    if(byId('scheduleTime'))byId('scheduleTime').textContent=(start&&end)?start+'–'+end:'—';
+    const text=(id,value)=>{const el=byId(id);if(el&&el.textContent!==String(value))el.textContent=String(value)};
+    const cls=(el,value)=>{if(el&&el.className!==value)el.className=value};
+
+    text('shiftCrumbText','Perhitungan Harian / '+dateLabel);
+    text('topbarRoleShift','Karyawan • '+shift);
+    text('holderPill','Pemegang: '+holder);
+    text('scheduleLabel',shift);
+    text('scheduleTime',(start&&end)?start+'–'+end:'—');
 
     const work=byId('workStatusPill');
     if(work){
-      work.textContent=g.allowed?'● Dalam Jam Kerja':'● '+(gateReasonLabel[g.reason]||'Menunggu');
-      work.className='pill '+(g.allowed?'green':'blue');
+      text('workStatusPill',g.allowed?'● Dalam Jam Kerja':'● '+(gateReasonLabel[g.reason]||'Menunggu'));
+      cls(work,'pill '+(g.allowed?'green':'blue'));
     }
-    const status=byId('shiftStatusLabel'),sub=byId('shiftStatusSub');
     if(session?.status==='handover_complete'){
-      if(status)status.textContent='Selesai';
-      if(sub)sub.textContent='Handover '+(timeLabel(session.handover_at)||'selesai');
+      text('shiftStatusLabel','Selesai');
+      text('shiftStatusSub','Handover '+(timeLabel(session.handover_at)||'selesai'));
     }else if(session?.status==='in_progress'){
-      if(status)status.textContent='Sedang Berjalan';
-      if(sub)sub.textContent='Dibuka '+(timeLabel(session.opened_at)||'');
+      text('shiftStatusLabel','Sedang Berjalan');
+      text('shiftStatusSub','Dibuka '+(timeLabel(session.opened_at)||''));
     }else if(g.allowed){
-      if(status)status.textContent='Siap Dimulai';
-      if(sub)sub.textContent='Belum ada session hitungan';
+      text('shiftStatusLabel','Siap Dimulai');
+      text('shiftStatusSub','Belum ada session hitungan');
     }else{
-      if(status)status.textContent='Menunggu';
-      if(sub)sub.textContent=gateReasonLabel[g.reason]||String(g.reason||'Gate belum siap');
+      text('shiftStatusLabel','Menunggu');
+      text('shiftStatusSub',gateReasonLabel[g.reason]||String(g.reason||'Gate belum siap'));
     }
   }
   function paintGate(box,key,html){
