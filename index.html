@@ -3391,8 +3391,15 @@ function stockMovementSnapshot(){
 function operationalSnapshot(){
   try{return (typeof opEntries!=='undefined'&&Array.isArray(opEntries))?JSON.parse(JSON.stringify(opEntries)):[]}catch(_){return []}
 }
+function summaryFingerprint(v){
+  try{
+    const x=JSON.parse(JSON.stringify(v||{}));
+    delete x.savedAt;
+    return JSON.stringify(x);
+  }catch(_){return ''}
+}
 function snapshot(){
-  const s=currentShift();if(!s||!window.KABalanceV44?.balanceSnapshot)return;
+  const s=currentShift();if(!s||!window.KABalanceV44?.balanceSnapshot)return false;
   try{
     const b=window.KABalanceV44.balanceSnapshot(false);
     const op=window.KABalanceV44.piutangBreakdown?.()?.operasional??window.KABalanceV44.operationalTotal?.()??0;
@@ -3401,10 +3408,11 @@ function snapshot(){
     const prev=map[s.id]||{};
     const legacyArchiveIds=new Set(['2026-09-18-full-rifda','2026-09-19-full-rifda','2026-09-24-full-rifda']);
     const legacyArchive=legacyArchiveIds.has(String(s.id));
-    map[s.id]={
+    const next={
+      ...prev,
       shiftId:s.id,shiftLabel:s.label,date:s.date,shift:s.shift,holder:s.holder,
       margin:Number(b.margin||0),balance:Number(b.balance||0),minus:Math.min(0,Number(b.balance||0)),
-      operational:Number(op||0),complete:!!b.complete,savedAt:Date.now(),
+      operational:Number(op||0),complete:!!b.complete,
       modalOpening:Number(b.opening||0),modalClosing:Number(b.closing||0),
       modalChange:Number(b.closing||0)-Number(b.opening||0),
       piutangOpening:Number(b.piutangAwal||0),piutangClosing:Number(b.piutangAkhir||0),
@@ -3420,8 +3428,12 @@ function snapshot(){
       archiveLabel:legacyArchive?'Simulasi sebelum produksi':(prev.archiveLabel||null),
       archivedAt:legacyArchive?(prev.archivedAt||'2026-09-27T02:21:00+07:00'):(prev.archivedAt||null)
     };
+    if(summaryFingerprint(prev)===summaryFingerprint(next))return false;
+    next.savedAt=Date.now();
+    map[s.id]=next;
     write(SUM,map);
-  }catch(e){console.warn('Admin summary snapshot skipped',e)}
+    return true;
+  }catch(e){console.warn('Admin summary snapshot skipped',e);return false}
 }
 function corrections(){const a=read(CORR,[]);return Array.isArray(a)?a:[]}
 function activeCorrection(){
@@ -3433,14 +3445,24 @@ function ensureCorrectionBanner(){
   const content=document.querySelector('.content');if(!content)return;
   const b=document.createElement('div');b.id='kaAdminCorrectionBanner';content.prepend(b);
 }
+let correctionRenderKey='';
 function renderCorrection(){
   ensureCorrectionBanner();const b=$('kaAdminCorrectionBanner'),r=activeCorrection();if(!b)return;
-  if(!r){b.classList.remove('show');b.innerHTML='';return}
+  if(!r){
+    if(correctionRenderKey==='none')return;
+    correctionRenderKey='none';
+    b.classList.remove('show');
+    if(b.innerHTML)b.innerHTML='';
+    return;
+  }
+  const key=[r.id,r.status,r.reason,r.requestedAt,r.resubmittedAt].join('|');
+  if(correctionRenderKey===key)return;
+  correctionRenderKey=key;
   const status=r.status==='resubmitted'?'Sudah dikirim ulang — menunggu Admin':'Dikembalikan Admin untuk diperbaiki';
   b.classList.add('show');
   b.innerHTML='<b>⚠ '+esc(status)+'</b><div style="margin-top:5px">'+esc(r.reason||'Periksa kembali inputan shift ini.')+'</div><div style="font-size:10px;margin-top:5px">Dikirim '+esc(new Date(r.requestedAt).toLocaleString('id-ID'))+'</div><div class="ka-corr-actions">'+(r.status==='returned'?'<button class="btn primary" id="kaCorrOpen" type="button">Buka Hitungan untuk Perbaikan</button><button class="btn" id="kaCorrResubmit" type="button">Kirim Ulang ke Admin</button>':'')+'</div>';
   $('kaCorrOpen')?.addEventListener('click',()=>{try{window.showStep?.(0)}catch(_){};window.scrollTo({top:0,behavior:'smooth'});window.uiToast?.('Silakan perbaiki inputan. Data lama tidak dihapus.','info')});
-  $('kaCorrResubmit')?.addEventListener('click',()=>{const arr=corrections(),x=arr.find(a=>a.id===r.id);if(!x)return;x.status='resubmitted';x.resubmittedAt=new Date().toISOString();write(CORR,arr);snapshot();renderCorrection();window.uiToast?.('Hitungan dikirim ulang ke Admin.','ok')});
+  $('kaCorrResubmit')?.addEventListener('click',()=>{const arr=corrections(),x=arr.find(a=>a.id===r.id);if(!x)return;x.status='resubmitted';x.resubmittedAt=new Date().toISOString();write(CORR,arr);snapshot();correctionRenderKey='';renderCorrection();window.uiToast?.('Hitungan dikirim ulang ke Admin.','ok')});
 }
 function ensureHistoryUI(){
   if($('kaHistoryOverlay'))return;
@@ -3471,8 +3493,23 @@ function bindSchedule(){
 }
 function install(){
   ensureAttendanceUI();ensureHistoryUI();ensureCorrectionBanner();bindSchedule();bindHistory();renderAttendance();renderHistory();renderCorrection();snapshot();
-  setInterval(()=>{snapshot();renderCorrection();},3000);
-  window.addEventListener('storage',e=>{if([ATT,CORR,SUM].includes(e.key)){renderAttendance();renderHistory();renderCorrection()}});
+
+  // Snapshot sekarang event-driven. Tidak ada lagi penulisan savedAt tiap 3 detik.
+  let snapTimer=null;
+  const scheduleSnapshot=()=>{
+    clearTimeout(snapTimer);
+    snapTimer=setTimeout(()=>{snapTimer=null;snapshot()},450);
+  };
+  document.addEventListener('input',scheduleSnapshot,true);
+  document.addEventListener('change',scheduleSnapshot,true);
+  document.addEventListener('click',e=>{if(e.target?.closest?.('button'))scheduleSnapshot()},true);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)snapshot()});
+
+  window.addEventListener('storage',e=>{
+    if(e.key===ATT)renderAttendance();
+    if(e.key===CORR){correctionRenderKey='';renderCorrection()}
+    if(e.key===SUM)renderHistory();
+  });
   window.KAAdminBridgeV1={snapshot,openAttendance,openHistory,renderHistory,renderCorrection};
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
@@ -3535,8 +3572,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
   function setStatus(text,type='info'){
     const el=$('kaFinalSubmitStatus');if(!el)return;
-    el.className='notice '+(type==='ok'?'green':type==='bad'?'red':type==='warn'?'amber':'blue');
-    el.innerHTML=text;
+    const cls='notice '+(type==='ok'?'green':type==='bad'?'red':type==='warn'?'amber':'blue');
+    if(el.className!==cls)el.className=cls;
+    if(el.innerHTML!==text)el.innerHTML=text;
   }
 
   function markSubmitted(balance){
@@ -3675,8 +3713,16 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       tries++;
       if(ensureUI()||tries>80)clearInterval(timer);
     },150);
-    setInterval(refresh,1500);
-    window.addEventListener('ka:shared-sync',refresh);
+    let refreshTimer=null;
+    const scheduleRefresh=()=>{
+      clearTimeout(refreshTimer);
+      refreshTimer=setTimeout(()=>{refreshTimer=null;refresh()},250);
+    };
+    document.addEventListener('input',scheduleRefresh,true);
+    document.addEventListener('change',scheduleRefresh,true);
+    document.addEventListener('click',e=>{if(e.target?.closest?.('button'))scheduleRefresh()},true);
+    window.addEventListener('storage',e=>{if(e.key===SUM)scheduleRefresh()});
+    window.addEventListener('ka:shared-sync',e=>{if(Number(e?.detail?.changed||0)>0)scheduleRefresh()});
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
