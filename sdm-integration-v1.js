@@ -67,20 +67,23 @@
     const q=new URLSearchParams(location.search);
     if(q.get('sim_date'))return false;
     const ctx=runtimeContext(profile,sc);
-    try{sessionStorage.setItem('ka_runtime_shift_context_v1',JSON.stringify(ctx))}catch(_){}
-    window.KA_SHIFT_CONTEXT=ctx;
-    if(window.KARegulationsV29?.activeShift){
-      const a=window.KARegulationsV29.activeShift;
-      a.id=ctx.id;a.date=ctx.date;a.shift=ctx.shift;a.holder=ctx.holder;a.label=ctx.label;
-    }
-    const currentKey=window.KAAutosaveV53?.key?.()||'';
-    const correctKey='ka_shift_autosave_v53_'+ctx.id;
     const loadedFromRuntime=String(document.documentElement.dataset.kaRuntimeShiftReady||'')==='1';
-    if(!loadedFromRuntime && currentKey && currentKey!==correctKey){
+    const wasCorrect=contextMatches(ctx);
+    try{sessionStorage.setItem('ka_runtime_shift_context_v1',JSON.stringify(ctx))}catch(_){}
+
+    // First authenticated resolve: reload once so Rules + Autosave initialize
+    // against the correct employee/date/shift key, never the old preview shift.
+    if(!loadedFromRuntime && !wasCorrect){
       const u=new URL(location.href);
       u.searchParams.set('ctx','sdm');
       location.replace(u.href);
       return true;
+    }
+
+    window.KA_SHIFT_CONTEXT=ctx;
+    if(window.KARegulationsV29?.activeShift){
+      const a=window.KARegulationsV29.activeShift;
+      a.id=ctx.id;a.date=ctx.date;a.shift=ctx.shift;a.holder=ctx.holder;a.label=ctx.label;
     }
     return false;
   }
@@ -101,7 +104,7 @@
     const work=byId('workStatusPill');
     if(work){
       work.textContent=g.allowed?'● Dalam Jam Kerja':'● '+(gateReasonLabel[g.reason]||'Menunggu');
-      work.className='pill '+(g.allowed?'green':'orange');
+      work.className='pill '+(g.allowed?'green':'blue');
     }
     const status=byId('shiftStatusLabel'),sub=byId('shiftStatusSub');
     if(session?.status==='handover_complete'){
