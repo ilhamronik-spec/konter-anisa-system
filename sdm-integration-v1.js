@@ -45,7 +45,7 @@
     box.innerHTML='<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart</b><div style="font-size:11px;color:var(--muted);margin-top:4px">Memeriksa mapping & jadwal read-only…</div></div><span class="status info">SHADOW • TIDAK MEMBLOKIR</span></div>';
     try{
       const r=await call('my_schedule',{date:todayJakarta()});
-      const m=r.mapping,sc=r.schedule,g=r.gate||{},session=r.session||null,prev=r.previous_schedule||null;
+      const m=r.mapping,sc=r.schedule,g=r.gate||{},session=r.session||null,prev=r.previous_schedule||null,pos=r.queue_position||null,total=r.queue_length||null;
       let detail='',tone='info',title='BELUM TERHUBUNG';
       if(!m){
         title='MAPPING BELUM ADA';tone='warn';
@@ -58,6 +58,7 @@
         title=g.allowed?(session?.status==='in_progress'?'SHIFT BERJALAN':session?.status==='handover_complete'?'HANDOVER SELESAI':'TERJADWAL'):'TERKUNCI';
         tone=g.allowed?'ok':'warn';
         detail=String(sc.code||'')+' • '+String(sc.label||'')+(time?' • '+time:'')+' • '+String(sc.sdm_display_name||m.sdm_display_name||'')+' • '+(gateReasonLabel[g.reason]||g.reason||'');
+        if(pos)detail+=' • Urutan hitung '+pos+(total?' dari '+total:'');
         if(prev&&g.reason==='previous_not_handover')detail+=' • Menunggu '+String(prev.sdm_display_name||prev.sdm_user_id||'shift sebelumnya');
       }
       box.innerHTML='<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart • '+esc(title)+'</b><div style="font-size:11px;color:var(--muted);margin-top:4px">'+esc(detail)+'</div></div><span class="status '+tone+'">'+(g.enforced?'ENFORCED':'SHADOW • TIDAK MEMBLOKIR')+'</span></div>';
@@ -74,7 +75,10 @@
     after_shift:'Jam shift sudah berakhir',
     future_schedule:'Jadwal belum aktif',
     past_schedule:'Jadwal sudah lewat',
-    previous_not_handover:'Menunggu shift sebelumnya menyelesaikan handover',
+    previous_not_handover:'Menunggu pemegang hitungan sebelumnya menyelesaikan handover',
+    purchasing_excluded:'Purchasing tidak masuk antrean pemegang hitungan',
+    not_calculation_holder:'Bukan pemegang hitungan pada antrean hari ini',
+    same_start_conflict:'Ada lebih dari satu karyawan mulai pada jam yang sama — perlu prioritas Admin',
     ready:'Siap memulai hitungan',
     in_progress:'Shift sedang berjalan',
     submitted:'Hitungan sudah dikirim',
