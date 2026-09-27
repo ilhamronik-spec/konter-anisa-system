@@ -115,10 +115,6 @@
   }
   window.addEventListener('load',()=>setTimeout(()=>audit(true),1700),{once:true});
 
-  const observer=new MutationObserver(()=>enforceBadge());
-  const startObserver=()=>{
-    if(document.body) observer.observe(document.body,{childList:true,subtree:true,characterData:true});
-  };
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',startObserver,{once:true});
-  else startObserver();
+  // Tidak memakai MutationObserver global. Runtime lock cukup diaudit saat
+  // bootstrap/load; badge tidak perlu memantau setiap perubahan karakter di BODY.
 })();
