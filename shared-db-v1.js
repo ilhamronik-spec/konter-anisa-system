@@ -5,6 +5,7 @@ const ENDPOINT='https://nrvmaijxrwaxsoaeogud.supabase.co/functions/v1/ka-sync';
 const TOKEN_KEY='ka_sync_pairing_token_v1';
 const HASH_KEY='ka_sync_hashes_v1';
 const LOCAL_HASH_KEY='ka_sync_local_hashes_v2';
+const LAST_PULL_KEY='ka_sync_last_pull_v2';
 const BOOT_KEY='ka_sync_bootstrapped_v1';
 const MEDIA_DONE_KEY='ka_sync_media_done_v1';
 const SHIFT_INDEX='ka_shift_autosave_v53_index';
@@ -312,8 +313,16 @@ function baseline(){
   saveHashes(h);
   saveLocalHashes(h);
 }
-async function pullAll(){
-  const data=await api({action:'pull'});
+async function pullAll(incremental=false){
+  const last=incremental?String(localStorage.getItem(LAST_PULL_KEY)||'').trim():'';
+  let since='';
+  if(last){
+    const t=new Date(last).getTime();
+    if(Number.isFinite(t))since=new Date(Math.max(0,t-2000)).toISOString();
+  }
+  const body={action:'pull'};
+  if(since)body.since=since;
+  const data=await api(body);
   const hashes=loadHashes(),rows=data.records||[];
   let changed=0;
   rows.forEach(r=>{
@@ -322,13 +331,10 @@ async function pullAll(){
     if(r.kind==='note'&&!r.is_deleted)cloudNoteIds.add(String(r.record_id));
   });
   saveHashes(hashes);
+  if(data.serverTime)localStorage.setItem(LAST_PULL_KEY,String(data.serverTime));
   if(changed>0){
-    // Remote data that was actually applied becomes the new clean local baseline,
-    // so the next auto-sync never echoes it straight back to the server.
     saveLocalHashes(currentLocalHashes());
     try{$('refreshHistory')?.click()}catch(_){}
-  }
-  if(changed>0){
     try{window.dispatchEvent(new CustomEvent('ka:shared-sync',{detail:{direction:'pull',count:rows.length,changed}}))}catch(_){}
   }
   return rows;
@@ -441,11 +447,10 @@ async function syncNow(manual=false){
   try{
     if(!localStorage.getItem(BOOT_KEY))await bootstrap();
     else{
-      const released=await pullUsageTombstones();
       const pushed=await pushChanged();
-      const pulled=await pullAll();
+      const pulled=await pullAll(true);
       const media=await uploadPendingMedia();
-      setStatus('ok','Sinkron selesai • release '+released+' • kirim '+pushed+' • tarik '+pulled.length+' • foto '+media);
+      setStatus('ok','Sinkron selesai • kirim '+pushed+' • perubahan cloud '+pulled.length+' • foto '+media);
     }
     lastError='';return true;
   }catch(e){
@@ -457,7 +462,7 @@ async function syncNow(manual=false){
 }
 async function pair(token){
   localStorage.setItem(TOKEN_KEY,String(token||'').trim());
-  localStorage.removeItem(BOOT_KEY);localStorage.removeItem(HASH_KEY);localStorage.removeItem(LOCAL_HASH_KEY);cloudNoteIds=new Set();
+  localStorage.removeItem(BOOT_KEY);localStorage.removeItem(HASH_KEY);localStorage.removeItem(LOCAL_HASH_KEY);localStorage.removeItem(LAST_PULL_KEY);cloudNoteIds=new Set();
   setStatus('sync');
   try{
     await api({action:'health'});
@@ -472,7 +477,7 @@ async function pair(token){
   }
 }
 function unpair(){
-  localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(BOOT_KEY);localStorage.removeItem(HASH_KEY);localStorage.removeItem(LOCAL_HASH_KEY);
+  localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(BOOT_KEY);localStorage.removeItem(HASH_KEY);localStorage.removeItem(LOCAL_HASH_KEY);localStorage.removeItem(LAST_PULL_KEY);
   cloudNoteIds=new Set();setStatus('idle');
 }
 async function getMediaUrl(noteId){
@@ -481,12 +486,26 @@ async function getMediaUrl(noteId){
 function start(){
   if(started)return;started=true;badge();
   const autoSync=()=>{if(!document.hidden)syncNow(false)};
+  let queued=null;
+  const queueSync=()=>{
+    clearTimeout(queued);
+    queued=setTimeout(()=>{queued=null;autoSync()},1600);
+  };
   if(localStorage.getItem(TOKEN_KEY)){
     autoSync();
-    timer=setInterval(autoSync,4000);
+    // Incremental safety pull only. Heavy full-database polling every 4 seconds
+    // is intentionally removed.
+    timer=setInterval(autoSync,30000);
   }else setStatus('idle');
   window.addEventListener('online',autoSync);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoSync()});
+  window.addEventListener('focus',autoSync);
+  document.addEventListener('input',queueSync,true);
+  document.addEventListener('change',queueSync,true);
+  document.addEventListener('click',e=>{if(e.target?.closest?.('button'))queueSync()},true);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden)syncNow(false);
+    else autoSync();
+  });
 }
 export function startKASharedDBV1(){start()}
 export const KASharedDBV1={start,pair,unpair,syncNow,getMediaUrl,status:()=>({paired:!!localStorage.getItem(TOKEN_KEY),busy,lastError,endpoint:ENDPOINT})};
