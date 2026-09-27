@@ -29,6 +29,95 @@
   }
 
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function slug(v){return String(v||'unknown').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'unknown'}
+  function dateLabelId(date){
+    try{return new Date(String(date)+'T12:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}
+    catch(_){return String(date||'')}
+  }
+  function timeLabel(ts){
+    if(!ts)return '';
+    try{return new Intl.DateTimeFormat('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(ts)).replace('.',':')+' WIB'}
+    catch(_){return ''}
+  }
+  function runtimeContext(profile,sc){
+    const holder=String(profile?.display_name||profile?.username||sc?.sdm_display_name||'Karyawan').trim();
+    const shift=String(sc?.label||sc?.code||'Shift').trim();
+    const date=String(sc?.date||todayJakarta());
+    const dateLabel=dateLabelId(date);
+    return {
+      id:date+'-'+slug(shift)+'-'+slug(holder),
+      date,dateLabel,shift,holder,
+      label:dateLabel+' • Shift '+shift+' • '+holder,
+      shiftCode:String(sc?.code||''),
+      startTime:String(sc?.start_time||''),
+      endTime:String(sc?.end_time||''),
+      sourceScheduleId:String(sc?.source_schedule_id||''),
+      profileId:String(profile?.id||''),
+      source:'sdmsmart'
+    };
+  }
+  function contextMatches(ctx){
+    const a=window.KARegulationsV29?.activeShift||window.KA_SHIFT_CONTEXT||{};
+    return String(a.date||'')===String(ctx.date||'') &&
+      String(a.holder||'')===String(ctx.holder||'') &&
+      String(a.shift||'')===String(ctx.shift||'');
+  }
+  function ensureRuntimeContext(profile,sc){
+    if(!profile||String(profile.role||'')!=='employee'||!sc)return false;
+    const q=new URLSearchParams(location.search);
+    if(q.get('sim_date'))return false;
+    const ctx=runtimeContext(profile,sc);
+    try{sessionStorage.setItem('ka_runtime_shift_context_v1',JSON.stringify(ctx))}catch(_){}
+    window.KA_SHIFT_CONTEXT=ctx;
+    if(window.KARegulationsV29?.activeShift){
+      const a=window.KARegulationsV29.activeShift;
+      a.id=ctx.id;a.date=ctx.date;a.shift=ctx.shift;a.holder=ctx.holder;a.label=ctx.label;
+    }
+    const currentKey=window.KAAutosaveV53?.key?.()||'';
+    const correctKey='ka_shift_autosave_v53_'+ctx.id;
+    const loadedFromRuntime=String(document.documentElement.dataset.kaRuntimeShiftReady||'')==='1';
+    if(!loadedFromRuntime && currentKey && currentKey!==correctKey){
+      const u=new URL(location.href);
+      u.searchParams.set('ctx','sdm');
+      location.replace(u.href);
+      return true;
+    }
+    return false;
+  }
+  function updateEmployeeShell(r){
+    const p=r?.profile||window.KA_AUTH_PROFILE||{},sc=r?.schedule||null,g=r?.gate||{},session=r?.session||null;
+    if(!sc)return;
+    const holder=String(p.display_name||p.username||sc.sdm_display_name||'Karyawan');
+    const shift=String(sc.label||sc.code||'Shift');
+    const dateLabel=dateLabelId(sc.date);
+    const start=String(sc.start_time||'').slice(0,5),end=String(sc.end_time||'').slice(0,5);
+    const byId=id=>document.getElementById(id);
+    if(byId('shiftCrumbText'))byId('shiftCrumbText').textContent='Perhitungan Harian / '+dateLabel;
+    if(byId('topbarRoleShift'))byId('topbarRoleShift').textContent='Karyawan • '+shift;
+    if(byId('holderPill'))byId('holderPill').textContent='Pemegang: '+holder;
+    if(byId('scheduleLabel'))byId('scheduleLabel').textContent=shift;
+    if(byId('scheduleTime'))byId('scheduleTime').textContent=(start&&end)?start+'–'+end:'—';
+
+    const work=byId('workStatusPill');
+    if(work){
+      work.textContent=g.allowed?'● Dalam Jam Kerja':'● '+(gateReasonLabel[g.reason]||'Menunggu');
+      work.className='pill '+(g.allowed?'green':'orange');
+    }
+    const status=byId('shiftStatusLabel'),sub=byId('shiftStatusSub');
+    if(session?.status==='handover_complete'){
+      if(status)status.textContent='Selesai';
+      if(sub)sub.textContent='Handover '+(timeLabel(session.handover_at)||'selesai');
+    }else if(session?.status==='in_progress'){
+      if(status)status.textContent='Sedang Berjalan';
+      if(sub)sub.textContent='Dibuka '+(timeLabel(session.opened_at)||'');
+    }else if(g.allowed){
+      if(status)status.textContent='Siap Dimulai';
+      if(sub)sub.textContent='Belum ada session hitungan';
+    }else{
+      if(status)status.textContent='Menunggu';
+      if(sub)sub.textContent=gateReasonLabel[g.reason]||String(g.reason||'Gate belum siap');
+    }
+  }
   async function renderEmployeeGateShadow(){
     const content=document.querySelector('.content');
     if(!content||!window.KA_AUTH_PROFILE||!['employee','admin','owner'].includes(String(window.KA_AUTH_PROFILE.role||'')))return;
@@ -46,6 +135,9 @@
     try{
       const r=await call('my_schedule',{date:todayJakarta()});
       const m=r.mapping,sc=r.schedule,g=r.gate||{},session=r.session||null,prev=r.previous_schedule||null,pos=r.queue_position||null,total=r.queue_length||null;
+      if(sc&&ensureRuntimeContext(r.profile||window.KA_AUTH_PROFILE,sc))return;
+      document.documentElement.dataset.kaRuntimeShiftReady='1';
+      updateEmployeeShell(r);
       let detail='',tone='info',title='BELUM TERHUBUNG';
       if(!m){
         title='MAPPING BELUM ADA';tone='warn';
