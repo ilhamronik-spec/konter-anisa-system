@@ -270,7 +270,7 @@
 <div class="table-wrap"><table class="table" style="min-width:1000px"><thead><tr><th>Akun Konter</th><th>Role</th><th>SDM user ID</th><th>Nama SDM</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="sdmMappingBody"></tbody></table></div>
 </div>
 <div class="card table-card" style="margin-top:14px">
-<div class="section-card" style="padding-bottom:8px"><h3>User SDMsmart Belum Terhubung</h3><div class="ops-rule-note">Bisa langsung dibuatkan akun login Konter lalu dipasangkan. Password sementara tetap ditentukan Admin.</div></div>
+<div class="section-card" style="padding-bottom:8px"><h3>User SDMsmart Belum Terhubung</h3><div class="ops-rule-note">Hanya user operasional aktif (employee/operator/purchasing) yang ditampilkan. Akun Admin SDMsmart tidak perlu dibuatkan akun Karyawan Konter.</div></div>
 <div class="table-wrap"><table class="table" style="min-width:900px"><thead><tr><th>User SDMsmart</th><th>Username SDM</th><th>Role SDM</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="sdmUnlinkedUserBody"></tbody></table></div>
 </div>
 </div>
@@ -993,7 +993,10 @@ function renderSdmFoundation(){
   document.querySelectorAll('[data-map-save]').forEach(b=>b.onclick=()=>saveSdmMapping(b.dataset.mapSave));
 
   const linkedSdmIds=new Set(sdmFoundation.profiles.map(p=>String(p.sdm_mapping?.sdm_user_id||'')).filter(Boolean));
-  const unlinkedSdm=sdmFoundation.sdmUsers.filter(u=>u.active!==false&&!linkedSdmIds.has(String(u.sdm_user_id||'')));
+  const unlinkedSdm=sdmFoundation.sdmUsers.filter(u=>{
+    const role=String(u.role||'').toLowerCase();
+    return u.active!==false&&['employee','operator','purchasing'].includes(role)&&!linkedSdmIds.has(String(u.sdm_user_id||''));
+  });
   $('sdmUnlinkedUserBody').innerHTML=unlinkedSdm.length?unlinkedSdm.map(u=>'<tr><td><b>'+esc(u.display_name||u.sdm_user_id)+'</b><div style="font-size:10px;color:var(--muted)">'+esc(u.sdm_user_id||'')+'</div></td><td>'+esc(u.username||'—')+'</td><td>'+esc(u.role||'—')+'</td><td><span class="status warn">BELUM TERHUBUNG</span></td><td><button class="btn purple" data-create-link-sdm="'+esc(u.sdm_user_id)+'">Buat Akun & Hubungkan</button></td></tr>').join(''):'<tr><td colspan="5" class="empty">'+(sdmFoundation.sdmUsers.length?'Semua user SDM aktif sudah terhubung.':'User SDMsmart belum terbaca. Jalankan Sinkron User & Jadwal.')+'</td></tr>';
   document.querySelectorAll('[data-create-link-sdm]').forEach(b=>b.onclick=()=>createKonterFromSdm(b.dataset.createLinkSdm));
 
