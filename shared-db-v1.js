@@ -163,85 +163,95 @@ function mergeAccObatShift(id,payload){
     const incoming=Array.isArray(payload?.[type])?payload[type].map(x=>({...x,shiftId:sid})):[];
     store[type]=keep.concat(incoming);
   });
-  setJson(ACC_OBAT_KEY,store);
-  try{window.KAAccObatV41?.replaceShiftPurchases?.(sid,payload||{accessory:[],medicine:[]})}catch(_){}
+  const changed=setJson(ACC_OBAT_KEY,store);
+  if(changed){try{window.KAAccObatV41?.replaceShiftPurchases?.(sid,payload||{accessory:[],medicine:[]})}catch(_){}}
+  return changed;
 }
 function applyOne(r){
-  if(!r)return;
+  if(!r)return false;
   const p=r.payload,id=String(r.record_id||'');
+  let changed=false;
   if(r.is_deleted){
     if(r.kind==='note'){
       let a=read('ka_v29_purchasing_notes',[]);if(!Array.isArray(a))a=[];
       const next=a.filter(x=>String(x?.id||'')!==id);
-      if(next.length!==a.length)setJson('ka_v29_purchasing_notes',next);
+      if(next.length!==a.length)changed=setJson('ka_v29_purchasing_notes',next)||changed;
       cloudNoteIds.delete(id);
     }
     if(r.kind==='acc_obat_purchase'){
-      mergeAccObatShift(id,{accessory:[],medicine:[]});
+      changed=mergeAccObatShift(id,{accessory:[],medicine:[]})||changed;
     }
     if(r.kind==='note_usage'){
       const m=read('ka_v29_used_notes',{})||{};
-      if(Object.prototype.hasOwnProperty.call(m,id)) delete m[id];
-      setJson('ka_v29_used_notes',m);
-      try{
-        if(window.KARegulationsV29?.usedNotes && typeof window.KARegulationsV29.usedNotes==='object'){
-          delete window.KARegulationsV29.usedNotes[id];
-        }
-        window.KAPurchasingV56?.refreshNotes?.();
-      }catch(_){}
+      if(Object.prototype.hasOwnProperty.call(m,id)){
+        delete m[id];
+        changed=setJson('ka_v29_used_notes',m)||changed;
+      }
+      if(changed){
+        try{
+          if(window.KARegulationsV29?.usedNotes && typeof window.KARegulationsV29.usedNotes==='object'){
+            delete window.KARegulationsV29.usedNotes[id];
+          }
+          window.KAPurchasingV56?.refreshNotes?.();
+        }catch(_){}
+      }
     }
-    return;
+    return changed;
   }
   if(r.kind==='note'){
     let a=read('ka_v29_purchasing_notes',[]);if(!Array.isArray(a))a=[];
     const ix=a.findIndex(x=>String(x?.id||'')===id);
     if(ix>=0)a[ix]=p;else a.push(p);
-    setJson('ka_v29_purchasing_notes',a);cloudNoteIds.add(id);
+    changed=setJson('ka_v29_purchasing_notes',a)||changed;
+    cloudNoteIds.add(id);
   }else if(r.kind==='note_usage'){
-    const m=read('ka_v29_used_notes',{})||{};m[id]=p;setJson('ka_v29_used_notes',m);
-    try{
-      if(window.KARegulationsV29?.usedNotes && typeof window.KARegulationsV29.usedNotes==='object'){
-        window.KARegulationsV29.usedNotes[id]=p;
-      }
-      window.KAPurchasingV56?.refreshNotes?.();
-    }catch(_){}
+    const m=read('ka_v29_used_notes',{})||{};m[id]=p;
+    changed=setJson('ka_v29_used_notes',m)||changed;
+    if(changed){
+      try{
+        if(window.KARegulationsV29?.usedNotes && typeof window.KARegulationsV29.usedNotes==='object'){
+          window.KARegulationsV29.usedNotes[id]=p;
+        }
+        window.KAPurchasingV56?.refreshNotes?.();
+      }catch(_){}
+    }
   }else if(r.kind==='shift'){
     const key=SHIFT_PREFIX+id;
     const local=read(key,null);
-    // Never regress an active shift. Progress/data richness wins first; timestamp
-    // only breaks ties. This prevents another tab/device from pushing a newer
-    // timestamp that actually contains an older workflow snapshot.
-    if(local&&!shouldApplyShift(local,p))return;
-    setJson(key,p);
+    if(local&&!shouldApplyShift(local,p))return false;
+    changed=setJson(key,p)||changed;
     let idx=read(SHIFT_INDEX,[]);if(!Array.isArray(idx))idx=[];
     idx=idx.filter(x=>String(x?.key||'')!==key);
     idx.push({key,ts:Number(p?._syncIndexTs||p?.savedAt||Date.now())});
     idx.sort((a,b)=>Number(b.ts||0)-Number(a.ts||0));
-    setJson(SHIFT_INDEX,idx);
+    changed=setJson(SHIFT_INDEX,idx)||changed;
   }else if(r.kind==='summary'){
-    const m=read('ka_admin_shift_summaries_v1',{})||{};m[id]=p;setJson('ka_admin_shift_summaries_v1',m);
+    const m=read('ka_admin_shift_summaries_v1',{})||{};m[id]=p;
+    changed=setJson('ka_admin_shift_summaries_v1',m)||changed;
   }else if(r.kind==='correction'){
     let a=read('ka_admin_correction_requests_v1',[]);if(!Array.isArray(a))a=[];
     const ix=a.findIndex(x=>String(x?.id||'')===id);
     if(ix>=0)a[ix]=p;else a.push(p);
-    setJson('ka_admin_correction_requests_v1',a);
+    changed=setJson('ka_admin_correction_requests_v1',a)||changed;
   }else if(r.kind==='integration_adjustment'){
-    const m=read('ka_sdm_adjustments_v1',{})||{};m[id]=p;setJson('ka_sdm_adjustments_v1',m);
+    const m=read('ka_sdm_adjustments_v1',{})||{};m[id]=p;
+    changed=setJson('ka_sdm_adjustments_v1',m)||changed;
   }else if(r.kind==='operational_budget'){
-    setJson(OP_BUDGET_KEY,p);
-    try{window.dispatchEvent(new CustomEvent('ka:operational-budget-updated',{detail:p}))}catch(_){}
+    changed=setJson(OP_BUDGET_KEY,p)||changed;
+    if(changed){try{window.dispatchEvent(new CustomEvent('ka:operational-budget-updated',{detail:p}))}catch(_){}}
   }else if(r.kind==='accounts'){
-    setJson('ka_admin_accounts_v59',p);
-    try{window.dispatchEvent(new CustomEvent('ka:admin-accounts-updated'))}catch(_){}
+    changed=setJson('ka_admin_accounts_v59',p)||changed;
+    if(changed){try{window.dispatchEvent(new CustomEvent('ka:admin-accounts-updated'))}catch(_){}}
   }else if(r.kind==='margin_exception'){
-    setJson('ka_v29_margin_exceptions',p);
+    changed=setJson('ka_v29_margin_exceptions',p)||changed;
   }else if(r.kind==='price_approval'){
-    setJson('ka_v29_price_approvals',p);
+    changed=setJson('ka_v29_price_approvals',p)||changed;
   }else if(r.kind==='acc_obat_purchase'){
-    mergeAccObatShift(id,p);
+    changed=mergeAccObatShift(id,p)||changed;
   }else if(r.kind==='oil_purchase'){
-    setJson(OIL_PREFIX+id,p);
+    changed=setJson(OIL_PREFIX+id,p)||changed;
   }
+  return changed;
 }
 async function api(body){
   const token=String(localStorage.getItem(TOKEN_KEY)||'').trim();
@@ -292,19 +302,12 @@ async function pullAll(){
   const hashes=loadHashes(),rows=data.records||[];
   let changed=0;
   rows.forEach(r=>{
-    const k=recKey(r),remoteHash=r.is_deleted?'__deleted__':recordHash(r);
-    // Remote yang sama dengan baseline terakhir tidak perlu diaplikasikan ulang
-    // ke localStorage. Ini menjaga sinkron 4 detik tetap aktif tanpa UI churn.
-    if(hashes[k]!==remoteHash){
-      applyOne(r);
-      changed++;
-    }
-    hashes[k]=remoteHash;
+    if(applyOne(r))changed++;
+    hashes[recKey(r)]=r.is_deleted?'__deleted__':recordHash(r);
     if(r.kind==='note'&&!r.is_deleted)cloudNoteIds.add(String(r.record_id));
   });
   saveHashes(hashes);
   if(changed>0){
-    try{window.KAPurchasingV56?.refreshNotes?.()}catch(_){}
     try{$('refreshHistory')?.click()}catch(_){}
   }
   try{window.dispatchEvent(new CustomEvent('ka:shared-sync',{detail:{direction:'pull',count:rows.length,changed}}))}catch(_){}
