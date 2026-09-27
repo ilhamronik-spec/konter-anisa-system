@@ -286,11 +286,14 @@ function badge(){
 }
 function setStatus(state,detail=''){
   const el=badge();
-  if(state==='ok'){el.className='status ok';el.textContent='DATABASE • TERHUBUNG'}
-  else if(state==='sync'){el.className='status info';el.textContent='DATABASE • SINKRON...'}
-  else if(state==='bad'){el.className='status bad';el.textContent='DATABASE • OFFLINE'}
-  else{el.className='status warn';el.textContent='DATABASE • BELUM DIPASANGKAN'}
-  el.title=detail||'Klik untuk pairing / sinkron database bersama';
+  let cls='status warn',txt='DATABASE • BELUM DIPASANGKAN';
+  if(state==='ok'){cls='status ok';txt='DATABASE • TERHUBUNG'}
+  else if(state==='sync'){cls='status info';txt='DATABASE • SINKRON...'}
+  else if(state==='bad'){cls='status bad';txt='DATABASE • OFFLINE'}
+  const title=detail||'Klik untuk pairing / sinkron database bersama';
+  if(el.className!==cls)el.className=cls;
+  if(el.textContent!==txt)el.textContent=txt;
+  if(el.title!==title)el.title=title;
 }
 function loadHashes(){const h=read(HASH_KEY,{});return h&&typeof h==='object'?h:{}}
 function saveHashes(h){write(HASH_KEY,h)}
