@@ -290,7 +290,7 @@
 </div>
 
 <div class="sdm-pane" data-sdm-pane="gate" style="display:none">
-<div class="notice blue"><b>SHADOW CONTROL.</b> Tabel ini menunjukkan siapa yang seharusnya boleh memulai hitungan berdasarkan jadwal SDMsmart, jam shift, dan handover sebelumnya. Selama mode masih SHADOW, hasil gate tidak memblokir workflow produksi.</div>
+<div class="notice blue"><b>SHADOW CONTROL.</b> Pemegang hitungan mengikuti urutan <b>karyawan non-Purchasing yang mulai paling pagi</b>, lalu berpindah setelah handover selesai. Purchasing tidak pernah masuk antrean meskipun hadir paling awal. Selama mode masih SHADOW, hasil gate tidak memblokir workflow produksi.</div>
 <div class="grid kpis">
 <div class="card kpi purple"><small>Mode Gate</small><strong id="sdmGateControlMode">SHADOW</strong><div>Enforcement belum diaktifkan</div></div>
 <div class="card kpi good"><small>Siap Mulai</small><strong id="sdmGateReadyCount">0</strong><div>Decision gate = allow</div></div>
@@ -1083,7 +1083,10 @@ const gateReasonText={
   after_shift:'Jam shift selesai',
   future_schedule:'Jadwal belum aktif',
   past_schedule:'Jadwal sudah lewat',
-  previous_not_handover:'Menunggu handover sebelumnya',
+  previous_not_handover:'Menunggu handover pemegang sebelumnya',
+  purchasing_excluded:'Purchasing dikecualikan',
+  not_calculation_holder:'Bukan pemegang hitungan',
+  same_start_conflict:'Jam mulai sama — perlu prioritas Admin',
   ready:'Siap mulai',
   in_progress:'Sedang berjalan',
   submitted:'Sudah submit',
