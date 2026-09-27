@@ -243,8 +243,8 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <aside class="side">
 <div class="brand"><div class="logo">KA</div><div><h1>KONTER ANISA</h1><small>Business Management System</small></div></div>
 <div class="nav-title">Portal Karyawan</div>
-<div class="nav"><button class="active" id="navDaily" type="button"><span class="dot"></span>Perhitungan Harian</button><button id="navSchedule" type="button"><span class="dot"></span>Jadwal &amp; Kehadiran</button><button id="navDebt" type="button"><span class="dot"></span>Hutang Saya</button><button id="navPayslip" type="button"><span class="dot"></span>Slip Gaji</button></div>
-<div class="side-foot"><div style="font-size:11px;color:#c9d6e5;font-weight:700">Interactive Preview</div><div style="font-size:10px;color:#8194ad;margin-top:4px">Opening dari stok akhir sheet 17 • input uji tanggal 18 • belum terhubung database</div></div>
+<div class="nav"><button class="active" id="navDaily" type="button"><span class="dot"></span>Perhitungan Harian</button><button id="navHistory" type="button"><span class="dot"></span>Riwayat Hitungan Saya</button></div>
+<div class="side-foot"><div style="font-size:11px;color:#c9d6e5;font-weight:700">PORTAL KARYAWAN</div><div style="font-size:10px;color:#8194ad;margin-top:4px">Fokus: Perhitungan Harian Konter • SDM, absensi & gaji tetap di SDMsmart</div></div>
 </aside>
 <main class="main">
 <div class="topbar"><div><button class="btn mobile-menu" id="mobileMenuBtn" type="button">☰</button> <span class="crumb">Perhitungan Harian / 18 September 2026 <span class="status info" style="margin-left:8px">UI V28 — LIVE STOCK CALC • ROLLOVER FIX 5</span></span></div><div class="user"><div style="text-align:right"><b style="font-size:12px">Rifda</b><div style="font-size:10px;color:var(--muted)">Karyawan • Full</div></div><div class="avatar">RF</div></div></div>
@@ -2571,11 +2571,8 @@ function bindAllInteractiveControls(){
   const daily=document.getElementById('navDaily');
   if(daily) daily.addEventListener('click',()=>{showStep(0);uiToast('Perhitungan Harian aktif','ok')});
 
-  [['navSchedule','Jadwal & Kehadiran'],['navDebt','Hutang Saya'],['navPayslip','Slip Gaji']]
-    .forEach(([id,label])=>{
-      const el=document.getElementById(id);
-      if(el) el.addEventListener('click',()=>uiToast(label+' belum dibangun pada preview ini','info'));
-    });
+  const history=document.getElementById('navHistory');
+  if(history) history.addEventListener('click',()=>{if(window.KAAdminBridgeV1?.openHistory)window.KAAdminBridgeV1.openHistory();else uiToast('Riwayat sedang dimuat.','info')});
 
   const menu=document.getElementById('mobileMenuBtn');
   if(menu){
@@ -3186,8 +3183,8 @@ window.KAAuthV1.requireRole(['employee','admin','owner']).then(function(p){
 <script src="./runtime-lock-v77.js?build=80"></script>
 
 <style id="ka-admin-bridge-style-v1">
-#kaAttendanceOverlay,#kaCorrectionOverlay{position:fixed;inset:0;z-index:26000;background:rgba(8,8,11,.74);backdrop-filter:blur(6px);display:none;padding:22px;overflow:auto}
-#kaAttendanceOverlay.open,#kaCorrectionOverlay.open{display:block}
+#kaAttendanceOverlay,#kaCorrectionOverlay,#kaHistoryOverlay{position:fixed;inset:0;z-index:26000;background:rgba(8,8,11,.74);backdrop-filter:blur(6px);display:none;padding:22px;overflow:auto}
+#kaAttendanceOverlay.open,#kaCorrectionOverlay.open,#kaHistoryOverlay.open{display:block}
 .ka-ext-shell{max-width:980px;margin:30px auto;background:#fff;border:1px solid #d8c5e8;border-radius:20px;padding:20px;box-shadow:0 30px 90px rgba(30,10,45,.35)}
 .ka-ext-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
 .ka-ext-head h3{margin:0}.ka-ext-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ka-ext-card{border:1px solid #ebe4f1;border-radius:14px;padding:14px;background:#fff}
@@ -3196,7 +3193,7 @@ window.KAAuthV1.requireRole(['employee','admin','owner']).then(function(p){
 #kaAdminCorrectionBanner.show{display:block}
 #kaAdminCorrectionBanner .ka-corr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .ka-ext-table{width:100%;border-collapse:collapse}.ka-ext-table th,.ka-ext-table td{padding:10px;border-bottom:1px solid #eee7f2;text-align:left;font-size:12px}.ka-ext-table th{font-size:10px;text-transform:uppercase;color:#6d6177;background:#faf7fd}
-@media(max-width:700px){.ka-ext-grid{grid-template-columns:1fr}#kaAttendanceOverlay,#kaCorrectionOverlay{padding:8px}.ka-ext-shell{padding:14px;margin:10px auto}}
+@media(max-width:700px){.ka-ext-grid{grid-template-columns:1fr}#kaAttendanceOverlay,#kaCorrectionOverlay,#kaHistoryOverlay{padding:8px}.ka-ext-shell{padding:14px;margin:10px auto}}
 </style>
 <script id="ka-admin-bridge-v1">
 (function(){
@@ -3389,15 +3386,38 @@ function renderCorrection(){
   $('kaCorrOpen')?.addEventListener('click',()=>{try{window.showStep?.(0)}catch(_){};window.scrollTo({top:0,behavior:'smooth'});window.uiToast?.('Silakan perbaiki inputan. Data lama tidak dihapus.','info')});
   $('kaCorrResubmit')?.addEventListener('click',()=>{const arr=corrections(),x=arr.find(a=>a.id===r.id);if(!x)return;x.status='resubmitted';x.resubmittedAt=new Date().toISOString();write(CORR,arr);snapshot();renderCorrection();window.uiToast?.('Hitungan dikirim ulang ke Admin.','ok')});
 }
+function ensureHistoryUI(){
+  if($('kaHistoryOverlay'))return;
+  const box=document.createElement('div');box.id='kaHistoryOverlay';
+  box.innerHTML='<div class="ka-ext-shell"><div class="ka-ext-head"><div><h3>Riwayat Hitungan Saya</h3><div style="font-size:11px;color:var(--muted);margin-top:4px">Riwayat perhitungan Konter. Absensi, gaji, slip dan data SDM tetap dibuka melalui SDMsmart.</div></div><button class="btn" id="kaHistoryClose" type="button">Tutup ✕</button></div><div class="table-wrap"><table class="ka-ext-table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Margin</th><th>Balance</th><th>Status</th></tr></thead><tbody id="kaHistoryBody"></tbody></table></div></div>';
+  document.body.appendChild(box);
+  $('kaHistoryClose').onclick=()=>box.classList.remove('open');
+  box.addEventListener('click',e=>{if(e.target===box)box.classList.remove('open')});
+}
+function renderHistory(){
+  ensureHistoryUI();
+  const e=currentEmployee(),map=read(SUM,{})||{},name=String(e.name||'').trim().toLowerCase();
+  const rows=Object.values(map).filter(x=>String(x?.holder||'').trim().toLowerCase()===name).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.savedAt||0)-Number(a.savedAt||0));
+  $('kaHistoryBody').innerHTML=rows.length?rows.map(x=>{
+    const bal=Number(x.balance||0),sent=x.submissionStatus==='submitted',archived=x.archived===true||x.archiveStatus==='archived';
+    const status=archived?'ARSIP':sent?'TERKIRIM':x.complete?'SELESAI / DRAFT':'BERJALAN';
+    return '<tr><td><b>'+esc(x.date||'—')+'</b></td><td>'+esc(x.shift||'—')+'</td><td><b>'+fmt(x.margin)+'</b></td><td style="font-weight:800;color:'+(bal<0?'#b91c1c':bal>0?'#b45309':'#087443')+'">'+fmt(bal)+'</td><td>'+esc(status)+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--muted)">Belum ada riwayat hitungan untuk akun ini.</td></tr>';
+}
+function openHistory(){renderHistory();$('kaHistoryOverlay').classList.add('open')}
+function bindHistory(){
+  const nav=$('navHistory');if(!nav||nav.dataset.kaHistoryBound==='1')return;nav.dataset.kaHistoryBound='1';
+  nav.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();openHistory()},true);
+}
 function bindSchedule(){
   const nav=$('navSchedule');if(!nav||nav.dataset.kaAttBound==='1')return;nav.dataset.kaAttBound='1';
   nav.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();openAttendance()},true);
 }
 function install(){
-  ensureAttendanceUI();ensureCorrectionBanner();bindSchedule();renderAttendance();renderCorrection();snapshot();
+  ensureAttendanceUI();ensureHistoryUI();ensureCorrectionBanner();bindSchedule();bindHistory();renderAttendance();renderHistory();renderCorrection();snapshot();
   setInterval(()=>{snapshot();renderCorrection();},3000);
-  window.addEventListener('storage',e=>{if([ATT,CORR].includes(e.key)){renderAttendance();renderCorrection()}});
-  window.KAAdminBridgeV1={snapshot,openAttendance,renderCorrection};
+  window.addEventListener('storage',e=>{if([ATT,CORR,SUM].includes(e.key)){renderAttendance();renderHistory();renderCorrection()}});
+  window.KAAdminBridgeV1={snapshot,openAttendance,openHistory,renderHistory,renderCorrection};
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
@@ -3599,7 +3619,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 <script>
 setTimeout(function(){
-  import('./shared-db-v1.js?build=7').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+  import('./shared-db-v1.js?build=8').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
 </body>
