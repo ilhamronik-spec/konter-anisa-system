@@ -179,25 +179,41 @@
     submitted:'Hitungan sudah dikirim',
     handover_complete:'Handover selesai'
   };
-  function bindShiftSessionShadow(){
-    const btn=document.getElementById('openingNextBtn');
-    if(!btn||btn.dataset.kaSdmSessionBound==='1')return;
-    btn.dataset.kaSdmSessionBound='1';
-    btn.addEventListener('click',async()=>{
+  let shiftStartPromise=null;
+  async function startShiftShadowOnce(){
+    if(shiftStartPromise)return shiftStartPromise;
+    shiftStartPromise=(async()=>{
       try{
         const r=await call('begin_shift',{date:todayJakarta()});
-        if(r?.session)renderEmployeeGateShadow();
-      }catch(_){
+        if(r?.session)await renderEmployeeGateShadow();
+        return r;
+      }catch(e){
         // Mode SHADOW tidak boleh mengganggu perhitungan produksi.
+        shiftStartPromise=null;
+        return null;
       }
+    })();
+    return shiftStartPromise;
+  }
+  function bindShiftSessionShadow(){
+    const ids=['openingPkgPreviewBtn','openingCigPreviewBtn','openingNextBtn'];
+    let found=false;
+    ids.forEach(id=>{
+      const btn=document.getElementById(id);
+      if(!btn)return;
+      found=true;
+      if(btn.dataset.kaSdmSessionBound==='1')return;
+      btn.dataset.kaSdmSessionBound='1';
+      btn.addEventListener('click',()=>{startShiftShadowOnce()},{capture:true});
     });
+    return found;
   }
   function bootEmployeeShadow(){
     let tries=0;
     const t=setInterval(()=>{
       tries++;
-      bindShiftSessionShadow();
-      if(document.getElementById('openingNextBtn')||tries>60)clearInterval(t);
+      const found=bindShiftSessionShadow();
+      if(found||tries>60)clearInterval(t);
     },200);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootEmployeeShadow,{once:true});else bootEmployeeShadow();
