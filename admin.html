@@ -55,7 +55,8 @@
 <button data-view="capital" data-group="capitaldebt"><span class="dot"></span>Modal & Hutang</button>
 <button data-view="purchases" data-group="purchases"><span class="dot"></span>Input Belanja</button>
 <button data-view="review" data-group="review"><span class="dot"></span>Cek Inputan</button>
-<button data-view="attendance" data-group="people"><span class="dot"></span>Karyawan & Akses</button>
+<button data-view="accounts" data-group="accounts"><span class="dot"></span>Akun & Akses</button>
+<button data-view="sdm" data-group="sdm"><span class="dot"></span>Integrasi SDMsmart</button>
 <button data-view="archive" data-group="archive"><span class="dot"></span>Arsip</button>
 <button data-view="reports" data-group="reports"><span class="dot"></span>Laporan & Audit</button>
 </div>
@@ -71,29 +72,29 @@
 <div class="card kpi good"><small>Total Margin Bulan Ini</small><strong id="kpiMargin">Rp0</strong><div id="kpiMarginSub">0 shift terekam</div></div>
 <div class="card kpi purple"><small>Modal Akhir Terbaru</small><strong id="kpiMinus">Rp0</strong><div id="kpiMinusSub">Belum ada shift final</div></div>
 <div class="card kpi warn"><small>Operasional Bulan Ini</small><strong id="kpiOperational">Rp0</strong><div id="kpiOperationalSub">Seluruh shift terekam</div></div>
-<div class="card kpi purple"><small>Absen Hari Ini</small><strong id="kpiAttendance">0</strong><div id="kpiAttendanceSub">Karyawan sudah absen masuk</div></div>
+<div class="card kpi purple"><small>Review SDM Pending</small><strong id="kpiAttendance">0</strong><div id="kpiAttendanceSub">Balance menunggu keputusan Admin</div></div>
 </div>
-<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="purchases">Input Belanja</button><button data-go="review">Cek Inputan</button><button data-go="attendance">Karyawan & Akses</button><button data-go="archive">Arsip</button><button data-go="reports">Laporan & Audit</button></div>
+<div class="group-tabs" style="margin-bottom:18px"><button data-go="margin">Keuangan</button><button data-go="capital">Modal & Hutang</button><button data-go="purchases">Input Belanja</button><button data-go="review">Cek Inputan</button><button data-go="accounts">Akun & Akses</button><button data-go="sdm">Integrasi SDMsmart</button><button data-go="archive">Arsip</button><button data-go="reports">Laporan & Audit</button></div>
 <div class="grid two">
-<div class="card section-card"><h3>Kehadiran Hari Ini</h3><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>Karyawan</th><th>Shift</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th></tr></thead><tbody id="dashAttendance"></tbody></table></div></div>
+<div class="card section-card"><h3>Balance Belum Disahkan ke SDMsmart</h3><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>Tanggal</th><th>Karyawan</th><th>Balance</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="dashAttendance"></tbody></table></div><div class="actions" style="margin-top:12px"><button class="btn purple" data-go="sdm">Buka Integrasi SDMsmart</button></div></div>
 <div class="card section-card"><h3>Shift Terakhir</h3><div class="notice blue">Ringkasan aktivitas terbaru: tanggal, pemegang shift, margin, dan modal akhir.</div><div id="dashMinusList" class="summary-list"></div><div class="actions" style="margin-top:12px"><button class="btn primary" data-go="margin">Buka Keuangan</button></div></div>
 </div>
 </section>
 
 <section class="view" id="view-margin">
-<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="minus">Selisih / Minus</button><button data-go="operational">Operasional</button></div>
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="operational">Operasional</button></div>
 <div class="hero"><div><h2>Margin</h2><p>Rincian Margin per hari dan shift. Dashboard hanya menampilkan total keseluruhan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="marginSearch" placeholder="Cari tanggal / pemegang / ID shift"><select class="select" id="marginDate"><option value="">Semua tanggal</option></select><button class="btn" id="marginRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Margin</th><th>Balance</th><th>Status Kirim</th><th>Update</th></tr></thead><tbody id="marginBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-minus">
-<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="minus">Selisih / Minus</button><button data-go="operational">Operasional</button></div>
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="operational">Operasional</button></div>
 <div class="hero"><div><h2>Minus</h2><p>Rincian Balance minus per hari. Data positif dan Balance pas tidak dimasukkan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="minusSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="minusDate"><option value="">Semua tanggal</option></select><button class="btn" id="minusRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Balance</th><th>Kategori</th><th>Status Review</th></tr></thead><tbody id="minusBody"></tbody></table></div></div>
 </section>
 
 <section class="view" id="view-operational">
-<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="minus">Selisih / Minus</button><button data-go="operational">Operasional</button></div>
+<div class="group-tabs" data-tabgroup="finance"><button data-go="margin">Margin</button><button data-go="operational">Operasional</button></div>
 <div class="hero"><div><h2>Operasional</h2><p>Rincian total operasional per hari/shift. Dashboard menampilkan akumulasi keseluruhan.</p></div></div>
 <div class="card table-card"><div class="table-toolbar"><input class="input" id="opSearch" placeholder="Cari tanggal / pemegang"><select class="select" id="opDate"><option value="">Semua tanggal</option></select><button class="btn" id="opRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Pemegang</th><th>Operasional</th><th>Margin</th><th>Balance</th></tr></thead><tbody id="opBody"></tbody></table></div></div>
 </section>
@@ -165,13 +166,50 @@
 </section>
 
 <section class="view" id="view-accounts">
-<div class="group-tabs" data-tabgroup="people"><button data-go="attendance">Kehadiran</button><button data-go="accounts">Akun & Role</button></div>
-<div class="hero"><div><h2>Akun & Role</h2><p>Role tidak melekat pada nama orang. Admin dapat menambah akun, mengubah role, atau menonaktifkan akun.</p></div></div>
+<div class="hero"><div><h2>Akun & Akses</h2><p>Kelola akun login Konter Anisa, role, status aktif, dan password. Jadwal, absensi, payroll, dan slip gaji tetap dikelola di SDMsmart.</p></div></div>
 <div class="grid two">
 <div class="card section-card"><h3>Tambah Akun Login</h3><div class="form-grid"><div class="field"><label>Nama</label><input class="input" id="accName" placeholder="Contoh: Rifda"></div><div class="field"><label>Username</label><input class="input" id="accUsername" placeholder="contoh: rifda" autocomplete="off"></div><div class="field"><label>Password Sementara</label><input class="input" id="accPassword" type="password" minlength="8" placeholder="Minimal 8 karakter" autocomplete="new-password"></div><div class="field"><label>Role</label><select class="select" id="accRole"><option value="employee">Karyawan</option><option value="purchasing">Purchasing</option><option value="admin">Admin</option><option value="owner">Owner</option></select></div></div><div class="actions" style="margin-top:12px"><button class="btn purple" id="accAdd">Buat Akun Login</button><span class="status info">Password disimpan oleh Supabase Auth</span></div></div>
 <div class="card section-card"><h3>Prinsip Role</h3><div class="summary-list"><div class="summary-row"><span>Karyawan</span><b>Input operasional & shift</b></div><div class="summary-row"><span>Purchasing</span><b>Nota pembelian</b></div><div class="summary-row"><span>Admin</span><b>Monitoring, review, akun</b></div><div class="summary-row"><span>Owner</span><b>Akses pemilik</b></div></div></div>
 </div>
 <div class="card table-card" style="margin-top:15px"><div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="accountBody"></tbody></table></div></div>
+</section>
+
+<section class="view" id="view-sdm">
+<div class="hero"><div><h2>Integrasi SDMsmart</h2><p>Review Balance Konter dan siapkan nilai plus/minus final yang nantinya dibaca SDMsmart. Balance asli tidak pernah diubah.</p></div><div class="actions"><span class="pill purple">Integration Ledger V1</span><span class="status warn">WRITE SDMsmart BELUM DIAKTIFKAN</span></div></div>
+<div class="notice blue"><b>Prinsip:</b> Balance Asli berasal dari hitungan shift dan terkunci. Admin hanya mengisi <b>Koreksi Admin (+/−)</b>. Nilai yang akan dikirim ke SDMsmart adalah <b>Balance Final = Balance Asli + Koreksi Admin</b>. Saat ini ledger sudah tersimpan & tersinkron di database Konter; adapter ke aplikasi SDMsmart masih OFF untuk keamanan.</div>
+<div class="group-tabs" id="sdmTabs">
+<button class="active" data-sdm-tab="adjustment">Balance & Penyesuaian</button>
+<button data-sdm-tab="margin">Margin</button>
+<button data-sdm-tab="status">Status Sinkronisasi</button>
+</div>
+
+<div class="sdm-pane" data-sdm-pane="adjustment">
+<div class="grid kpis">
+<div class="card kpi purple"><small>Balance Asli Bersih</small><strong id="sdmOriginalNet">Rp0</strong><div>Akumulasi periode aktif</div></div>
+<div class="card kpi warn"><small>Koreksi Admin Bersih</small><strong id="sdmAdjustmentNet">Rp0</strong><div>Draft + disahkan</div></div>
+<div class="card kpi good"><small>Final Disahkan</small><strong id="sdmApprovedNet">Rp0</strong><div>Siap dikirim saat adapter aktif</div></div>
+<div class="card kpi bad"><small>Belum Direview</small><strong id="sdmPendingCount">0</strong><div>Balance non-zero belum disahkan</div></div>
+</div>
+<div class="card table-card">
+<div class="table-toolbar" style="grid-template-columns:1fr .8fr .8fr auto"><input class="input" id="sdmSearch" placeholder="Cari tanggal / karyawan / shift"><select class="select" id="sdmStatusFilter"><option value="">Semua status</option><option value="pending">Belum direview</option><option value="draft">Draft</option><option value="approved">Disahkan</option><option value="stale">Sumber berubah</option></select><select class="select" id="sdmSignFilter"><option value="">Plus & Minus</option><option value="minus">Minus</option><option value="plus">Plus</option><option value="zero">Nol</option></select><button class="btn" id="sdmRefresh">↻ Refresh</button></div>
+<div class="table-wrap"><table class="table" style="min-width:1180px"><thead><tr><th>Tanggal / Shift</th><th>Karyawan</th><th>Balance Asli</th><th>Koreksi Admin</th><th>Balance Final</th><th>Alasan</th><th>Approval</th><th>Sync SDM</th><th>Aksi</th></tr></thead><tbody id="sdmAdjustmentBody"></tbody></table></div>
+</div>
+</div>
+
+<div class="sdm-pane" data-sdm-pane="margin" style="display:none">
+<div class="notice blue">Margin tetap dihitung oleh Konter Anisa. Tab ini menyiapkan rekap bulanan untuk adapter SDMsmart; belum ada write ke Firebase/SDMsmart Production.</div>
+<div class="card table-card"><div class="table-toolbar"><input class="input" id="sdmMarginSearch" placeholder="Cari tanggal / karyawan"><select class="select" id="sdmMarginStatus"><option value="">Semua</option><option value="ready">Siap</option><option value="zero">Margin 0</option></select><button class="btn" id="sdmMarginRefresh">↻ Refresh</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Shift</th><th>Karyawan</th><th>Margin</th><th>Status Integrasi</th></tr></thead><tbody id="sdmMarginBody"></tbody></table></div></div>
+</div>
+
+<div class="sdm-pane" data-sdm-pane="status" style="display:none">
+<div class="grid kpis">
+<div class="card kpi good"><small>Ledger Konter</small><strong>AKTIF</strong><div>Supabase/shared DB</div></div>
+<div class="card kpi purple"><small>Mapping Karyawan</small><strong>TAHAP BERIKUT</strong><div>Konter UUID ↔ SDM user ID</div></div>
+<div class="card kpi warn"><small>Adapter SDMsmart</small><strong>OFF</strong><div>Belum menulis Firebase</div></div>
+<div class="card kpi warn"><small>Mode</small><strong>SAFE STAGING</strong><div>Production SDMsmart tidak disentuh</div></div>
+</div>
+<div class="card section-card"><h3>Alur yang Dipasang</h3><div class="summary-list"><div class="summary-row"><span>1. Konter menghitung Balance</span><b>READ ONLY / TERKUNCI</b></div><div class="summary-row"><span>2. Admin review + koreksi (+/−)</span><b>Integration Ledger</b></div><div class="summary-row"><span>3. Admin sahkan</span><b>Revision tercatat</b></div><div class="summary-row"><span>4. Adapter SDMsmart</span><b class="amber">Belum diaktifkan</b></div><div class="summary-row"><span>5. SDMsmart membaca nilai final</span><b>Sesudah STAGING lolos</b></div></div></div>
+</div>
 </section>
 
 <section class="view" id="view-archive">
@@ -234,6 +272,7 @@
 </main>
 </div>
 
+<div class="modal" id="sdmAdjustmentModal"><div class="modal-card" style="width:min(760px,100%)"><div class="modal-head"><h3 id="sdmAdjustmentTitle">Review Balance SDMsmart</h3><button class="btn" id="sdmAdjustmentClose">Tutup ✕</button></div><div class="notice blue" id="sdmAdjustmentInfo">—</div><div class="grid two"><div class="card section-card"><h4>Nilai Perhitungan</h4><div class="summary-list"><div class="summary-row"><span>Balance Asli 🔒</span><b id="sdmOriginalValue">Rp0</b></div><div class="summary-row"><span>Koreksi Admin</span><b id="sdmAdjustmentPreview">Rp0</b></div><div class="summary-row"><span>Balance Final</span><b id="sdmFinalPreview">Rp0</b></div></div></div><div class="card section-card"><h4>Koreksi Admin</h4><div class="field"><label>Koreksi (+/−)</label><input class="input" id="sdmAdjustmentInput" type="number" step="1" placeholder="Contoh: 20000 atau -10000"></div><div style="font-size:10px;color:var(--muted);margin-top:6px">+ mengurangi efek minus / menaikkan final. − menambah minus / menurunkan final.</div></div></div><div class="field" style="margin-top:14px"><label>Alasan / Hasil Review Admin — Wajib</label><textarea class="textarea" id="sdmAdjustmentReason" placeholder="Contoh: Rp20.000 bukan tanggung jawab karyawan karena koreksi stok telah diverifikasi."></textarea></div><div class="actions" style="margin-top:14px"><button class="btn" id="sdmSaveDraft">Simpan Draft</button><button class="btn purple" id="sdmApprove">Sahkan untuk SDMsmart</button></div><div class="notice amber" style="margin-top:14px;margin-bottom:0"><b>Belum ada write ke aplikasi SDMsmart.</b> Tombol Sahkan hanya mengunci nilai final di Integration Ledger Konter sampai adapter STAGING diaktifkan.</div></div></div>
 <div class="modal" id="purchaseModal"><div class="modal-card" style="width:min(980px,100%)"><div class="modal-head"><h3 id="purchaseModalTitle">Detail Input Belanja</h3><button class="btn" id="purchaseModalClose">Tutup ✕</button></div><div class="notice blue" id="purchaseModalInfo">—</div><div class="grid two" style="margin-bottom:14px"><div class="card section-card"><h4>Nota Purchasing</h4><div id="purchaseModalNote"></div></div><div class="card section-card"><h4>Bukti Nota</h4><div id="purchasePhotoState" class="notice blue" style="margin:0">Memuat bila tersedia…</div><img id="purchasePhotoImg" alt="Foto nota" style="display:none;max-width:100%;max-height:360px;border-radius:12px;margin:auto"></div></div><div class="table-wrap"><table class="table" style="min-width:760px"><thead><tr><th>Item / Komponen</th><th>Qty</th><th>Harga/Modal</th><th>Subtotal</th></tr></thead><tbody id="purchaseDetailBody"></tbody></table></div></div></div>
 <div class="modal" id="returnModal"><div class="modal-card"><div class="modal-head"><h3>Kembalikan Hitungan ke Karyawan</h3><button class="btn" id="returnClose">Tutup ✕</button></div><div class="notice amber" id="returnInfo">—</div><div class="field"><label>Alasan / Temuan Admin — Wajib</label><textarea class="textarea" id="returnReason" placeholder="Contoh: Selisih minus terlalu besar. Periksa kembali Cash, QRIS BCA, dan transaksi transfer."></textarea></div><div class="actions" style="margin-top:12px"><button class="btn danger" id="returnConfirm">Kembalikan untuk Perbaikan</button></div></div></div>
 <div class="modal" id="capitalModal"><div class="modal-card" style="width:min(900px,100%)"><div class="modal-head"><h3 id="capitalModalTitle">Detail Modal</h3><button class="btn" id="capitalModalClose">Tutup ✕</button></div><div class="notice blue" id="capitalModalInfo">—</div><div class="table-wrap"><table class="table" style="min-width:620px"><thead><tr><th>#</th><th>Kategori Modal</th><th>Nilai</th><th>Status</th></tr></thead><tbody id="capitalDetailBody"></tbody></table></div></div></div>
@@ -245,11 +284,12 @@
 <script>
 (function(){
 'use strict';
-const SUM='ka_admin_shift_summaries_v1',ATT='ka_attendance_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81',PNOTES='ka_v29_purchasing_notes',USED='ka_v29_used_notes',ACCOUNTS='ka_admin_accounts_v59',SHIFT_PREFIX='ka_shift_autosave_v53_',OIL_PREFIX='ka_oil_purchase_v75_',BIG=50000;
+const SUM='ka_admin_shift_summaries_v1',ATT='ka_attendance_v1',CORR='ka_admin_correction_requests_v1',AUTH='ka_auth_session_v81',PNOTES='ka_v29_purchasing_notes',USED='ka_v29_used_notes',ACCOUNTS='ka_admin_accounts_v59',SDMADJ='ka_sdm_adjustments_v1',SHIFT_PREFIX='ka_shift_autosave_v53_',OIL_PREFIX='ka_oil_purchase_v75_',BIG=50000;
 const $=id=>document.getElementById(id);
 const read=(k,f)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}};
 const write=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));try{window.dispatchEvent(new StorageEvent('storage',{key:k,newValue:JSON.stringify(v)}))}catch(_){}};
 const fmt=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
+const fmtSigned=n=>{n=Math.round(Number(n)||0);return n>0?'+Rp'+n.toLocaleString('id-ID'):n<0?'-Rp'+Math.abs(n).toLocaleString('id-ID'):'Rp0'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dateLabel=d=>{const m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return d||'—';return Number(m[3])+'/'+m[2]+'/'+m[1]};
 const time=v=>{if(!v)return '—';try{return new Date(v).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(_){return '—'}};
@@ -294,6 +334,16 @@ function migrateLegacyCutoverArchiveLocal(){
 function attendance(){const a=read(ATT,[]);return Array.isArray(a)?a.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))):[]}
 function corrections(){const a=read(CORR,[]);return Array.isArray(a)?a:[]}
 function corrForShift(id){return corrections().filter(x=>x.shiftId===id).sort((a,b)=>String(b.requestedAt||'').localeCompare(String(a.requestedAt||'')))[0]||null}
+function sdmAdjustments(){const m=read(SDMADJ,{});return m&&typeof m==='object'?m:{}}
+function sdmAdjFor(id){return sdmAdjustments()[String(id||'')]||null}
+function sdmAdjStale(summary,adj){return !!(adj&&adj.status==='approved'&&Math.round(Number(adj.originalBalance||0))!==Math.round(Number(summary?.balance||0)))}
+function sdmAdjState(summary,adj){
+  if(sdmAdjStale(summary,adj))return 'stale';
+  if(adj?.status==='approved')return 'approved';
+  if(adj?.status==='draft')return 'draft';
+  return 'pending';
+}
+function sdmFinal(summary,adj){return Number(summary?.balance||0)+Number(adj?.adjustment||0)}
 function adminUser(){
   const p=window.KA_AUTH_PROFILE;
   if(p&&p.active!==false&&(p.role==='admin'||p.role==='owner'))return {id:p.id,name:p.display_name||p.username,role:p.role,active:true};
@@ -308,15 +358,18 @@ function today(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ja
 function datesFrom(arr,field='date'){return [...new Set(arr.map(x=>String(x[field]||'')).filter(Boolean))].sort().reverse()}
 function fillDates(id,dates){const el=$(id),cur=el.value;el.innerHTML='<option value="">Semua tanggal</option>'+dates.map(d=>'<option value="'+esc(d)+'">'+esc(dateLabel(d))+'</option>').join('');if(dates.includes(cur))el.value=cur}
 function renderDashboard(){
-  const s=activeSummaries(),a=activeAttendance(),m=s.reduce((x,y)=>x+Number(y.margin||0),0),op=s.reduce((x,y)=>x+Number(y.operational||0),0),todayAtt=a.filter(x=>x.date===today()&&x.checkIn);
+  const s=activeSummaries(),m=s.reduce((x,y)=>x+Number(y.margin||0),0),op=s.reduce((x,y)=>x+Number(y.operational||0),0);
   const capitalRows=productionSummaries().filter(x=>Number(x.modalClosing||0)>0).sort((x,y)=>String(x.date||'').localeCompare(String(y.date||''))||Number(x.savedAt||0)-Number(y.savedAt||0));
   const periodPill=$('activePeriodPill');if(periodPill)periodPill.textContent='Periode Aktif • '+periodLabel(currentPeriod());
   const latestCapital=capitalRows[capitalRows.length-1]||null;
+  const pending=s.filter(x=>Number(x.balance||0)!==0&&sdmAdjState(x,sdmAdjFor(x.shiftId))!=='approved');
   $('kpiMargin').textContent=fmt(m);$('kpiMarginSub').textContent=s.length+' shift terekam';
   $('kpiMinus').textContent=fmt(latestCapital?.modalClosing||0);$('kpiMinusSub').textContent=latestCapital?(dateLabel(latestCapital.date)+' • '+(latestCapital.holder||'—')):'Belum ada shift final';
   $('kpiOperational').textContent=fmt(op);$('kpiOperationalSub').textContent=s.length+' shift terekam';
-  $('kpiAttendance').textContent=String(todayAtt.length);$('kpiAttendanceSub').textContent='Karyawan sudah absen masuk';
-  $('dashAttendance').innerHTML=todayAtt.length?todayAtt.map(x=>'<tr><td><b>'+esc(x.employeeName)+'</b></td><td>'+esc(x.shiftLabel||'—')+'</td><td>'+time(x.checkIn)+'</td><td>'+time(x.checkOut)+'</td><td>'+(x.checkOut?'<span class="status ok">Selesai</span>':'<span class="status info">Sudah Masuk</span>')+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada karyawan yang absen hari ini.</td></tr>';
+  $('kpiAttendance').textContent=String(pending.length);$('kpiAttendanceSub').textContent='Balance non-zero menunggu keputusan Admin';
+  const rows=pending.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,5);
+  $('dashAttendance').innerHTML=rows.length?rows.map(x=>'<tr><td><b>'+esc(dateLabel(x.date))+'</b><div style="font-size:10px;color:var(--muted)">'+esc(x.shift||'')+'</div></td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money '+(Number(x.balance)<0?'red':'amber')+'"><b>'+fmtSigned(x.balance)+'</b></td><td><span class="status warn">'+(sdmAdjState(x,sdmAdjFor(x.shiftId))==='stale'?'SUMBER BERUBAH':'BELUM DISAHKAN')+'</span></td><td><button class="btn" data-dash-sdm="'+esc(x.shiftId)+'">Review</button></td></tr>').join(''):'<tr><td colspan="5" class="empty">Tidak ada Balance non-zero yang menunggu review SDMsmart.</td></tr>';
+  document.querySelectorAll('[data-dash-sdm]').forEach(b=>b.onclick=()=>{show('sdm');openSdmAdjustment(b.dataset.dashSdm)});
   const recent=s.slice().sort((x,y)=>String(y.date||'').localeCompare(String(x.date||''))||Number(y.savedAt||0)-Number(x.savedAt||0)).slice(0,5);
   $('dashMinusList').innerHTML=recent.length?recent.map(x=>'<div class="summary-row"><span><b>'+esc(dateLabel(x.date))+' • '+esc(x.holder||'—')+'</b><br><small>'+esc(x.shift||'')+' • Margin '+fmt(x.margin)+'</small></span><b>'+fmt(x.modalClosing||0)+'</b></div>').join(''):'<div class="notice blue">Belum ada shift terekam.</div>';
 }
@@ -633,6 +686,77 @@ function openReturn(id){const x=summaries().find(s=>s.shiftId===id);if(!x)return
 function submitReturn(){const reason=String($('returnReason').value||'').trim();if(!reason)return alert('Alasan/temuan Admin wajib diisi.');const x=summaries().find(s=>s.shiftId===returnShiftId);if(!x)return;const arr=corrections(),id='corr-'+Date.now();arr.push({id,shiftId:x.shiftId,shiftLabel:x.shiftLabel,date:x.date,shift:x.shift,employeeName:x.holder,employeeId:(window.KAAdminAccounts?.activeByRole?.('employee')||[]).find(a=>a.name===x.holder)?.id||'',reason,status:'returned',snapshot:{margin:x.margin,balance:x.balance,operational:x.operational},requestedAt:new Date().toISOString(),requestedBy:adminUser()?.name||'Admin'});write(CORR,arr);$('returnModal').classList.remove('open');renderReview();renderMinus()}
 function resolveCorrection(id){const arr=corrections(),x=arr.find(a=>a.id===id);if(!x)return;x.status='resolved';x.resolvedAt=new Date().toISOString();x.resolvedBy=adminUser()?.name||'Admin';write(CORR,arr);renderReview();renderMinus()}
 
+let activeSdmShiftId='';
+function setSdmTab(tab){
+  document.querySelectorAll('[data-sdm-tab]').forEach(b=>b.classList.toggle('active',b.dataset.sdmTab===tab));
+  document.querySelectorAll('[data-sdm-pane]').forEach(p=>p.style.display=p.dataset.sdmPane===tab?'block':'none');
+}
+function renderSdm(){
+  const rows=activeSummaries(),map=sdmAdjustments();
+  const originalNet=rows.reduce((t,x)=>t+Number(x.balance||0),0);
+  const adjustmentNet=rows.reduce((t,x)=>t+Number(map[x.shiftId]?.adjustment||0),0);
+  const approved=rows.filter(x=>sdmAdjState(x,map[x.shiftId])==='approved');
+  const approvedNet=approved.reduce((t,x)=>t+sdmFinal(x,map[x.shiftId]),0);
+  const pending=rows.filter(x=>Number(x.balance||0)!==0&&sdmAdjState(x,map[x.shiftId])!=='approved');
+  $('sdmOriginalNet').textContent=fmtSigned(originalNet);
+  $('sdmAdjustmentNet').textContent=fmtSigned(adjustmentNet);
+  $('sdmApprovedNet').textContent=fmtSigned(approvedNet);
+  $('sdmPendingCount').textContent=String(pending.length);
+
+  const q=String($('sdmSearch')?.value||'').toLowerCase(),st=$('sdmStatusFilter')?.value||'',sign=$('sdmSignFilter')?.value||'';
+  const filtered=rows.filter(x=>{
+    const a=map[x.shiftId],state=sdmAdjState(x,a),final=sdmFinal(x,a);
+    const signOk=!sign||(sign==='minus'&&final<0)||(sign==='plus'&&final>0)||(sign==='zero'&&final===0);
+    return (!st||state===st)&&signOk&&(!q||[x.date,x.shift,x.holder,x.shiftId,a?.reason].join(' ').toLowerCase().includes(q));
+  });
+  $('sdmAdjustmentBody').innerHTML=filtered.length?filtered.map(x=>{
+    const a=map[x.shiftId],state=sdmAdjState(x,a),final=sdmFinal(x,a);
+    const status=state==='approved'?'<span class="status ok">DISAHKAN</span>':state==='draft'?'<span class="status info">DRAFT</span>':state==='stale'?'<span class="status bad">SUMBER BERUBAH</span>':'<span class="status warn">BELUM REVIEW</span>';
+    const sync=state==='approved'?'<span class="status warn">MENUNGGU ADAPTER</span>':'<span class="status info">BELUM DIKIRIM</span>';
+    return '<tr><td><b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'—')+'</b><div style="font-size:10px;color:var(--muted)">'+esc(x.shiftId||'')+'</div></td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money '+(Number(x.balance)<0?'red':Number(x.balance)>0?'amber':'green')+'"><b>'+fmtSigned(x.balance)+'</b></td><td class="money"><b>'+fmtSigned(a?.adjustment||0)+'</b></td><td class="money '+(final<0?'red':final>0?'amber':'green')+'"><b>'+fmtSigned(final)+'</b></td><td>'+esc(a?.reason||'—')+'</td><td>'+status+(a?.revision?'<div style="font-size:10px;color:var(--muted)">Rev '+Number(a.revision)+'</div>':'')+'</td><td>'+sync+'</td><td><button class="btn '+(state==='approved'?'':'purple')+'" data-sdm-edit="'+esc(x.shiftId)+'">'+(state==='approved'?'Review Ulang':'Review')+'</button></td></tr>';
+  }).join(''):'<tr><td colspan="9" class="empty">Belum ada data sesuai filter.</td></tr>';
+  document.querySelectorAll('[data-sdm-edit]').forEach(b=>b.onclick=()=>openSdmAdjustment(b.dataset.sdmEdit));
+
+  const mq=String($('sdmMarginSearch')?.value||'').toLowerCase(),ms=$('sdmMarginStatus')?.value||'';
+  const mrows=rows.filter(x=>(!mq||[x.date,x.shift,x.holder].join(' ').toLowerCase().includes(mq))&&(!ms||(ms==='ready'&&Number(x.margin||0)>0)||(ms==='zero'&&Number(x.margin||0)===0)));
+  $('sdmMarginBody').innerHTML=mrows.length?mrows.map(x=>'<tr><td>'+esc(dateLabel(x.date))+'</td><td>'+esc(x.shift||'—')+'</td><td><b>'+esc(x.holder||'—')+'</b></td><td class="money green"><b>'+fmt(x.margin)+'</b></td><td><span class="status warn">MENUNGGU ADAPTER SDM</span></td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada data Margin periode aktif.</td></tr>';
+}
+function updateSdmPreview(){
+  const x=activeSummaries().find(r=>String(r.shiftId)===String(activeSdmShiftId));if(!x)return;
+  const adj=Number($('sdmAdjustmentInput').value||0),final=Number(x.balance||0)+adj;
+  $('sdmAdjustmentPreview').textContent=fmtSigned(adj);
+  $('sdmFinalPreview').textContent=fmtSigned(final);
+  $('sdmFinalPreview').className=final<0?'red':final>0?'amber':'green';
+}
+function openSdmAdjustment(id){
+  const x=activeSummaries().find(r=>String(r.shiftId)===String(id));if(!x)return;
+  activeSdmShiftId=String(id);
+  const a=sdmAdjFor(id);
+  $('sdmAdjustmentTitle').textContent='Review Balance • '+(x.holder||'Karyawan');
+  $('sdmAdjustmentInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'—')+' • '+esc(x.holder||'—')+'</b><br>Balance asli berasal dari hitungan Karyawan dan tidak dapat diedit dari menu ini.';
+  $('sdmOriginalValue').textContent=fmtSigned(x.balance);
+  $('sdmAdjustmentInput').value=String(Number(a?.adjustment||0));
+  $('sdmAdjustmentReason').value=String(a?.reason||'');
+  updateSdmPreview();
+  $('sdmAdjustmentModal').classList.add('open');
+}
+function saveSdmAdjustment(approve){
+  const x=activeSummaries().find(r=>String(r.shiftId)===String(activeSdmShiftId));if(!x)return;
+  const adjustment=Math.round(Number($('sdmAdjustmentInput').value||0)),reason=String($('sdmAdjustmentReason').value||'').trim();
+  if(!reason)return alert('Alasan / hasil review Admin wajib diisi.');
+  const map=sdmAdjustments(),prev=map[x.shiftId]||{},now=new Date().toISOString(),actor=adminUser()?.name||'Admin';
+  const rec={
+    id:x.shiftId,shiftId:x.shiftId,date:x.date,shift:x.shift,employeeName:x.holder,
+    originalBalance:Number(x.balance||0),adjustment,finalBalance:Number(x.balance||0)+adjustment,
+    reason,status:approve?'approved':'draft',revision:Number(prev.revision||0)+1,
+    updatedAt:now,updatedBy:actor,approvedAt:approve?now:null,approvedBy:approve?actor:null,
+    syncStatus:approve?'pending_adapter':'not_ready',source:'konter-anisa'
+  };
+  map[x.shiftId]=rec;write(SDMADJ,map);
+  $('sdmAdjustmentModal').classList.remove('open');
+  renderSdm();renderDashboard();renderAudit();
+  try{window.KASharedDBV1?.syncNow?.(true)}catch(_){}
+}
 function renderArchive(){
   const all=archivedSummaries();
   const periods=[...new Set(all.map(x=>String(x.archivePeriod||periodKey(x.date))).filter(Boolean))].sort().reverse();
@@ -781,6 +905,7 @@ function auditEvents(){
   attendance().forEach(x=>{if(x.checkIn)ev.push({ts:Date.parse(x.checkIn)||0,source:'Karyawan',actor:x.employeeName||'Karyawan',desc:'Absen masuk • '+(x.shiftLabel||'')});if(x.checkOut)ev.push({ts:Date.parse(x.checkOut)||0,source:'Karyawan',actor:x.employeeName||'Karyawan',desc:'Absen pulang • '+(x.shiftLabel||'')})});
   purchasingNotes().forEach(x=>{if(x.createdAt)ev.push({ts:Date.parse(x.createdAt)||0,source:'Purchasing',actor:x.createdByName||'Purchasing',desc:'Membuat nota '+(x.id||'')+' • '+fmt(x.amount)+' • '+String(x.type||'')});if(x.statusChangedAt)ev.push({ts:Date.parse(x.statusChangedAt)||0,source:'Purchasing',actor:x.statusChangedBy||x.createdByName||'Purchasing',desc:'Status nota '+(x.id||'')+' → '+String(x.status||'')})});
   corrections().forEach(x=>{if(x.requestedAt)ev.push({ts:Date.parse(x.requestedAt)||0,source:'Admin',actor:x.requestedBy||'Admin',desc:'Mengembalikan hitungan '+(x.shiftLabel||x.shiftId)+' • '+String(x.reason||'')});if(x.resubmittedAt)ev.push({ts:Date.parse(x.resubmittedAt)||0,source:'Karyawan',actor:x.employeeName||'Karyawan',desc:'Mengirim ulang perbaikan '+(x.shiftLabel||x.shiftId)});if(x.resolvedAt)ev.push({ts:Date.parse(x.resolvedAt)||0,source:'Admin',actor:x.resolvedBy||'Admin',desc:'Menandai perbaikan selesai '+(x.shiftLabel||x.shiftId)})});
+  Object.values(sdmAdjustments()).forEach(x=>{if(x?.updatedAt)ev.push({ts:Date.parse(x.updatedAt)||0,source:'Admin',actor:x.updatedBy||'Admin',desc:(x.status==='approved'?'Mengesahkan':'Menyimpan draft')+' penyesuaian SDM '+(x.shiftId||'')+' • final '+fmtSigned(x.finalBalance)+' • '+String(x.reason||'')})});
   const accStore=read(ACCOUNTS,null);if(accStore?.updatedAt)ev.push({ts:Number(accStore.updatedAt),source:'Admin',actor:adminUser()?.name||'Admin',desc:'Master akun & role diperbarui'});
   return ev.filter(x=>x.ts).sort((a,b)=>b.ts-a.ts);
 }
@@ -790,22 +915,22 @@ function renderAudit(){
   $('auditList').innerHTML=rows.length?rows.map(x=>'<div class="audit-item"><div class="audit-time">'+esc(new Date(x.ts).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</div><div class="audit-actor">'+esc(x.actor)+'</div><div class="audit-desc">'+esc(x.desc)+'</div><div class="audit-source"><span class="status '+(x.source==='Admin'?'bad':x.source==='Purchasing'?'warn':x.source==='Karyawan'?'ok':'info')+'">'+esc(x.source)+'</span></div></div>').join(''):'<div class="empty">Belum ada aktivitas yang sesuai filter.</div>';
 }
 
-function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderPurchases();renderReview();renderAttendance();renderAccounts();renderArchive();renderReport();renderAudit()}
+function renderAll(){renderIdentity();renderDashboard();renderMargin();renderMinus();renderOp();renderCapital();renderCapitalChart();renderDebt();renderPurchases();renderReview();renderAttendance();renderAccounts();renderSdm();renderArchive();renderReport();renderAudit()}
 function show(v){
-  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',purchases:'purchases',review:'review',attendance:'people',accounts:'people',archive:'archive',reports:'reports',audit:'reports'};
-  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Keuangan / Selisih & Minus',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',purchases:'Pemantauan Input Belanja',review:'Cek Inputan',attendance:'Karyawan & Akses / Kehadiran',accounts:'Karyawan & Akses / Akun & Role',archive:'Arsip Bulanan',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
+  const groups={dashboard:'dashboard',margin:'finance',minus:'finance',operational:'finance',capital:'capitaldebt',debt:'capitaldebt',purchases:'purchases',review:'review',attendance:'accounts',accounts:'accounts',sdm:'sdm',archive:'archive',reports:'reports',audit:'reports'};
+  const crumbs={dashboard:'Dashboard',margin:'Keuangan / Margin',minus:'Cek Inputan / Selisih Lama',operational:'Keuangan / Operasional',capital:'Modal & Hutang / Perkembangan Modal',debt:'Modal & Hutang / Hutang Aktif',purchases:'Pemantauan Input Belanja',review:'Cek Inputan',attendance:'Akun & Akses / Kehadiran Lama',accounts:'Akun & Akses',sdm:'Integrasi SDMsmart',archive:'Arsip Bulanan',reports:'Laporan & Audit / Laporan',audit:'Laporan & Audit / Audit Aktivitas'};
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
   document.querySelectorAll('.nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.group===groups[v]));
   document.querySelectorAll('.group-tabs [data-go]').forEach(x=>x.classList.toggle('active',x.dataset.go===v));
   $('crumbView').textContent=crumbs[v]||v;
   $('side').classList.remove('mobile-open');
 }
-function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',()=>{migrateLegacyCutoverArchiveLocal();renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',()=>{renderAll();refreshServerAccounts()});window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
+function bind(){document.querySelectorAll('.nav [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));$('mobileMenuBtn').onclick=()=>$('side').classList.toggle('mobile-open');[['marginSearch','input',renderMargin],['marginDate','change',renderMargin],['minusSearch','input',renderMinus],['minusDate','change',renderMinus],['opSearch','input',renderOp],['opDate','change',renderOp],['capitalSearch','input',renderCapital],['capitalDate','change',renderCapital],['debtSearch','input',renderDebt],['debtTypeFilter','change',renderDebt],['reviewSearch','input',renderReview],['reviewFilter','change',renderReview],['attSearch','input',renderAttendance],['attDate','change',renderAttendance],['purchaseSearch','input',renderPurchases],['purchaseType','change',renderPurchases],['purchaseStatus','change',renderPurchases]].forEach(([id,ev,fn])=>$(id).addEventListener(ev,fn));['marginRefresh','minusRefresh','opRefresh','capitalRefresh','debtRefresh','reviewRefresh','attRefresh','purchaseRefresh'].forEach(id=>$(id).onclick=renderAll);$('reportPreview').onclick=()=>{reportDemo=false;renderReport()};$('reportExample').onclick=()=>{reportDemo=true;renderReport()};$('reportCsv').onclick=exportReportCsv;$('reportPrint').onclick=printReport;['reportType','reportPeriod','reportFrom','reportTo'].forEach(id=>$(id).addEventListener('change',()=>{if(!reportDemo)renderReport()}));[['archiveSearch','input'],['archivePeriod','change'],['archiveType','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderArchive));$('archiveRefresh').onclick=renderArchive;document.querySelectorAll('[data-sdm-tab]').forEach(b=>b.onclick=()=>setSdmTab(b.dataset.sdmTab));[['sdmSearch','input'],['sdmStatusFilter','change'],['sdmSignFilter','change'],['sdmMarginSearch','input'],['sdmMarginStatus','change']].forEach(([id,ev])=>$(id).addEventListener(ev,renderSdm));$('sdmRefresh').onclick=renderSdm;$('sdmMarginRefresh').onclick=renderSdm;$('sdmAdjustmentInput').addEventListener('input',updateSdmPreview);$('sdmAdjustmentClose').onclick=()=>$('sdmAdjustmentModal').classList.remove('open');$('sdmAdjustmentModal').onclick=e=>{if(e.target===$('sdmAdjustmentModal'))$('sdmAdjustmentModal').classList.remove('open')};$('sdmSaveDraft').onclick=()=>saveSdmAdjustment(false);$('sdmApprove').onclick=()=>saveSdmAdjustment(true);$('auditSearch').addEventListener('input',renderAudit);$('auditSource').addEventListener('change',renderAudit);$('auditRefresh').onclick=renderAudit;$('accAdd').onclick=addAccount;$('returnClose').onclick=()=>$('returnModal').classList.remove('open');$('returnConfirm').onclick=submitReturn;$('returnModal').onclick=e=>{if(e.target===$('returnModal'))$('returnModal').classList.remove('open')};$('capitalModalClose').onclick=()=>$('capitalModal').classList.remove('open');$('capitalModal').onclick=e=>{if(e.target===$('capitalModal'))$('capitalModal').classList.remove('open')};$('debtModalClose').onclick=()=>$('debtModal').classList.remove('open');$('debtModal').onclick=e=>{if(e.target===$('debtModal'))$('debtModal').classList.remove('open')};$('purchaseModalClose').onclick=()=>$('purchaseModal').classList.remove('open');$('purchaseModal').onclick=e=>{if(e.target===$('purchaseModal'))$('purchaseModal').classList.remove('open')};window.addEventListener('storage',e=>{const k=String(e.key||'');if([SUM,ATT,CORR,PNOTES,USED,ACCOUNTS,SDMADJ].includes(k)||k.startsWith(SHIFT_PREFIX)||k.startsWith(OIL_PREFIX))renderAll()});window.addEventListener('ka:shared-sync',()=>{migrateLegacyCutoverArchiveLocal();renderAll()});window.addEventListener('ka:admin-accounts-updated',renderAll);window.addEventListener('ka:auth-ready',()=>{renderAll();refreshServerAccounts()});window.addEventListener('resize',()=>{clearTimeout(window.__kaCapResize);window.__kaCapResize=setTimeout(renderCapitalChart,120)});setInterval(renderAll,5000)}
 function init(){
   migrateLegacyCutoverArchiveLocal();
   bind();renderAll();refreshServerAccounts();
   const q=new URLSearchParams(location.search),view=String(q.get('view')||''),shiftId=String(q.get('shift')||'');
-  const allowed=new Set(['dashboard','margin','minus','operational','capital','debt','purchases','review','attendance','accounts','archive','reports','audit']);
+  const allowed=new Set(['dashboard','margin','minus','operational','capital','debt','purchases','review','attendance','accounts','sdm','archive','reports','audit']);
   if(allowed.has(view))show(view);
   if(shiftId){
     if(view==='margin'||!view){$('marginSearch').value=shiftId;renderMargin();if(!view)show('margin')}
@@ -818,7 +943,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <script src="./admin-lock-v3.js?build=3&fix=purchase1"></script>
 <script>
 setTimeout(function(){
-  import('./shared-db-v1.js?build=7').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
+  import('./shared-db-v1.js?build=8').then(function(m){m.startKASharedDBV1()}).catch(function(e){console.error('Shared DB bridge gagal dimuat',e)});
 },0);
 </script>
 </body>
