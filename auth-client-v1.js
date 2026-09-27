@@ -56,12 +56,14 @@
   }
   function emailFor(username){return cleanUsername(username)+'@konter-anisa.local'}
   async function signIn(username,password){
+    try{sessionStorage.removeItem('ka_runtime_shift_context_v1')}catch(_){}
     const c=await client();
     const {data,error}=await c.auth.signInWithPassword({email:emailFor(username),password:String(password||'')});
     if(error)throw error;
     return data;
   }
   async function signOut(){
+    try{sessionStorage.removeItem('ka_runtime_shift_context_v1')}catch(_){}
     try{const c=await client();await c.auth.signOut()}catch(_){}
     location.replace('./login.html');
   }
