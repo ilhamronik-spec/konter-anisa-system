@@ -2787,6 +2787,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 </script>
 <script src="./account-master-v59.js?build=80"></script>
 <script src="./auth-client-v1.js?build=80"></script>
+<script src="./sdm-integration-v1.js?build=80"></script>
 <script>
 window.KAAuthV1.requireRole(['employee','admin','owner']).then(function(p){
   if(!p||p.bootstrap||p.bypass)return;
@@ -2794,6 +2795,7 @@ window.KAAuthV1.requireRole(['employee','admin','owner']).then(function(p){
     var name=p.display_name||p.username||'Karyawan';
     var b=document.querySelector('.topbar .user b'); if(b)b.textContent=name;
     var a=document.querySelector('.topbar .avatar'); if(a)a.textContent=name.trim().split(/\s+/).map(function(x){return x[0]||''}).join('').slice(0,2).toUpperCase();
+    setTimeout(function(){try{window.KASDMV1?.renderEmployeeGateShadow?.()}catch(_){}},0);
   }catch(_){}
 });
 </script>
