@@ -64,6 +64,7 @@
 </div>
 
 <script src="./auth-client-v1.js?build=81&fix=tabauth1"></script>
+<script src="./sdm-integration-v1.js?build=1&fix=noreload2"></script>
 <script>
 (async function(){
   const $=id=>document.getElementById(id);
@@ -89,9 +90,16 @@
     if(next && !/^https?:/i.test(next) && !next.startsWith('//')) return './'+next.replace(/^\.\//,'');
     return '';
   }
-  async function redirectByProfile(){
-    const p=await window.KAAuthV1.ownProfile();
+  async function redirectByProfile(profile=null){
+    const p=profile||await window.KAAuthV1.ownProfile();
     if(!p||!p.active)throw new Error('Akun tidak aktif.');
+    if(String(p.role)==='employee'){
+      try{await window.KASDMV1?.prepareEmployeeRuntime?.(p)}catch(_){
+        // Login tetap boleh lanjut; gate akan menunjukkan masalah jadwal secara aman.
+      }
+    }else{
+      try{sessionStorage.removeItem('ka_runtime_shift_context_v1')}catch(_){}
+    }
     const target=safeNext()||window.KAAuthV1.homeForRole(p.role);
     location.replace(target);
   }
