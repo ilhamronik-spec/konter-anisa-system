@@ -28,6 +28,43 @@
     return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'});
   }
 
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  async function renderEmployeeGateShadow(){
+    const content=document.querySelector('.content');
+    if(!content||!window.KA_AUTH_PROFILE||!['employee','admin','owner'].includes(String(window.KA_AUTH_PROFILE.role||'')))return;
+    let box=document.getElementById('kaSdmGateShadow');
+    if(!box){
+      box=document.createElement('div');
+      box.id='kaSdmGateShadow';
+      box.className='card';
+      box.style.marginBottom='14px';
+      box.style.padding='15px';
+      const hero=content.querySelector('.hero');
+      if(hero?.nextSibling)content.insertBefore(box,hero.nextSibling);else content.prepend(box);
+    }
+    box.innerHTML='<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart</b><div style="font-size:11px;color:var(--muted);margin-top:4px">Memeriksa mapping & jadwal read-only…</div></div><span class="status info">SHADOW • TIDAK MEMBLOKIR</span></div>';
+    try{
+      const r=await call('my_schedule',{date:todayJakarta()});
+      const m=r.mapping,sc=r.schedule,g=r.gate||{};
+      let detail='',tone='info',title='BELUM TERHUBUNG';
+      if(!m){
+        title='MAPPING BELUM ADA';tone='warn';
+        detail='Akun Konter ini belum dipasangkan ke users.id SDMsmart.';
+      }else if(!sc){
+        title='JADWAL BELUM TERBACA';tone='warn';
+        detail='Mapping sudah ada, tetapi jadwal tanggal ini belum masuk cache read-only.';
+      }else{
+        const time=[String(sc.start_time||'').slice(0,5),String(sc.end_time||'').slice(0,5)].filter(Boolean).join('–');
+        title=(g.allowed?'TERJADWAL':'TIDAK ADA SHIFT KERJA');
+        tone=g.allowed?'ok':'warn';
+        detail=String(sc.code||'')+' • '+String(sc.label||'')+(time?' • '+time:'')+' • '+String(sc.sdm_display_name||m.sdm_display_name||'');
+      }
+      box.innerHTML='<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart • '+esc(title)+'</b><div style="font-size:11px;color:var(--muted);margin-top:4px">'+esc(detail)+'</div></div><span class="status '+tone+'">'+(g.enforced?'ENFORCED':'SHADOW • TIDAK MEMBLOKIR')+'</span></div>';
+    }catch(e){
+      box.innerHTML='<div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><div><b>Gate SDMsmart • GATEWAY BELUM SIAP</b><div style="font-size:11px;color:var(--muted);margin-top:4px">'+esc(String(e?.message||e))+'</div></div><span class="status warn">SHADOW • TIDAK MEMBLOKIR</span></div>';
+    }
+  }
+
   window.KASDMV1={
     call,
     status:()=>call('status'),
@@ -36,6 +73,7 @@
     saveMapping:(payload)=>call('save_mapping',payload),
     listSchedules:(from,to)=>call('list_schedules',{from,to}),
     syncSchedules:(from,to)=>call('sync_schedules',{from,to}),
+    renderEmployeeGateShadow,
     todayJakarta,
     endpoint:ENDPOINT
   };
