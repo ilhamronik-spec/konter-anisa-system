@@ -2837,7 +2837,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 </script>
 <script src="./account-master-v59.js?build=80"></script>
 <script src="./auth-client-v1.js?build=80&fix=tab-channel1"></script>
-<script src="./sdm-integration-v1.js?build=80&fix=shift-holders1"></script>
+<script src="./sdm-integration-v1.js?build=80&fix=shift-holders2"></script>
 <script>
 window.KAAuthV1.requireRole(['employee']).then(function(p){
   if(!p||p.bootstrap||p.bypass)return;
@@ -3873,10 +3873,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     const btn=$('kaSubmitFinalBtn');
     const s=shiftContext();
     const rec=read(SUM,{})?.[s.id];
-    const ready=completeState();
+    const holders=window.KAShiftHoldersV1?.selection?.()||[];
+    const ready=completeState()&&holders.length>0;
     if(btn){
       btn.disabled=!ready;
-      btn.title=ready?'Simpan final dan kirim ke Admin':'Lengkapi seluruh data final terlebih dahulu';
+      btn.title=ready?'Simpan final dan kirim ke Admin':(!holders.length?'Pilih Pemegang Shift terlebih dahulu':'Lengkapi seluruh data final terlebih dahulu');
     }
     if(rec?.submissionStatus==='submitted'){
       const t=rec.submittedAt?new Date(rec.submittedAt).toLocaleString('id-ID'):'—';
