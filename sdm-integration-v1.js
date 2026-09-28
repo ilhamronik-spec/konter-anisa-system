@@ -113,7 +113,8 @@
 
     text('shiftCrumbText','Perhitungan Harian / '+dateLabel);
     text('topbarRoleShift','Karyawan • '+shift);
-    text('holderPill','Pemegang: '+holder);
+    const selectedNames=window.KAShiftHoldersV1?.selectedNames?.()||[];
+    text('holderPill','Pemegang: '+(selectedNames.length?selectedNames.join(' + '):holder));
     text('scheduleLabel',shift);
     text('scheduleTime',(start&&end)?start+'–'+end:'—');
 
