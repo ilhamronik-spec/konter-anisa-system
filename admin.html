@@ -413,7 +413,7 @@
 
 <script src="./account-master-v59.js?build=80"></script>
 <script src="./auth-client-v1.js?build=81&fix=tab-channel1"></script>
-<script src="./sdm-integration-v1.js?build=3&fix=selftest1"></script>
+<script src="./sdm-integration-v1.js?build=3&fix=shift-holders2"></script>
 <script>window.KAAuthV1.requireRole(['admin','owner']);</script>
 <script>
 (function(){
@@ -1203,8 +1203,11 @@ async function refreshWritebackOutbox(){
   renderWritebackOutbox();
 }
 const SDM_ADAPTER_BLOCKER_LABELS={
-  employee_mapping_missing:'Mapping karyawan belum ada',
-  salary_run_alias_missing:'Alias payroll belum diisi',
+  employee_mapping_missing:'Mapping operator belum ada',
+  salary_run_alias_missing:'Alias payroll operator belum diisi',
+  shift_holders_missing:'Pemegang Shift belum tersimpan di STAGING',
+  shift_holder_mapping_missing:'Ada Pemegang Shift yang mapping SDMsmart-nya belum ada',
+  shift_holder_alias_missing:'Ada Pemegang Shift yang alias payroll-nya belum diisi',
   work_date_invalid:'Tanggal kerja tidak valid',
   shift_id_missing:'Shift ID tidak tersedia',
   outbox_status_invalid:'Status outbox tidak valid',
@@ -1227,7 +1230,7 @@ async function previewSdmAdapter(outboxId){
       box.className='notice '+(a.ready_for_adapter?'green':'amber');
       box.innerHTML='<b>'+(a.ready_for_adapter?'ADAPTER SIAP — WRITE TETAP TERKUNCI':'ADAPTER BELUM SIAP')+'</b>'+
         '<br>Target: <code>'+esc(a.target_path||'—')+'</code>'+
-        '<br>Alias payroll: <b>'+esc(p.responsible||'—')+'</b>'+
+        '<br>Pemegang payroll: <b>'+esc((Array.isArray(p.responsibleNames)&&p.responsibleNames.length?p.responsibleNames:[p.responsible]).filter(Boolean).join(' + ')||'—')+'</b>'+
         '<br>Margin RAW ke salaryRuns: <b>'+fmt(p.margin||0)+'</b> • Mines adapter: <b>'+fmt(p.mines||0)+'</b>'+
         '<br>Balance final audit: <b>'+fmtSigned(p.konterBalanceFinal||0)+'</b>'+
         '<br>Cutover margin lama: <b>'+(a.cutover_confirmed?'SUDAH DIKONFIRMASI':'BELUM')+'</b>'+
@@ -1370,7 +1373,10 @@ const SDM_PREFLIGHT_LABELS={
   source_complete:'Identitas/tanggal/alasan lengkap',
   source_consistent:'Balance sumber konsisten',
   employee_unique:'Karyawan teridentifikasi unik',
-  employee_mapped:'Karyawan terhubung ke SDMsmart',
+  employee_mapped:'Operator terhubung ke SDMsmart',
+  shift_holders_selected:'Pemegang Shift sudah dipilih',
+  shift_holders_valid:'Pemegang Shift sesuai jadwal',
+  holder_aliases_ready:'Alias payroll seluruh pemegang siap',
   schedule_found:'Jadwal SDMsmart ditemukan',
   session_found:'Session shift ditemukan',
   handover_complete:'Handover sudah selesai',
@@ -1408,8 +1414,9 @@ function openSdmAdjustment(id){
   const x=activeSummaries().find(r=>String(r.shiftId)===String(id));if(!x)return;
   activeSdmShiftId=String(id);
   const a=sdmAdjFor(id);
-  $('sdmAdjustmentTitle').textContent='Review Balance • '+(x.holder||'Karyawan');
-  $('sdmAdjustmentInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'—')+' • '+esc(x.holder||'—')+'</b><br>Balance asli berasal dari hitungan Karyawan dan tidak dapat diedit dari menu ini.';
+  const holderNames=(Array.isArray(x.shiftHolders)?x.shiftHolders:[]).map(h=>h.display_name).filter(Boolean);
+  $('sdmAdjustmentTitle').textContent='Review Balance • '+(holderNames.length?holderNames.join(' + '):(x.holder||'Karyawan'));
+  $('sdmAdjustmentInfo').innerHTML='<b>'+esc(dateLabel(x.date))+' • '+esc(x.shift||'—')+' • Pemegang: '+esc(holderNames.length?holderNames.join(' + '):(x.holder||'—'))+'</b><br>Operator input: '+esc(x.holder||'—')+'. Balance asli berasal dari hitungan Karyawan dan tidak dapat diedit dari menu ini.';
   $('sdmOriginalValue').textContent=fmtSigned(x.balance);
   $('sdmAdjustmentInput').value=String(Number(a?.adjustment||0));
   $('sdmAdjustmentReason').value=String(a?.reason||'');
