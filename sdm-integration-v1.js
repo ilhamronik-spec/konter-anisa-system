@@ -209,11 +209,13 @@
     if(shiftStartPromise)return shiftStartPromise;
     shiftStartPromise=(async()=>{
       try{
-        const r=await call('begin_shift',{date:todayJakarta()});
+        const holderIds=window.KAShiftHoldersV1?.selectedSdmUserIds?.()||[];
+        const r=await call('begin_shift',{date:todayJakarta(),holder_sdm_user_ids:holderIds});
         if(r?.session)await renderEmployeeGateShadow();
         return r;
       }catch(e){
-        // Mode SHADOW tidak boleh mengganggu perhitungan produksi.
+        // Mode SHADOW tidak boleh merusak input, tetapi session tidak akan dibuat
+        // sampai Pemegang Shift dipilih dengan benar.
         shiftStartPromise=null;
         return null;
       }
@@ -272,12 +274,13 @@
     call,
     status:()=>call('status'),
     mySchedule:(date=todayJakarta())=>call('my_schedule',{date}),
+    shiftHolderCandidates:(date=todayJakarta())=>call('shift_holder_candidates',{date}),
     listMappings:()=>call('list_mappings'),
     saveMapping:(payload)=>call('save_mapping',payload),
     listSchedules:(from,to)=>call('list_schedules',{from,to}),
     syncSchedules:(from,to)=>call('sync_schedules',{from,to}),
     gateStatus:(date=todayJakarta())=>call('gate_status',{date}),
-    beginShift:(date=todayJakarta())=>call('begin_shift',{date}),
+    beginShift:(date=todayJakarta(),holder_sdm_user_ids=[])=>call('begin_shift',{date,holder_sdm_user_ids}),
     completeHandover,
     gateOverview:(date=todayJakarta())=>call('gate_overview',{date}),
     forceHandover:(session_id,reason)=>call('force_handover',{session_id,reason}),
