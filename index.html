@@ -3284,7 +3284,15 @@ window.KAAuthV1.requireRole(['employee']).then(function(p){
   function ready(){
     const cfg=config();if(!cfg)return true;
     const x=read(PREFIX+cfg.id,null);
-    return !!(x&&x.rolloverSimulation===true&&String(x.rolloverFrom||'')===cfg.baseId);
+    // baseId live ditentukan dari closing FINAL saat trySeed(), bukan lagi dari
+    // shift/holder hari baru. Karena config() dipanggil ulang di autosave,
+    // validasi kesiapan memakai tanggal basis + adanya sumber rollover yang sah.
+    return !!(
+      x &&
+      x.rolloverSimulation===true &&
+      String(x.rolloverBaseDate||'')===String(cfg.baseDate||'') &&
+      String(x.rolloverFrom||'').trim()
+    );
   }
 
   function metadata(){return currentMeta?JSON.parse(JSON.stringify(currentMeta)):{}}
