@@ -212,6 +212,14 @@
       next.dataset.kaBaselineReady=valid?'1':'0';
       next.title=valid?'':'Opening ditahan sampai closing FINAL hari sebelumnya menjadi baseline.';
     }
+
+    document.querySelectorAll('#opening-pkg input,#opening-cig input,#opening-modal input').forEach(el=>{
+      if(el.matches('[id^="pkgReason"],[id^="cigDispReason"],[id^="cigWhReason"],[id^="prevModalReason"]')) return;
+      el.disabled=!valid;
+    });
+    document.querySelectorAll('.opening-row').forEach(row=>{
+      row.style.opacity=valid?'1':'.55';
+    });
   }
 
   function openingSnapshot(ix){
