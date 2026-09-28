@@ -3592,6 +3592,52 @@ function install(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
+<script id="ka-purchase-enter-save-v80">
+(function(){
+'use strict';
+if(document.documentElement.dataset.v80PurchaseEnter==='1')return;
+document.documentElement.dataset.v80PurchaseEnter='1';
+document.documentElement.dataset.v80CigEnter='1';
+
+function saveNow(){
+  try{window.KAAutosaveV53?.save?.()}catch(_){}
+}
+function focusId(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  try{el.focus();el.select?.()}catch(_){}
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||e.isComposing)return;
+  const id=String(e.target?.id||'');
+
+  if(['pkgNameEdit','pkgQty','pkgNewBase','pkgSell'].includes(id)){
+    e.preventDefault();
+    try{
+      if(id==='pkgNameEdit'&&typeof window.renamePkgBuy==='function')window.renamePkgBuy();
+      if(typeof window.calcPkgBuy==='function')window.calcPkgBuy();
+      saveNow();
+    }catch(_){}
+    if(id==='pkgNameEdit')focusId('pkgQty');
+    else if(id==='pkgQty')focusId('pkgNewBase');
+    else if(id==='pkgNewBase')focusId('pkgSell');
+    else if(id==='pkgSell')focusId('pkgNameEdit');
+    return;
+  }
+
+  if(['cigQty','cigTotal','cigSell'].includes(id)){
+    e.preventDefault();
+    try{
+      if(typeof window.calcCigBuy==='function')window.calcCigBuy();
+      saveNow();
+    }catch(_){}
+    if(id==='cigQty')focusId('cigTotal');
+    else if(id==='cigTotal')focusId('cigSell');
+    else if(id==='cigSell')focusId('cigQty');
+  }
+},true);
+})();
+</script>
 <script id="ka-shift-holders-v1">
 (function(){
 'use strict';
