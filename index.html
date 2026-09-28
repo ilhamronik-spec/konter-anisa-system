@@ -3199,7 +3199,19 @@ window.KAAuthV1.requireRole(['employee']).then(function(p){
     if(b){
       b.className='notice red';
       b.style.cssText='margin:0 0 14px;border-width:2px';
-      b.innerHTML='<b>OPENING '+target.toUpperCase()+' DITAHAN</b> • '+String(message||('Closing FINAL '+base+' belum tersedia.'));
+      b.innerHTML='<b>OPENING '+target.toUpperCase()+' DITAHAN</b> • '+String(message||('Closing FINAL '+base+' belum tersedia.'))+
+        '<br><span style="font-size:11px"><b>Angka yang masih terlihat di form adalah draft lama dan BUKAN baseline yang sah.</b></span>';
+    }
+    document.documentElement.dataset.kaOpeningBaseline='blocked';
+    ['openingNextBtn','openingPkgPreviewBtn','openingCigPreviewBtn','submitOpeningCorrection'].forEach(id=>{
+      const el=document.getElementById(id);if(el){el.disabled=true;el.title='Opening ditahan sampai closing FINAL '+base+' dimuat'}
+    });
+    const status=document.getElementById('openingContinueStatus');
+    if(status){status.textContent='DITAHAN — Baseline '+base+' belum valid';status.style.color='var(--red)'}
+    const box=document.getElementById('openingValidationBox');
+    if(box){
+      box.className='notice red';
+      box.innerHTML='<b>Baseline tidak valid:</b> jangan gunakan angka draft yang tampil. Opening '+target+' harus berasal dari closing FINAL '+base+'.';
     }
   }
 
