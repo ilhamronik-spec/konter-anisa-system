@@ -132,6 +132,7 @@
       const i=ix+1, input=byId('pkgCheck'+i);
       if(!input) return;
       const row=input.closest('tr');
+      if(row?.cells?.[2]) row.cells[2].textContent=money(Number(p.activeBase??p._openingBase??p.base??0));
       if(row?.cells?.[3]) row.cells[3].innerHTML='<b>'+num(p.stock)+'</b>';
       if(resetInputs) input.value=String(num(p.stock));
     });
@@ -149,6 +150,68 @@
       if(row?.cells?.[4]) row.cells[4].innerHTML='<b>'+num(c.warehouse)+'</b>';
       if(resetInputs){ di.value=String(num(c.display)); wi.value=String(num(c.warehouse)); }
     });
+  }
+
+  function hydrateModalOpeningUI(resetInputs){
+    if(typeof openingPrevModal==='undefined'||!Array.isArray(openingPrevModal))return;
+    openingPrevModal.forEach((m,ix)=>{
+      const i=ix+1,input=byId('prevModalCheck'+i);
+      if(!input)return;
+      const row=input.closest('tr'),value=Number(m?.value||0);
+      if(row?.cells?.[1])row.cells[1].textContent=money(value);
+      if(resetInputs){
+        if(typeof setMoneyInput==='function')setMoneyInput(input,value);
+        else input.value=Math.round(value).toLocaleString('id-ID');
+      }
+    });
+  }
+
+  function baselineStatus(){
+    const sim=window.KADayRolloverV1?.config?.();
+    if(!sim)return {valid:true,baseDate:'',targetDate:'',source:''};
+    const valid=!!window.KADayRolloverV1?.ready?.();
+    const meta=window.KADayRolloverV1?.metadata?.()||{};
+    return {valid,baseDate:String(sim.baseDate||''),targetDate:String(sim.date||''),source:String(meta.rolloverFrom||'')};
+  }
+
+  function renderOpeningOverview(){
+    const st=baselineStatus(),valid=!!st.valid;
+    const pkg=typeof pkgCatalog!=='undefined'?pkgCatalog.reduce((s,p)=>s+num(p.stock),0):0;
+    const cd=typeof cigCatalog!=='undefined'?cigCatalog.reduce((s,x)=>s+num(x.display),0):0;
+    const cw=typeof cigCatalog!=='undefined'?cigCatalog.reduce((s,x)=>s+num(x.warehouse),0):0;
+    const modal=typeof openingPrevModal!=='undefined'&&Array.isArray(openingPrevModal)
+      ?openingPrevModal.reduce((s,x)=>s+Number(x?.value||0),0):0;
+
+    const set=(id,v)=>{const e=byId(id);if(e)e.textContent=v};
+    const setStatus=(id)=>{const e=byId(id);if(!e)return;e.className='status '+(valid?'ok':'bad');e.textContent=valid?'Closing sebelumnya':'BASELINE TIDAK VALID'};
+    set('openingOverviewPkg',valid?(pkg+' unit'):'—');
+    set('openingOverviewCigDisplay',valid?(cd+' unit'):'—');
+    set('openingOverviewCigWarehouse',valid?(cw+' unit'):'—');
+    set('openingOverviewModal',valid?money(modal):'—');
+    ['openingOverviewPkgStatus','openingOverviewCigDisplayStatus','openingOverviewCigWarehouseStatus','openingOverviewModalStatus'].forEach(setStatus);
+
+    const label=byId('openingBaselineLabel');
+    if(label){
+      if(valid){
+        let d=st.baseDate||'';
+        try{d=new Date(d+'T12:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}catch(_){}
+        label.textContent='Closing FINAL '+(d||'hari sebelumnya');
+        label.style.color='var(--green)';
+      }else{
+        label.textContent='BASELINE BELUM VALID — JANGAN LANJUT';
+        label.style.color='var(--red)';
+      }
+    }
+    const box=byId('openingValidationBox');
+    if(box&&!valid){
+      box.className='notice red';
+      box.innerHTML='<b>Opening ditahan.</b> Paket, Rokok, dan Modal belum terbukti berasal dari closing FINAL hari sebelumnya. Angka lama tidak boleh dipakai.';
+    }
+    const next=byId('openingNextBtn');
+    if(next){
+      next.dataset.kaBaselineReady=valid?'1':'0';
+      next.title=valid?'':'Opening ditahan sampai closing FINAL hari sebelumnya menjadi baseline.';
+    }
   }
 
   function openingSnapshot(ix){
@@ -408,6 +471,11 @@
     if(typeof window.showStep==='function' && !window.showStep.__v50){
       const old=window.showStep;
       const wrapped=function(i){
+        if(Number(i)>=1 && !baselineStatus().valid){
+          renderOpeningOverview();
+          try{window.uiToast?.('Opening ditahan: closing FINAL hari sebelumnya belum menjadi baseline.','bad')}catch(_){}
+          return false;
+        }
         if(Number(i)>=1) syncBeforeOperationalStep();
         const result=old.apply(this,arguments);
         if(Number(i)===2) refreshAllDisplay();
@@ -469,6 +537,8 @@
       refreshOpeningSystem(){
         hydratePackageOpeningUI(false);
         hydrateCigOpeningUI(false);
+        hydrateModalOpeningUI(false);
+        renderOpeningOverview();
         try{ if(typeof updateOpeningCorrections==='function') updateOpeningCorrections(); }catch(_){}
       }
     };
@@ -495,7 +565,9 @@
 
     hydratePackageOpeningUI(!sim);
     hydrateCigOpeningUI(!sim);
+    hydrateModalOpeningUI(!sim);
     updateLabels();
+    renderOpeningOverview();
     commitOpeningToCatalog();
     refreshAllDisplay({resetMoves:!sim});
     try{ if(typeof syncPkgBuy==='function') syncPkgBuy(); }catch(_){}
