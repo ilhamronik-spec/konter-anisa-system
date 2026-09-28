@@ -3604,8 +3604,18 @@ function ctx(){
   const a=window.KARegulationsV29?.activeShift||window.KA_SHIFT_CONTEXT||{};
   return {id:String(a.id||''),date:String(a.date||window.KASDMV1?.todayJakarta?.()||''),shift:String(a.shift||''),holder:String(a.holder||'')};
 }
+function isSimulation(){return !!new URLSearchParams(location.search).get('sim_date')}
+function simulationSelection(){
+  if(!isSimulation())return [];
+  const q=new URLSearchParams(location.search);
+  const name=String(q.get('sim_holder')||ctx().holder||'Simulasi').trim();
+  return [{konter_user_id:'',display_name:name,sdm_user_id:'',salary_run_alias:null,schedule_source_id:'',simulation:true}];
+}
 function record(){const s=ctx(),all=read();return all[s.id]||null}
-function selection(){return Array.isArray(record()?.selected)?record().selected.map(x=>({...x})):[]}
+function selection(){
+  if(isSimulation())return simulationSelection();
+  return Array.isArray(record()?.selected)?record().selected.map(x=>({...x})):[];
+}
 function selectedSdmUserIds(){return selection().map(x=>String(x.sdm_user_id||'')).filter(Boolean)}
 function selectedNames(){return selection().map(x=>String(x.display_name||'')).filter(Boolean)}
 function saveSelected(candidates){
@@ -3646,6 +3656,12 @@ function renderState(sel=selection()){
 async function load(){
   const host=$('kaShiftHolderChecklist');if(!host)return;
   const s=ctx();
+  if(isSimulation()){
+    const sel=simulationSelection();
+    host.innerHTML='<span class="status info">SIMULASI • Pemegang: '+esc(sel[0]?.display_name||'Simulasi')+'</span>';
+    renderState(sel);
+    return;
+  }
   try{
     const r=await window.KASDMV1?.shiftHolderCandidates?.(s.date||undefined);
     const candidates=Array.isArray(r?.candidates)?r.candidates:[];
@@ -3669,7 +3685,7 @@ async function load(){
   }
 }
 function blockNextIfMissing(e){
-  if(selection().length)return;
+  if(isSimulation()||selection().length)return;
   e.preventDefault();e.stopImmediatePropagation();
   renderState([]);
   window.uiToast?.('Pilih minimal satu Pemegang Shift terlebih dahulu.','warn');
@@ -3679,7 +3695,7 @@ function boot(){
   $('openingNextBtn')?.addEventListener('click',blockNextIfMissing,true);
   load();
 }
-window.KAShiftHoldersV1={selection,selectedSdmUserIds,selectedNames,reload:load,ready:()=>selection().length>0};
+window.KAShiftHoldersV1={selection,selectedSdmUserIds,selectedNames,reload:load,ready:()=>isSimulation()||selection().length>0,isSimulation};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
