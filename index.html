@@ -2896,6 +2896,7 @@ window.KAAuthV1.requireRole(['employee']).then(function(p){
 
   const PREFIX='ka_shift_autosave_v53_';
   const INDEX_KEY='ka_shift_autosave_v53_index';
+  const SUMMARY_KEY='ka_admin_shift_summaries_v1';
   let started=false,timer=null,currentMeta=null;
 
   const read=(k,f=null)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x==null?f:x}catch(_){return f}};
@@ -2917,8 +2918,30 @@ window.KAAuthV1.requireRole(['employee']).then(function(p){
       const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-1);
       baseDate=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
     }
-    const baseId=baseDate+'-'+slug(shift)+'-'+slug(holder);
-    return {date,shift,holder,id,baseDate,baseId};
+    // baseId TIDAK diturunkan dari shift/holder hari baru.
+    // Opening harus memakai closing FINAL terakhir dari tanggal sebelumnya.
+    return {date,shift,holder,id,baseDate,baseId:''};
+  }
+
+  function finalClosingForDate(date){
+    const map=read(SUMMARY_KEY,{});
+    const rows=Object.values(map&&typeof map==='object'?map:{})
+      .filter(s=>String(s?.date||'')===String(date||'') &&
+        String(s?.submissionStatus||'')==='submitted' &&
+        !!s?.submittedAt &&
+        s?.complete===true)
+      .sort((a,b)=>{
+        const ta=Date.parse(String(a?.submittedAt||''))||Number(a?.savedAt||0)||0;
+        const tb=Date.parse(String(b?.submittedAt||''))||Number(b?.savedAt||0)||0;
+        return tb-ta;
+      });
+    for(const s of rows){
+      const sid=String(s?.shiftId||'').trim();
+      if(!sid)continue;
+      const snap=read(PREFIX+sid,null);
+      if(snap?.forms&&snap?.catalogs)return {id:sid,snapshot:snap,summary:s};
+    }
+    return null;
   }
 
   function isSimulation(){ return !!config(); }
@@ -3153,12 +3176,49 @@ window.KAAuthV1.requireRole(['employee']).then(function(p){
     }
   }
 
+  function paintBlocked(cfg,message){
+    const target=labelDate(cfg.date),base=labelDate(cfg.baseDate);
+    let b=document.getElementById('kaRolloverSimBanner');
+    const host=document.querySelector('.content');
+    if(!b&&host){
+      b=document.createElement('div');b.id='kaRolloverSimBanner';host.prepend(b);
+    }
+    if(b){
+      b.className='notice red';
+      b.style.cssText='margin:0 0 14px;border-width:2px';
+      b.innerHTML='<b>OPENING '+target.toUpperCase()+' DITAHAN</b> • '+String(message||('Closing FINAL '+base+' belum tersedia.'));
+    }
+  }
+
   function trySeed(){
     const cfg=config();if(!cfg)return false;
+
+    let base=null;
+    const canonical=canonicalBase(cfg.baseDate);
+    if(canonical){
+      cfg.baseId=String(canonical.shiftId||cfg.baseDate+'-canonical');
+      base=canonical;
+    }else{
+      const finalBase=finalClosingForDate(cfg.baseDate);
+      if(!finalBase){
+        paintBlocked(cfg,'Closing FINAL '+labelDate(cfg.baseDate)+' belum tersedia. Selesaikan closing hari sebelumnya terlebih dahulu; sistem tidak akan memakai stok draft sebagai opening.');
+        persistSimulation(cfg);
+        return false;
+      }
+      cfg.baseId=finalBase.id;
+      base=finalBase.snapshot;
+    }
+
     paint(cfg);
     persistSimulation(cfg);
     const currentKey=PREFIX+cfg.id;
     let current=read(currentKey,null);
+
+    // Jangan menimpa draft/manual shift yang sudah ada secara diam-diam.
+    if(current && current.rolloverSimulation!==true){
+      paintBlocked(cfg,'Sudah ada draft tanggal '+labelDate(cfg.date)+' yang bukan hasil rollover final. Reset draft tersebut terlebih dahulu sebelum membuat opening baru dari '+labelDate(cfg.baseDate)+'.');
+      return false;
+    }
 
     if(current&&current.rolloverSimulation===true&&String(current.rolloverFrom||'')===cfg.baseId&&Number(current.rolloverVersion||0)>=3){
       // V6 khusus simulasi 24/09: koreksi Modal Voucher opening 23/09 TANPA
@@ -3191,8 +3251,10 @@ window.KAAuthV1.requireRole(['employee']).then(function(p){
       applyRuntime(current);return true;
     }
 
-    const base=canonicalBase(cfg.baseDate)||read(PREFIX+cfg.baseId,null);
-    if(!base||!base.forms||!base.catalogs)return false;
+    if(!base||!base.forms||!base.catalogs){
+      paintBlocked(cfg,'Snapshot closing FINAL '+labelDate(cfg.baseDate)+' tidak lengkap.');
+      return false;
+    }
 
     current=buildSeed(cfg,base);
     applyRuntime(current);
