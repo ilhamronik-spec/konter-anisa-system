@@ -255,6 +255,19 @@ body{background:radial-gradient(circle at 82% 0,rgba(168,85,247,.08),transparent
 <div class="card progress-card"><div class="steps" id="steps"></div></div>
 <section class="section active" data-i="0">
 <div class="section-head"><div><h3>1. Cek Data Awal</h3><p>Periksa stok dan modal bawaan dari shift sebelumnya. Jika ada yang salah, ajukan koreksi ke Admin.</p></div><div class="actions"><button class="btn warn" data-ui-click="submitOpeningCorrections()" disabled="" id="submitOpeningCorrection" type="button">Ajukan Koreksi (0)</button><button class="btn primary" data-ui-click="nextStep()" id="openingNextBtn" type="button">Data Sesuai &amp; Lanjut</button></div></div>
+<div class="card" id="kaShiftHolderCard" style="margin-bottom:14px;border:2px solid #d8c5e8">
+  <div class="section-head" style="margin-bottom:10px">
+    <div>
+      <h4 style="margin:0">Pemegang Shift</h4>
+      <p style="margin:4px 0 0;color:var(--muted)">Centang semua karyawan yang benar-benar memegang shift ini. Pilihan ini menjadi dasar pembagian Margin dan identitas responsible di SDMsmart.</p>
+    </div>
+    <span class="status warn" id="kaShiftHolderCount">WAJIB DIPILIH</span>
+  </div>
+  <div id="kaShiftHolderChecklist" style="display:flex;gap:10px;flex-wrap:wrap"><span style="font-size:11px;color:var(--muted)">Memuat jadwal SDMsmart…</span></div>
+  <div class="notice amber" id="kaShiftHolderStatus" style="margin:12px 0 0">
+    <b>Belum ada pemegang shift dipilih.</b> Centang minimal satu karyawan sebelum melanjutkan.
+  </div>
+</div>
 <div class="notice amber">Stok awal wajib dicek terhadap <b>shift sebelumnya</b>. <b>ATURAN MATI:</b> stok Paket / Rokok yang lebih kecil dari bawaan shift sebelumnya menghasilkan MINUS dan <b>tidak dapat disimpan, tidak dapat diajukan ke Admin, dan tidak ada override</b>. Paket dan Rokok wajib di-Preview &amp; Konfirmasi sebelum lanjut.</div>
 <div class="grid two-equal">
 <div class="card"><div class="table-wrap"><table class="table" style="min-width:650px"><thead><tr><th>Kelompok</th><th>Item</th><th>Nilai Bawaan</th><th>Status</th></tr></thead><tbody><tr><td>Paket</td><td>Stok Awal</td><td><b>897 unit</b></td><td><span class="status ok">Data Awal Aplikasi</span></td></tr><tr><td>Rokok Display</td><td>Display Awal</td><td><b>154 unit</b></td><td><span class="status ok">Data Awal Aplikasi</span></td></tr><tr><td>Rokok Gudang</td><td>Gudang Awal</td><td><b>595 unit</b></td><td><span class="status ok">Data Awal Aplikasi</span></td></tr><tr><td>Modal</td><td>Modal Shift Sebelumnya</td><td><b>Rp107.692.007</b></td><td><span class="status ok">12 Sep Malam</span></td></tr></tbody></table></div></div>
@@ -2824,7 +2837,7 @@ window.addEventListener('load',initBlankEndingStocksV27,{once:true});
 </script>
 <script src="./account-master-v59.js?build=80"></script>
 <script src="./auth-client-v1.js?build=80&fix=tab-channel1"></script>
-<script src="./sdm-integration-v1.js?build=80&fix=no-poll1"></script>
+<script src="./sdm-integration-v1.js?build=80&fix=shift-holders1"></script>
 <script>
 window.KAAuthV1.requireRole(['employee']).then(function(p){
   if(!p||p.bootstrap||p.bypass)return;
@@ -3473,6 +3486,8 @@ function snapshot(){
     const next={
       ...prev,
       shiftId:s.id,shiftLabel:s.label,date:s.date,shift:s.shift,holder:s.holder,
+      shiftHolders:(window.KAShiftHoldersV1?.selection?.()||prev.shiftHolders||[]),
+      holderCount:(window.KAShiftHoldersV1?.selection?.()||prev.shiftHolders||[]).length,
       margin:Number(b.margin||0),balance:Number(b.balance||0),minus:Math.min(0,Number(b.balance||0)),
       operational:Number(op||0),complete:!!b.complete,
       modalOpening:Number(b.opening||0),modalClosing:Number(b.closing||0),
@@ -3577,6 +3592,97 @@ function install(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
+<script id="ka-shift-holders-v1">
+(function(){
+'use strict';
+const KEY='ka_shift_holders_v1';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const read=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||'{}');return x&&typeof x==='object'?x:{}}catch(_){return {}}};
+const write=v=>{try{localStorage.setItem(KEY,JSON.stringify(v));window.dispatchEvent(new StorageEvent('storage',{key:KEY,newValue:JSON.stringify(v)}))}catch(_){}};
+function ctx(){
+  const a=window.KARegulationsV29?.activeShift||window.KA_SHIFT_CONTEXT||{};
+  return {id:String(a.id||''),date:String(a.date||window.KASDMV1?.todayJakarta?.()||''),shift:String(a.shift||''),holder:String(a.holder||'')};
+}
+function record(){const s=ctx(),all=read();return all[s.id]||null}
+function selection(){return Array.isArray(record()?.selected)?record().selected.map(x=>({...x})):[]}
+function selectedSdmUserIds(){return selection().map(x=>String(x.sdm_user_id||'')).filter(Boolean)}
+function selectedNames(){return selection().map(x=>String(x.display_name||'')).filter(Boolean)}
+function saveSelected(candidates){
+  const s=ctx();if(!s.id)return;
+  const checked=[...document.querySelectorAll('[data-ka-shift-holder]:checked')].map(el=>String(el.dataset.kaShiftHolder||''));
+  const selected=candidates.filter(x=>checked.includes(String(x.sdm_user_id||''))).map(x=>({
+    konter_user_id:String(x.konter_user_id||''),
+    display_name:String(x.display_name||''),
+    sdm_user_id:String(x.sdm_user_id||''),
+    salary_run_alias:String(x.salary_run_alias||'')||null,
+    schedule_source_id:String(x.schedule_source_id||''),
+    schedule_code:String(x.schedule_code||''),
+    start_time:String(x.start_time||''),
+    end_time:String(x.end_time||'')
+  }));
+  const all=read();
+  all[s.id]={shift_id:s.id,date:s.date,selected,updatedAt:new Date().toISOString()};
+  write(all);renderState(selected);
+  try{window.KAAdminBridgeV1?.snapshot?.()}catch(_){}
+  try{window.dispatchEvent(new CustomEvent('ka:shift-holders-changed',{detail:{shiftId:s.id,selected}}))}catch(_){}
+}
+function renderState(sel=selection()){
+  const count=$('kaShiftHolderCount'),status=$('kaShiftHolderStatus'),next=$('openingNextBtn'),pill=$('holderPill');
+  const names=sel.map(x=>x.display_name).filter(Boolean);
+  if(count){
+    count.className='status '+(sel.length?'ok':'warn');
+    count.textContent=sel.length?sel.length+' PEMEGANG':'WAJIB DIPILIH';
+  }
+  if(status){
+    status.className='notice '+(sel.length?'green':'amber');
+    status.innerHTML=sel.length
+      ?'<b>Pemegang Shift: '+esc(names.join(' + '))+'</b><br>Margin akan dikirim ke salaryRuns dengan responsibleNames '+esc(names.join(', '))+'. Pembagian payroll dilakukan oleh SDMsmart. Mines masih dikunci sampai rumusnya terverifikasi.'
+      :'<b>Belum ada pemegang shift dipilih.</b> Centang minimal satu karyawan sebelum melanjutkan.';
+  }
+  if(pill&&names.length)pill.textContent='Pemegang: '+names.join(' + ');
+  if(next)next.dataset.kaHolderReady=sel.length?'1':'0';
+}
+async function load(){
+  const host=$('kaShiftHolderChecklist');if(!host)return;
+  const s=ctx();
+  try{
+    const r=await window.KASDMV1?.shiftHolderCandidates?.(s.date||undefined);
+    const candidates=Array.isArray(r?.candidates)?r.candidates:[];
+    const savedIds=new Set(selectedSdmUserIds());
+    if(!candidates.length){
+      host.innerHTML='<span class="status bad">Tidak ada kandidat pemegang shift dari jadwal SDMsmart.</span>';
+      renderState([]);return;
+    }
+    host.innerHTML=candidates.map(x=>{
+      const id=String(x.sdm_user_id||''),checked=savedIds.has(id)?' checked':'';
+      const alias=x.salary_run_alias?' • '+esc(x.salary_run_alias):'';
+      return '<label style="display:flex;align-items:center;gap:8px;border:1px solid #ddd2e7;border-radius:12px;padding:10px 12px;background:#fff;cursor:pointer">'+
+        '<input type="checkbox" data-ka-shift-holder="'+esc(id)+'"'+checked+'>'+
+        '<span><b>'+esc(x.display_name||id)+'</b><small style="display:block;color:var(--muted);margin-top:2px">'+esc(x.schedule_label||x.schedule_code||'Shift')+' • '+esc(String(x.start_time||'').slice(0,5))+'–'+esc(String(x.end_time||'').slice(0,5))+alias+'</small></span></label>';
+    }).join('');
+    host.querySelectorAll('[data-ka-shift-holder]').forEach(el=>el.addEventListener('change',()=>saveSelected(candidates)));
+    renderState(selection());
+  }catch(e){
+    host.innerHTML='<span class="status bad">Gagal memuat pemegang shift: '+esc(String(e?.message||e))+'</span>';
+    renderState(selection());
+  }
+}
+function blockNextIfMissing(e){
+  if(selection().length)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  renderState([]);
+  window.uiToast?.('Pilih minimal satu Pemegang Shift terlebih dahulu.','warn');
+  $('kaShiftHolderCard')?.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function boot(){
+  $('openingNextBtn')?.addEventListener('click',blockNextIfMissing,true);
+  load();
+}
+window.KAShiftHoldersV1={selection,selectedSdmUserIds,selectedNames,reload:load,ready:()=>selection().length>0};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
 <script>
 /* Konter Anisa Final Submit V1 — explicit handoff Karyawan -> Admin */
 (() => {
@@ -3647,8 +3753,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     if(!rec)throw new Error('Snapshot Admin belum terbentuk. Klik Hitung Ulang Balance lalu coba lagi.');
     const b=balance||{};
     const now=new Date().toISOString();
+    const shiftHolders=window.KAShiftHoldersV1?.selection?.()||rec.shiftHolders||[];
     map[s.id]={
       ...rec,
+      shiftHolders,
+      holderCount:shiftHolders.length,
       submissionStatus:'submitted',
       submittedAt:now,
       submittedBy:actorName(),
@@ -3666,6 +3775,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     const btn=$('kaSubmitFinalBtn');
     try{
       const finalBalance=balanceState();
+      const shiftHolders=window.KAShiftHoldersV1?.selection?.()||[];
+      if(!shiftHolders.length){
+        setStatus('<b>Belum dapat dikirim.</b> Pemegang Shift belum dipilih pada Cek Data Awal.','bad');
+        try{window.showStep?.(0)}catch(_){}
+        document.getElementById('kaShiftHolderCard')?.scrollIntoView({behavior:'smooth',block:'center'});
+        return;
+      }
       if(!(finalBalance&&finalBalance.complete&&finalBalance.pkgComplete&&finalBalance.cigComplete)){
         setStatus('<b>Belum dapat dikirim.</b> Lengkapi Stok Akhir Paket, Stok Akhir Rokok, dan seluruh 25 Modal Inputan terlebih dahulu.','bad');
         return;
@@ -3689,7 +3805,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
           balance:Number(rec.balance||0),
           margin:Number(rec.margin||0),
           modalClosing:Number(rec.modalClosing||0),
-          submissionRevision:Number(rec.submissionRevision||0)
+          submissionRevision:Number(rec.submissionRevision||0),
+          shiftHolders:Array.isArray(rec.shiftHolders)?rec.shiftHolders:[]
         },shiftContext().date||undefined);
       }catch(_){}
 
