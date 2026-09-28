@@ -11,8 +11,9 @@
 
   function jakartaDate(){
     try{
-      return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'})
-        .format(new Date()).split('/').reverse().join('-');
+      const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+      const x=Object.fromEntries(p.filter(v=>v.type!=='literal').map(v=>[v.type,v.value]));
+      return x.year+'-'+x.month+'-'+x.day;
     }catch(_){ return ''; }
   }
   function activeDate(){
@@ -22,7 +23,7 @@
     }catch(_){ return jakartaDate(); }
   }
   if(activeDate()!==TARGET) return;
-  if(!Array.isArray(window.pkgCatalog)||!Array.isArray(window.cigCatalog)||!Array.isArray(window.openingPrevModal)) return;
+  if(typeof pkgCatalog==='undefined'||typeof cigCatalog==='undefined'||typeof openingPrevModal==='undefined') return;
   if(pkgCatalog.length!==pkg.length||cigCatalog.length!==cig.length||openingPrevModal.length!==modal.length){
     console.error('Baseline 27→28 dibatalkan: struktur katalog tidak sesuai.',{pkg:pkgCatalog.length,cig:cigCatalog.length,modal:openingPrevModal.length});
     return;
@@ -32,13 +33,13 @@
     const [base,sell,stock]=pkg[i];
     p.stock=stock;p.base=base;p.sell=sell;
     p._openingBase=base;p.purchaseBase=base;p.activeBase=base;p.activeSell=sell;p.purchaseQty=0;
-    if(Array.isArray(window.openingPkg)&&openingPkg[i]) Object.assign(openingPkg[i],{stock,base,sell});
+    if(typeof openingPkg!=='undefined'&&Array.isArray(openingPkg)&&openingPkg[i]) Object.assign(openingPkg[i],{stock,base,sell});
   });
   cigCatalog.forEach((c,i)=>{
     const [base,sell,display,warehouse]=cig[i];
     c.display=display;c.warehouse=warehouse;c.base=base;c.sell=sell;
     c._openingBase=base;c.activeBase=base;c.purchaseQty=0;c.purchaseCost=0;
-    if(Array.isArray(window.openingCig)&&openingCig[i]) Object.assign(openingCig[i],{display,warehouse,base,sell});
+    if(typeof openingCig!=='undefined'&&Array.isArray(openingCig)&&openingCig[i]) Object.assign(openingCig[i],{display,warehouse,base,sell});
   });
   openingPrevModal.forEach((x,i)=>{x.value=modal[i];});
 
