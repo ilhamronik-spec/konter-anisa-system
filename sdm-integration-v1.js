@@ -283,6 +283,7 @@
     forceHandover:(session_id,reason)=>call('force_handover',{session_id,reason}),
     writebackPreflight:(shift_id)=>call('writeback_preflight',{shift_id}),
     stageWriteback:(payload)=>call('stage_writeback',payload||{}),
+    adapterSelfTest:()=>call('adapter_self_test'),
     cutoverReadiness:()=>call('cutover_readiness'),
     adapterPreview:(payload)=>call('adapter_preview',payload||{}),
     sendWriteback:(payload)=>call('send_writeback',payload||{}),
