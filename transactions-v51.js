@@ -536,3 +536,59 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',refresh,{once:true});
   else refresh();
 })();
+
+
+/* Closing 28 Sep → Opening 29 Sep stock baseline */
+(function(){
+  'use strict';
+  const SOURCE='worksheet september benar(7).xlsx • closing 28 September 2026';
+  const TARGET='2026-09-29';
+  const pkg=[[7100,8000,44],[10150,10000,34],[13900,15000,16],[11950,13000,47],[14550,16000,25],[13500,15000,16],[22850,24000,13],[15900,17000,17],[24000,25000,7],[26000,29000,6],[23200,25000,2],[31800,33000,0],[44000,48000,4],[6800,7000,10],[8900,10000,0],[13750,15000,31],[16000,17000,7],[19500,21000,3],[9750,11000,10],[16500,19000,26],[22000,25000,24],[30000,32000,0],[64500,76000,3],[86750,95000,1],[8400,10000,0],[10250,12000,25],[9900,12000,0],[11850,13000,4],[12650,16000,15],[14625,16000,0],[17400,24000,0],[27200,29000,0],[13500,14000,0],[7800,8000,0],[9150,11000,0],[13100,15000,0],[15150,17000,0],[17100,18000,0],[23100,25000,0],[20100,22000,0],[34750,34000,0],[9600,11000,0],[7750,8000,0],[13400,13000,0],[22850,24000,0],[22500,25000,0],[12100,13000,0],[16500,18000,0],[15750,22000,0],[26800,28000,0],[19500,25000,0],[28500,36000,0],[8750,17000,0],[13750,27000,0],[16000,38000,0],[15000,42000,0],[11000,25000,0],[20000,32000,0]];
+  const cig=[[14800,16000,0,80],[35100,37000,0,10],[16600,20000,0,80],[7900,9000,0,10],[25900,27000,0,0],[15200,17000,0,10],[7200,8000,0,10],[16000,18000,0,0],[21300,23000,0,0],[34900,36000,0,0],[22400,24000,0,0],[15500,18000,0,6],[16000,17000,0,10],[25600,27000,0,10],[13200,15000,0,0],[14000,15000,0,0],[15700,18000,0,10],[14700,16000,0,0],[15400,17000,0,10],[15400,20000,0,0],[12900,15000,0,10],[21350,23000,0,0],[25100,26000,0,10],[11600,14000,0,10],[29500,30000,0,0],[15300,16000,0,0],[15350,16000,0,0],[24000,25000,0,0],[16500,18000,0,10],[19500,21000,0,0],[24000,25000,0,10],[42388.88888888889,45000,0,0],[15000,17000,0,0],[34000,35000,0,0],[38950,40000,0,10],[16300,18000,0,0],[37100,40000,0,0],[39400,42000,0,0],[18000,19000,0,0],[23000,24000,0,0],[23500,25000,0,0],[17500,19000,0,0],[16700,18000,0,10],[32000,33000,0,0],[17900,20000,0,20],[15200,17000,0,10],[16800,18000,0,0],[26500,28000,0,0],[32600,34000,0,0],[34000,36000,0,0],[31000,32000,0,0],[13450,15000,0,0],[33000,35000,0,0],[41900,44000,0,0],[13700,15000,0,10],[10500,15000,0,60],[30000,35000,0,0],[30000,35000,0,0],[17900,20000,0,10],[17000,20000,0,0]];
+
+  function jakartaDate(){
+    try{
+      const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+      const x=Object.fromEntries(p.filter(v=>v.type!=='literal').map(v=>[v.type,v.value]));
+      return x.year+'-'+x.month+'-'+x.day;
+    }catch(_){return '';}
+  }
+  function activeDate(){
+    try{
+      const q=new URLSearchParams(location.search);
+      return String(q.get('sim_date')||window.KARegulationsV29?.activeShift?.date||jakartaDate()||'').trim();
+    }catch(_){return jakartaDate();}
+  }
+  if(activeDate()!==TARGET) return;
+  if(typeof pkgCatalog==='undefined'||typeof cigCatalog==='undefined') return;
+  if(pkgCatalog.length!==pkg.length||cigCatalog.length!==cig.length){
+    console.error('Baseline 28→29 dibatalkan: struktur katalog tidak sesuai.',{pkg:pkgCatalog.length,cig:cigCatalog.length});
+    return;
+  }
+  pkgCatalog.forEach((p,i)=>{
+    const [base,sell,stock]=pkg[i];
+    p.stock=stock;p.base=base;p.sell=sell;
+    p._openingBase=base;p.purchaseBase=base;p.activeBase=base;p.activeSell=sell;p.purchaseQty=0;
+    if(typeof openingPkg!=='undefined'&&Array.isArray(openingPkg)&&openingPkg[i]) Object.assign(openingPkg[i],{stock,base,sell});
+  });
+  cigCatalog.forEach((c,i)=>{
+    const [base,sell,display,warehouse]=cig[i];
+    c.display=display;c.warehouse=warehouse;c.base=base;c.sell=sell;
+    c._openingBase=base;c.activeBase=base;c.purchaseQty=0;c.purchaseCost=0;
+    if(typeof openingCig!=='undefined'&&Array.isArray(openingCig)&&openingCig[i]) Object.assign(openingCig[i],{display,warehouse,base,sell});
+  });
+  window.KAExcelBaselineV2={
+    version:'28-to-29-stock-v1',targetDate:TARGET,source:SOURCE,
+    packageUnits:pkg.reduce((n,x)=>n+x[2],0),
+    cigaretteDisplay:cig.reduce((n,x)=>n+x[2],0),
+    cigaretteWarehouse:cig.reduce((n,x)=>n+x[3],0),
+    modalStatus:'not imported: 21 of 25 modal closing values are blank in sheet 28'
+  };
+  const refresh=()=>{
+    try{window.refreshPkgNameViews?.()}catch(_){}
+    try{window.KAStockV50?.refreshOpeningSystem?.()}catch(_){}
+    try{window.KABalanceV44?.renderBalance?.()}catch(_){}
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});
+  else refresh();
+})();
