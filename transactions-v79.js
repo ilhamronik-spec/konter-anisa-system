@@ -98,3 +98,39 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(install,0),{once:true});
   else setTimeout(install,0);
 })();
+
+/* Closing 28 Sep → Opening 29 Sep: enforce active costs after autosave restore */
+(function(){
+  'use strict';
+  const TARGET='2026-09-29';
+  function activeDate(){
+    try{
+      const q=new URLSearchParams(location.search);
+      if(q.get('sim_date')) return String(q.get('sim_date')).trim();
+      const d=window.KARegulationsV29?.activeShift?.date;
+      if(d)return String(d).trim();
+      const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+      const x=Object.fromEntries(p.filter(v=>v.type!=='literal').map(v=>[v.type,v.value]));
+      return x.year+'-'+x.month+'-'+x.day;
+    }catch(_){return '';}
+  }
+  function applyClosing28Prices(){
+    if(activeDate()!==TARGET||typeof pkgCatalog==='undefined'||typeof cigCatalog==='undefined')return;
+    pkgCatalog.forEach(p=>{
+      const base=Number(p.base||0),sell=Number(p.sell||0);
+      p._openingBase=base;p.purchaseBase=base;p.activeBase=base;p.activeSell=sell;p.purchaseQty=0;
+    });
+    cigCatalog.forEach(c=>{
+      const base=Number(c.base||0);
+      c._openingBase=base;c.activeBase=base;c.purchaseQty=0;c.purchaseCost=0;
+    });
+    try{window.KAStockV50?.refreshOpeningSystem?.()}catch(_){}
+    try{window.refreshPkgNameViews?.()}catch(_){}
+    try{window.KAUIV51?.refresh?.()}catch(_){}
+    try{window.KABalanceV44?.renderBalance?.()}catch(_){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyClosing28Prices,{once:true});
+  else applyClosing28Prices();
+  // V53 restores autosave on load. Reapply canonical closing costs afterwards.
+  window.addEventListener('load',()=>setTimeout(applyClosing28Prices,60),{once:true});
+})();
