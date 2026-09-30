@@ -203,3 +203,55 @@
   else setTimeout(installGuard,80);
   window.addEventListener('load',()=>setTimeout(installGuard,140),{once:true});
 })();
+
+
+/* Do not open 30 Sep before the 29 Sep closing is final */
+(function(){
+  'use strict';
+  const TARGET='2026-09-30';
+  const MESSAGE='Opening 30 September ditahan: closing 29 September belum selesai dan belum disahkan. Jangan pakai angka bawaan lama.';
+  function activeDate(){
+    try{
+      const q=new URLSearchParams(location.search);
+      if(q.get('sim_date')) return String(q.get('sim_date')).trim();
+      const d=window.KARegulationsV29?.activeShift?.date;
+      if(d) return String(d).trim();
+      const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+      const x=Object.fromEntries(p.filter(v=>v.type!=='literal').map(v=>[v.type,v.value]));
+      return x.year+'-'+x.month+'-'+x.day;
+    }catch(_){ return ''; }
+  }
+  function hold(){
+    if(activeDate()!==TARGET) return false;
+    const set=(id,value,klass)=>{const el=document.getElementById(id);if(!el)return;if(klass)el.className=klass;el.textContent=value;};
+    set('openingOverviewPkg','—');
+    set('openingOverviewCigDisplay','—');
+    set('openingOverviewCigWarehouse','—');
+    set('openingOverviewModal','—');
+    ['openingOverviewPkgStatus','openingOverviewCigDisplayStatus','openingOverviewCigWarehouseStatus','openingOverviewModalStatus'].forEach(id=>set(id,'Closing 29 belum selesai','status bad'));
+    const label=document.getElementById('openingBaselineLabel');
+    if(label){label.textContent='CLOSING 29 BELUM SELESAI — JANGAN LANJUT';label.style.color='var(--red)';}
+    const box=document.getElementById('openingValidationBox');
+    if(box){box.className='notice red';box.innerHTML='<b>Opening ditahan.</b> '+MESSAGE;}
+    document.querySelectorAll('#opening-pkg input,#opening-cig input,#opening-modal input').forEach(el=>{if(!/Reason/.test(el.id))el.disabled=true;});
+    const next=document.getElementById('openingNextBtn');
+    if(next){next.dataset.kaBaselineReady='0';next.title=MESSAGE;next.disabled=true;next.setAttribute('aria-disabled','true');}
+    window.KAExcelOpeningHold={date:TARGET,reason:'closing 29 not final'};
+    return true;
+  }
+  function install(){
+    if(!hold())return;
+    if(typeof window.showStep==='function'&&!window.showStep.__v79Day30Hold){
+      const old=window.showStep;
+      const guarded=function(i){
+        if(Number(i)>=1){hold();try{window.uiToast?.(MESSAGE,'bad')}catch(_){};return false;}
+        return old.apply(this,arguments);
+      };
+      guarded.__v79Day30Hold=true;
+      window.showStep=guarded;
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,100),{once:true});
+  else setTimeout(install,100);
+  window.addEventListener('load',()=>setTimeout(install,180),{once:true});
+})();
