@@ -255,3 +255,39 @@
   else setTimeout(install,100);
   window.addEventListener('load',()=>setTimeout(install,180),{once:true});
 })();
+
+
+/* Static Excel closing 28 is the valid stock/price baseline for 29 Sep simulation */
+(function(){
+  'use strict';
+  const TARGET='2026-09-29';
+  function activeDate(){
+    try{
+      const q=new URLSearchParams(location.search);
+      if(q.get('sim_date')) return String(q.get('sim_date')).trim();
+      const d=window.KARegulationsV29?.activeShift?.date;
+      if(d) return String(d).trim();
+      return '';
+    }catch(_){return '';}
+  }
+  function apply(){
+    if(activeDate()!==TARGET) return;
+    const api=window.KADayRolloverV1;
+    if(api && !api.__kaExcelClosing28){
+      const oldMeta=typeof api.metadata==='function'?api.metadata.bind(api):null;
+      api.ready=()=>true;
+      api.metadata=()=>({...((oldMeta&&oldMeta())||{}),rolloverFrom:'worksheet september benar(7).xlsx • closing 28 September 2026',source:'excel-closing-28'});
+      api.__kaExcelClosing28=true;
+    }
+    document.querySelectorAll('.crumb').forEach(el=>{
+      if(/Perhitungan Harian/i.test(String(el.textContent||''))) el.textContent='Perhitungan Harian / 29 September 2026';
+    });
+    try{window.KAStockV50?.refreshOpeningSystem?.()}catch(_){}
+    try{window.refreshPkgNameViews?.()}catch(_){}
+    try{window.KAUIV51?.refresh?.()}catch(_){}
+    try{window.KABalanceV44?.renderBalance?.()}catch(_){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(apply,120),{once:true});
+  else setTimeout(apply,120);
+  window.addEventListener('load',()=>setTimeout(apply,220),{once:true});
+})();
