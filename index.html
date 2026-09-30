@@ -2861,16 +2861,33 @@ window.KAAuthV1.requireRole(['employee']).then(function(p){
     const simDate=String(q.get('sim_date')||'').trim();
     const slug=v=>String(v||'unknown').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'unknown';
 
-    // Production runtime context resolved from authenticated SDMsmart schedule.
-    // It is stored only in sessionStorage and is cleared whenever account login changes.
+    // Production context must use today's Jakarta date. An old session may keep
+    // the previous date after midnight; it must never become today's stock source.
     if(!simDate){
       try{
+        const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+        const map=Object.fromEntries(parts.filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
+        const today=map.year+'-'+map.month+'-'+map.day;
         const runtime=JSON.parse(sessionStorage.getItem('ka_runtime_shift_context_v1')||'null');
-        if(runtime && /^\d{4}-\d{2}-\d{2}$/.test(String(runtime.date||'')) && runtime.holder){
+        if(runtime && String(runtime.date||'')===today && runtime.holder){
           window.KA_SHIFT_CONTEXT=runtime;
           document.documentElement.dataset.kaRuntimeShiftReady='1';
           return;
         }
+        // Keep the authenticated employee/shift label, but discard the stale date.
+        if(runtime) sessionStorage.removeItem('ka_runtime_shift_context_v1');
+        const holder=String(runtime?.holder||document.querySelector('.user b')?.textContent||'Karyawan').trim()||'Karyawan';
+        const shift=String(runtime?.shift||'Full').trim()||'Full';
+        const d=new Date(today+'T12:00:00');
+        const dateLabel=d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+        window.KA_SHIFT_CONTEXT={
+          id:today+'-'+slug(shift)+'-'+slug(holder),
+          date:today,dateLabel,shift,holder,
+          label:dateLabel+' • Shift '+shift+' • '+holder,
+          source:'jakarta-live-date'
+        };
+        document.documentElement.dataset.kaRuntimeShiftReady='1';
+        return;
       }catch(_){}
     }
 
