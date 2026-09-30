@@ -134,3 +134,72 @@
   // V53 restores autosave on load. Reapply canonical closing costs afterwards.
   window.addEventListener('load',()=>setTimeout(applyClosing28Prices,60),{once:true});
 })();
+
+/* Closing 28 Sep modal guard: never reuse 27 Sep modal as opening 29 Sep */
+(function(){
+  'use strict';
+  const TARGET='2026-09-29';
+  const MESSAGE='Closing 28 September belum lengkap: 20 dari 25 saldo modal kosong di Excel. Modal lama tidak boleh dipakai untuk opening 29 September.';
+  function activeDate(){
+    try{
+      const q=new URLSearchParams(location.search);
+      if(q.get('sim_date')) return String(q.get('sim_date')).trim();
+      const d=window.KARegulationsV29?.activeShift?.date;
+      if(d) return String(d).trim();
+      const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+      const x=Object.fromEntries(p.filter(v=>v.type!=='literal').map(v=>[v.type,v.value]));
+      return x.year+'-'+x.month+'-'+x.day;
+    }catch(_){ return ''; }
+  }
+  function showModalHold(){
+    if(activeDate()!==TARGET || typeof openingPrevModal==='undefined' || !Array.isArray(openingPrevModal)) return false;
+    openingPrevModal.forEach(m=>{ if(m) m.value=0; });
+    const set=(id,value,klass)=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      if(klass) el.className=klass;
+      el.textContent=value;
+    };
+    set('openingOverviewModal','Belum lengkap');
+    set('openingOverviewModalStatus','Closing 28 belum lengkap','status bad');
+    const label=document.getElementById('openingBaselineLabel');
+    if(label){ label.textContent='CLOSING 28 BELUM LENGKAP — JANGAN LANJUT'; label.style.color='var(--red)'; }
+    const box=document.getElementById('openingValidationBox');
+    if(box){ box.className='notice red'; box.innerHTML='<b>Opening modal ditahan.</b> '+MESSAGE; }
+    document.querySelectorAll('#opening-modal [id^="prevModalCheck"]').forEach(input=>{
+      input.value='';
+      input.placeholder='Closing 28 belum diisi';
+      input.disabled=true;
+      const row=input.closest('tr');
+      if(!row) return;
+      if(row.cells?.[1]) row.cells[1].textContent='Belum lengkap';
+      if(row.cells?.[3]) row.cells[3].textContent='—';
+      const status=row.querySelector('.status');
+      if(status){ status.className='status bad'; status.textContent='Belum lengkap'; }
+      row.style.opacity='1';
+    });
+    const next=document.getElementById('openingNextBtn');
+    if(next){ next.dataset.kaBaselineReady='0'; next.title=MESSAGE; next.disabled=true; next.setAttribute('aria-disabled','true'); }
+    window.KAExcelBaselineV2={...(window.KAExcelBaselineV2||{}),modalStatus:'blocked: 20 of 25 modal closing values are blank in sheet 28',modalBlocked:true};
+    return true;
+  }
+  function installGuard(){
+    if(!showModalHold()) return;
+    if(typeof window.showStep==='function' && !window.showStep.__v79ModalGuard){
+      const old=window.showStep;
+      const guarded=function(i){
+        if(Number(i)>=1){
+          showModalHold();
+          try{window.uiToast?.(MESSAGE,'bad')}catch(_){}
+          return false;
+        }
+        return old.apply(this,arguments);
+      };
+      guarded.__v79ModalGuard=true;
+      window.showStep=guarded;
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(installGuard,80),{once:true});
+  else setTimeout(installGuard,80);
+  window.addEventListener('load',()=>setTimeout(installGuard,140),{once:true});
+})();
