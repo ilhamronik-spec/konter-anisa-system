@@ -291,3 +291,39 @@
   else setTimeout(apply,120);
   window.addEventListener('load',()=>setTimeout(apply,220),{once:true});
 })();
+
+
+/* Reset opening check fields from the same Excel closing 28 source, not stale HTML values */
+(function(){
+  'use strict';
+  const TARGET='2026-09-29';
+  function activeDate(){
+    try{return String(new URLSearchParams(location.search).get('sim_date')||window.KARegulationsV29?.activeShift?.date||'').trim()}catch(_){return '';}
+  }
+  function set(id,value,klass){const el=document.getElementById(id);if(!el)return;if(klass)el.className=klass;el.textContent=value;}
+  function apply(){
+    if(activeDate()!==TARGET) return;
+    if(Array.isArray(window.pkgCatalog)) window.pkgCatalog.forEach((p,i)=>{
+      const input=document.getElementById('pkgCheck'+(i+1));
+      if(input) input.value=String(Number(p?.stock||0));
+    });
+    if(Array.isArray(window.cigCatalog)) window.cigCatalog.forEach((c,i)=>{
+      const display=document.getElementById('cigDispCheck'+(i+1));
+      const warehouse=document.getElementById('cigWhCheck'+(i+1));
+      if(display) display.value=String(Number(c?.display||0));
+      if(warehouse) warehouse.value=String(Number(c?.warehouse||0));
+    });
+    try{if(typeof updateOpeningCorrections==='function')updateOpeningCorrections()}catch(_){}
+    set('openingOverviewModal','Belum lengkap');
+    set('openingOverviewModalStatus','Closing 28 belum lengkap','status bad');
+    set('openingContinueStatus','Ditahan — modal closing 28 belum lengkap');
+    const continueEl=document.getElementById('openingContinueStatus');
+    if(continueEl) continueEl.style.color='var(--red)';
+    const box=document.getElementById('openingValidationBox');
+    if(box){box.className='notice red';box.innerHTML='<b>Modal opening ditahan.</b> 20 saldo closing 28 belum terisi di Excel. Stok dan harga Paket/Rokok sudah dari closing 28.';}
+    document.querySelectorAll('#opening-modal [id^="prevModalCheck"]').forEach(input=>{input.value='';input.placeholder='Closing 28 belum diisi';input.disabled=true;});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(apply,320),{once:true});
+  else setTimeout(apply,320);
+  window.addEventListener('load',()=>setTimeout(apply,460),{once:true});
+})();
